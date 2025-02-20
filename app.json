@@ -3,8 +3,9 @@
     "name": "WorkplaceFrontEnd",
     "slug": "WorkplaceFrontEnd",
     "version": "1.0.0",
+    "entryPoint": "./App.tsx",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/wpslogo.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
