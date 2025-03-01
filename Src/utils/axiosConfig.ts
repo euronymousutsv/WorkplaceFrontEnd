@@ -4,7 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Set the base URL for API requests
 const api = axios.create({
-    baseURL: Platform.OS === 'web' ? 'http://192.168.1.143:3000/' : 'http://192.168.1.143:3000/', // Use local IP for both mobile and web
+    baseURL: Platform.OS === 'web' ? 'http://workerapi-env.eba-srhtzvap.ap-southeast-2.elasticbeanstalk.com' : 'http://workerapi-env.eba-srhtzvap.ap-southeast-2.elasticbeanstalk.com',
+    timeout: 10000,  // 10 seconds
 });
 
 // Set up Axios Interceptors
