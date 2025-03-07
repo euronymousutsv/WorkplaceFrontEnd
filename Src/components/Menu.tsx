@@ -15,7 +15,7 @@ type MenuProps = {
   isMenuOpen: boolean;
   toggleMenu: () => void;
   onChannelSelect: (channelId: string, channelName: string) => void;
-  activeChannel: string;
+  activeChannel: string | null;
 };
 
 const Menu = ({ isMenuOpen, toggleMenu, onChannelSelect, activeChannel }: MenuProps) => {

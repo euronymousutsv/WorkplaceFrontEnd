@@ -11,23 +11,25 @@ import {
   Image 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 
-// Define the shape of the messages for each channel
+// Define message structure
 interface Message {
   id: string;
   user: string;
   message: string;
   timestamp: string;
+  photo?: string;
 }
 
-// Define the channels as a type with the correct keys
+// Define structure of mock messages for different channels
 interface MockMessages {
   welcome: Message[];
   main: Message[];
   private1: Message[];
 }
 
-// Mock chat messages
+// Mock messages data
 const mockMessages: MockMessages = {
   welcome: [
     { id: '1', user: 'Admin', message: 'Welcome to the main channel!', timestamp: '2023-02-15 08:00' },
@@ -43,36 +45,35 @@ const mockMessages: MockMessages = {
   ],
 };
 
+// Props for ChatWindow component
 type ChatWindowProps = {
   activeChannelId: string;
   activeChannelName: string;
-  hideBottomNav: () => void; // Function to hide the bottom navigation when entering chat
+  hideBottomNav: () => void;
 };
 
 const ChatWindow = ({ activeChannelId, activeChannelName, hideBottomNav }: ChatWindowProps) => {
   const [newMessage, setNewMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>(mockMessages[activeChannelId as keyof MockMessages] || []);
-  const [photo, setPhoto] = useState(null); // To store photo if taken
-  const [activeChannel, setActiveChannel] = useState<string | null>(null); // Track active channel
   const scrollViewRef = useRef<ScrollView>(null);
 
-  // Update messages when activeChannelId changes
+  // Update messages when the active channel changes
   useEffect(() => {
     setMessages(mockMessages[activeChannelId as keyof MockMessages] || []);
-    hideBottomNav();  // Hide bottom navigation when inside the chat
+    hideBottomNav();
   }, [activeChannelId, hideBottomNav]);
 
-  // Auto scroll to bottom when new messages arrive
+  // Automatically scroll to bottom when new message is added
   useEffect(() => {
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
   }, [messages]);
 
+  // Send text message handler
   const handleSendMessage = () => {
-    if (newMessage.trim() === '') return; // Prevent empty messages
-    
-    // Add new message with timestamp
+    if (newMessage.trim() === '') return;
+
     const now = new Date();
     const hours = now.getHours();
     const minutes = now.getMinutes();
@@ -80,37 +81,35 @@ const ChatWindow = ({ activeChannelId, activeChannelName, hideBottomNav }: ChatW
     const formattedHours = hours % 12 || 12;
     const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
     const timeString = `${formattedHours}:${formattedMinutes} ${ampm}`;
-    
+
     const newMsg = { 
       id: Date.now().toString(), 
       user: 'You', 
       message: newMessage,
       timestamp: timeString
     };
-    
-    setMessages([...messages, newMsg]); // Add new message to the chat
-    setNewMessage(''); // Clear input field
+
+    setMessages([...messages, newMsg]);
+    setNewMessage('');
   };
 
-  const handlePhotoSend = () => {
-    // Logic to handle photo sending goes here
-    // For now, simulate sending a photo by just adding a placeholder message
-    const photoMessage = { 
-      id: Date.now().toString(), 
-      user: 'You', 
-      message: 'Photo sent',
-      timestamp: new Date().toLocaleTimeString()
-    };
-    setMessages([...messages, photoMessage]);
-    setPhoto(null);  // Reset photo state after sending
-  };
+  // Send photo message handler
+  const handlePhotoSend = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
 
-  const handleChannelClick = (channel: string) => {
-    // Toggle the active channel when clicked
-    if (activeChannel === channel) {
-      setActiveChannel(null); // Deactivate the channel if it's already active
-    } else {
-      setActiveChannel(channel); // Activate the clicked channel
+    if (!result.canceled && result.assets && result.assets[0].uri) {
+      const photoMessage = { 
+        id: Date.now().toString(), 
+        user: 'You',
+        message: '',
+        photo: result.assets[0].uri,
+        timestamp: new Date().toLocaleTimeString(),
+      };
+      setMessages([...messages, photoMessage]);
     }
   };
 
@@ -118,52 +117,43 @@ const ChatWindow = ({ activeChannelId, activeChannelName, hideBottomNav }: ChatW
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.chatContainer}
+      keyboardVerticalOffset={80}
     >
       {/* Channel header */}
       <View style={styles.channelHeader}>
         <Text style={styles.channelName}>{activeChannelName}</Text>
       </View>
-      
-      <ScrollView 
-        style={styles.messagesContainer}
-        ref={scrollViewRef}
-      >
-        {messages.length === 0 ? (
-          <View style={styles.emptyChat}>
-            <Text style={styles.emptyChatText}>No messages yet. Start the conversation!</Text>
-          </View>
-        ) : (
-          messages.map((msg, index) => (
-            <View key={msg.id || index} style={styles.messageWrapper}>
-              <View style={styles.message}>
-                <View style={styles.messageHeader}>
-                  <Text style={styles.messageUser}>{msg.user}</Text>
-                  <Text style={styles.messageTime}>{msg.timestamp}</Text>
-                </View>
-                <Text style={styles.messageText}>{msg.message}</Text>
+
+      <ScrollView style={styles.messagesContainer} ref={scrollViewRef}>
+        {messages.map((msg, index) => (
+          <View key={msg.id || index} style={[styles.messageWrapper, msg.user === 'You' && styles.myMessageWrapper]}>
+            <View style={[styles.message, msg.user === 'You' && styles.myMessage]}>
+              <View style={styles.messageHeader}>
+                <Text style={styles.messageUser}>{msg.user}</Text>
+                <Text style={styles.messageTime}>{msg.timestamp}</Text>
               </View>
+              {msg.photo ? (
+                <Image source={{ uri: msg.photo }} style={{ width: 200, height: 200, borderRadius: 8 }} />
+              ) : (
+                <Text style={styles.messageText}>{msg.message}</Text>
+              )}
             </View>
-          ))
-        )}
+          </View>
+        ))}
       </ScrollView>
 
-      {/* Input area */}
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
           placeholder="Type a message"
           value={newMessage}
           onChangeText={setNewMessage}
-          multiline
-          maxLength={500}
           returnKeyType="send"
           onSubmitEditing={handleSendMessage}
         />
         <TouchableOpacity onPress={handleSendMessage} style={styles.sendButton}>
           <Ionicons name="send" size={24} color="white" />
         </TouchableOpacity>
-        
-        {/* Photo Send Button */}
         <TouchableOpacity onPress={handlePhotoSend} style={styles.photoButton}>
           <Ionicons name="camera" size={24} color="white" />
         </TouchableOpacity>
@@ -205,11 +195,18 @@ const styles = StyleSheet.create({
   messageWrapper: {
     marginBottom: 16,
   },
+  myMessageWrapper: {
+    alignSelf: 'flex-end',
+  },
   message: {
     borderRadius: 12,
     padding: 12,
     backgroundColor: '#F0F7FF',
     maxWidth: '90%',
+  },
+  myMessage: {
+    backgroundColor: '#DCF8C6',
+    alignSelf: 'flex-end',
   },
   messageHeader: {
     flexDirection: 'row',

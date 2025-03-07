@@ -41,19 +41,27 @@ const styles = StyleSheet.create({
   bottomNavContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    padding: 15,
+    padding: 6,
     backgroundColor: 'white',
     borderTopWidth: 1,
     borderTopColor: '#ccc',
   },
   navButton: {
     alignItems: 'center',
+    paddingTop: 10,
   },
   activeNavButton: {
     backgroundColor: '#88B6EC', // Active tab color
     borderRadius: 10,
-    padding: 10,
+    paddingVertical: 6, // More balanced vertical padding
+    paddingHorizontal: 10, // Slightly increased horizontal padding for better touch area
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4, // For Android shadow
   },
+  
   navButtonText: {
     fontSize: 12,
     color: 'gray',

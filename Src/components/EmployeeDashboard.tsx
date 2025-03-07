@@ -17,14 +17,14 @@ const ActiveTabColor = '#88B6EC';
 const EmployeeDashboard: React.FC = () => {
   const { firstName, lastName } = useAuth();
   const [clockedIn, setClockedIn] = useState(false);
-  const [activeTab, setActiveTab] = useState('shifts');
+  const [activeTab, setActiveTab] = useState('home');
   const [contentTab, setContentTab] = useState('dashboard');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   
   // Chat state
-  const [activeChannelId, setActiveChannelId] = useState('private1'); // Default channel
-  const [activeChannelName, setActiveChannelName] = useState('# Welcome'); // Default channel name
+  const [activeChannelId, setActiveChannelId] = useState<string | null>(null); // Default channel
+  const [activeChannelName, setActiveChannelName] = useState(''); // Default channel name
   const [isChatView, setIsChatView] = useState(false);
 
   const handleClockInOut = () => {
@@ -33,9 +33,11 @@ const EmployeeDashboard: React.FC = () => {
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
-    if (tab === 'shifts') {
+    if (tab === 'home') {
       setContentTab('dashboard');
       setIsChatView(false);
+      setActiveChannelId(null);
+      setActiveChannelName('');
     } else if (tab === 'chat') {
       setIsChatView(true);
     }
@@ -72,14 +74,18 @@ const EmployeeDashboard: React.FC = () => {
             <Text style={styles.headerText}>{activeChannelName}</Text>
             <TouchableOpacity 
               style={styles.backButton} 
-              onPress={() => setIsChatView(false)}
+              onPress={() => {
+                setIsChatView(false);
+                setActiveChannelId(null);
+                setActiveChannelName('');
+              }}
             >
               <Ionicons name="arrow-back" size={24} color="white" />
             </TouchableOpacity>
           </View>
           
           <ChatWindow 
-            activeChannelId={activeChannelId} 
+            activeChannelId={activeChannelId || ''} 
             activeChannelName={activeChannelName}
             hideBottomNav={() => setIsChatView(true)}
           />
@@ -142,26 +148,22 @@ const EmployeeDashboard: React.FC = () => {
               <Text style={styles.buttonText}>{clockedIn ? 'Clock Out' : 'Clock In'}</Text>
             </TouchableOpacity>
             
-            {/* Chat Button */}
-            <TouchableOpacity
-              style={[styles.button, { backgroundColor: PrimaryColor }]}
-              onPress={() => setIsChatView(true)}
-            >
-              <Text style={styles.buttonText}>Open Chat</Text>
-            </TouchableOpacity>
+            
           </View>
         </ScrollView>
       )}
 
-      {/* Bottom Navigation */}
-      <BottomNav activeTab={activeTab} handleTabChange={handleTabChange} />
+       {/* Bottom Navigation */}
+       {!isChatView && (
+        <BottomNav activeTab={activeTab} handleTabChange={handleTabChange} />
+      )}
 
       {/* Menu - Side Menu with slide-in animation */}
       <Menu 
         isMenuOpen={isMenuOpen} 
         toggleMenu={toggleMenu} 
         onChannelSelect={handleChannelSelect}
-        activeChannel={activeChannelId}
+        activeChannel={activeChannelId || ''}
       />
       
       {/* Show Notifications if it's open */}
