@@ -1,45 +1,97 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView, Platform, Dimensions } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Platform } from 'react-native';
 import axios from '../utils/axiosConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Ionicons } from '@expo/vector-icons'; // For the eye icon and social icons
-
-const { width, height } = Dimensions.get('window');
-const isLandscape = width > height; // Check if the screen is in landscape mode
+import { Ionicons } from '@expo/vector-icons';  // Correct import for Ionicons
+import { useAuth } from '../context/AuthContext'; // Assuming you have the AuthContext to manage role
+import JWT from 'expo-jwt';  // Correct import for jwt-decode
 
 const LoginScreen = ({ navigation }: { navigation: any }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { setUserRole, setIsAuthenticated } = useAuth();  // Get AuthContext functions
+  const [Email, setEmail] = useState('');
+  const [Password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
 
   const handleLogin = async () => {
     try {
-      console.log('Login attempt with:', { email, password });  // Log the login data
-  
-      const response = await axios.post('http://192.168.1.143:3000/api/auth/login', { email, password });
-  
-      console.log('Backend Response:', response.data);  // Log the response data
-  
-      const { token, role } = response.data;
-  
+      console.log('Login attempt with:', { Email, Password });
+
+      // Send login request to backend
+      const response = await axios.post('http://workerapi-env.eba-srhtzvap.ap-southeast-2.elasticbeanstalk.com/api/employees/login', {
+        Email,
+        Password,
+      });
+
+      console.log('Backend Response:', response.data); // Log the entire response
+
+      const { token } = response.data;
+
       if (token) {
         console.log('Token received:', token);  // Log the token
-  
-        // Store the token in localStorage (for web) or AsyncStorage (for mobile)
+
+        // Decode the JWT token to extract role and other details
+        const decodedToken = JWT.decode(token, null);  // Use default() if you're importing with * as
+        console.log('Decoded Token:', decodedToken);  // Log the entire decoded token
+
+        const roleID = decodedToken.RoleID;  // Assuming role is stored as "RoleID" in the token payload
+        console.log('Decoded role:', roleID);  // Log the decoded role
+
+        // Map RoleID to a string role
+        const roleMap = {
+          1: 'manger',
+          2: 'admin',
+          3: 'employee',
+        };
+        const role = roleMap[roleID as keyof typeof roleMap] || 'employee';  // Default to 'employee' if RoleID is unknown
+        console.log('Decoded role:', role);  // Log the mapped role
+
+        // Platform-based login restrictions
         if (Platform.OS === 'web') {
-          localStorage.setItem('token', token);  // For Web, use localStorage
-        } else {
-          await AsyncStorage.setItem('token', token);  // For Mobile, use AsyncStorage
+          if (role === 'employee') {
+            setError('Employees cannot log in from the web.');
+            return;
+          }
+        } else if (Platform.OS === 'ios' || Platform.OS === 'android') {
+          if (role === 'admin' || role === 'manager') {
+            setError('Admins and Managers can only log in from the web.');
+            return;
+          }
         }
-  
-        // Navigate based on user role
-        if (role === 'admin') {
-          console.log('Redirecting to Admin Dashboard');
-          navigation.navigate('AdminDashboard');
+
+        // Ensure role exists before continuing
+        if (role) {
+          // Store the token in AsyncStorage (for mobile) or localStorage (for web)
+          if (Platform.OS === 'web') {
+            localStorage.setItem('token', token);  // For Web, use localStorage
+            localStorage.setItem('role', role);  // Store role in localStorage
+          } else {
+            await AsyncStorage.setItem('token', token);  // For Mobile, use AsyncStorage
+            await AsyncStorage.setItem('role', role.toString());  // Store role in AsyncStorage
+          }
+
+          // Set role in the global AuthContext
+          setUserRole(role);
+          setIsAuthenticated(true);
+
+          // Log context values to confirm they are updated
+          console.log('Context updated - User Role:', role);
+          console.log('Context updated - Is Authenticated:', true);
+
+          // //Navigate based on role
+          if (role === 'admin') {
+            navigation.navigate('AdminDashboard');
+          } else if (role === 'manager') {
+            navigation.navigate('ManagerDashboard');
+          } else if (role === 'employee') {
+            navigation.navigate('EmployeeDashboard');
+          }
+
+          
+          console.log('Authenticated state updated. Redirecting to dashboard...');
         } else {
-          console.log('Redirecting to Employee Dashboard');
-          navigation.navigate('EmployeeDashboard');
+          setError('No role in token');
+          console.error('No role found in token');
         }
       } else {
         setError('No token received');
@@ -50,7 +102,6 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
       setError('Invalid credentials');
     }
   };
-  
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
@@ -64,7 +115,7 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
         <TextInput
           style={styles.input}
           placeholder="Enter your email"
-          value={email}
+          value={Email}
           onChangeText={setEmail}
         />
 
@@ -73,7 +124,7 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
             style={styles.input}
             placeholder="Enter your password"
             secureTextEntry={!showPassword}
-            value={password}
+            value={Password}
             onChangeText={setPassword}
           />
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
@@ -89,7 +140,7 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
 
-        {/* orLogin with text */}
+        {/* Or login with text */}
         <Text style={styles.orLoginText}>or login with:</Text>
 
         {/* Social Media Logos (Apple and Google) */}
@@ -147,7 +198,7 @@ const styles = StyleSheet.create({
   },
   input: {
     width: '100%',
-    padding: Platform.OS === 'web' ? 15 : 20, // Larger padding for web
+    padding: Platform.OS === 'web' ? 15 : 20, // Larger padding for mobile
     borderWidth: 3,
     borderColor: '#ccc',
     marginBottom: 15,
@@ -211,7 +262,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   link: {
-    color: '#007bff', // Blue for the register link
+    color: '#007bff', // Blue 
     textDecorationLine: 'underline',
   },
   signupContainer: {
