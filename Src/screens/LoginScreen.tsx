@@ -39,8 +39,8 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
 
         // Map RoleID to a string role
         const roleMap = {
-          1: 'admin',
-          2: 'manager',
+          1: 'manger',
+          2: 'admin',
           3: 'employee',
         };
         const role = roleMap[roleID as keyof typeof roleMap] || 'employee';  // Default to 'employee' if RoleID is unknown
@@ -78,7 +78,7 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
           console.log('Context updated - User Role:', role);
           console.log('Context updated - Is Authenticated:', true);
 
-          //Navigate based on role
+          // //Navigate based on role
           if (role === 'admin') {
             navigation.navigate('AdminDashboard');
           } else if (role === 'manager') {
@@ -86,6 +86,9 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
           } else if (role === 'employee') {
             navigation.navigate('EmployeeDashboard');
           }
+
+          
+          console.log('Authenticated state updated. Redirecting to dashboard...');
         } else {
           setError('No role in token');
           console.error('No role found in token');

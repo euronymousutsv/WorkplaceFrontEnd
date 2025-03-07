@@ -4,7 +4,21 @@ import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
-const Menu = ({ isMenuOpen, toggleMenu }: { isMenuOpen: boolean, toggleMenu: () => void }) => {
+// Define channel types
+const channels = [
+  { id: 'welcome', name: '# Welcome' },
+  { id: 'main', name: '# Main Chat' },
+  { id: 'private1', name: '# Private Channel 1' },
+];
+
+type MenuProps = {
+  isMenuOpen: boolean;
+  toggleMenu: () => void;
+  onChannelSelect: (channelId: string, channelName: string) => void;
+  activeChannel: string;
+};
+
+const Menu = ({ isMenuOpen, toggleMenu, onChannelSelect, activeChannel }: MenuProps) => {
   const slideAnimation = new Animated.Value(-width); // Start off-screen to the left
 
   React.useEffect(() => {
@@ -32,10 +46,27 @@ const Menu = ({ isMenuOpen, toggleMenu }: { isMenuOpen: boolean, toggleMenu: () 
           </TouchableOpacity>
         </View>
 
-        {/* Menu Items */}
-        <Text style={styles.menuItem}># Welcome</Text>
-        <Text style={styles.menuItem}># Main Chat</Text>
-        <Text style={styles.menuItem}># Private Channel #1</Text>
+        {/* Menu Items - Made clickable */}
+        {channels.map((channel) => (
+          <TouchableOpacity
+            key={channel.id}
+            style={[
+              styles.menuItemContainer,
+              activeChannel === channel.id && styles.activeMenuItem
+            ]}
+            onPress={() => {
+              onChannelSelect(channel.id, channel.name);
+              toggleMenu();
+            }}
+          >
+            <Text style={[
+              styles.menuItem,
+              activeChannel === channel.id && styles.activeMenuItemText
+            ]}>
+              {channel.name}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
     </Animated.View>
   );
@@ -44,11 +75,11 @@ const Menu = ({ isMenuOpen, toggleMenu }: { isMenuOpen: boolean, toggleMenu: () 
 const styles = StyleSheet.create({
   menu: {
     position: 'absolute',
-    top: 75,
+    top: 47,
     left: 0,
     bottom: 0,
     backgroundColor: '#FDFDFF',
-    height: '88.6%', // Make sure it's covering most of the screen
+    height: '92%', // Make sure it's covering most of the screen
     width: '60%',   // Half width of the screen
     borderRadius: 20,
     borderRightWidth: 1,
@@ -73,10 +104,22 @@ const styles = StyleSheet.create({
   closeButtonIcon: {
     color: '#4A90E2',
   },
+  menuItemContainer: {
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    marginBottom: 5,
+  },
+  activeMenuItem: {
+    backgroundColor: 'rgba(74, 144, 226, 0.1)',
+  },
   menuItem: {
     fontSize: 18,
-    marginBottom: 15,
     color: '#393D3F',
+  },
+  activeMenuItemText: {
+    color: '#4A90E2',
+    fontWeight: 'bold',
   },
   menuHeader: {
     fontSize: 24,

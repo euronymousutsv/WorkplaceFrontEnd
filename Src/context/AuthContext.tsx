@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage for persistence
+import AsyncStorage from '@react-native-async-storage/async-storage'; // AsyncStorage for mobile (React Native)
+import { Platform } from 'react-native'; // To check platform (Web or Mobile)
 
-// Define the context data type
 interface AuthContextType {
   userRole: string;
   firstName: string;
@@ -11,12 +11,11 @@ interface AuthContextType {
   setLastName: (lastName: string) => void;
   isAuthenticated: boolean;
   setIsAuthenticated: (authStatus: boolean) => void;
+  saveAuthData: (role: string, firstName: string, lastName: string, token: string) => Promise<void>;
 }
 
-// Create the context with a default value
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Custom hook to use the AuthContext
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -25,7 +24,6 @@ export const useAuth = () => {
   return context;
 };
 
-// AuthProvider component to wrap the app and provide the context
 interface AuthProviderProps {
   children: ReactNode;
 }
@@ -39,23 +37,56 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const loadAuthData = async () => {
       try {
-        const token = await AsyncStorage.getItem('token');
-        const savedRole = await AsyncStorage.getItem('role');
-        const savedFirstName = await AsyncStorage.getItem('firstName');
-        const savedLastName = await AsyncStorage.getItem('lastName');
+        if (Platform.OS === 'web') {
+          // For Web: Use localStorage
+          const token = localStorage.getItem('token');
+          const savedRole = localStorage.getItem('role');
+          const savedFirstName = localStorage.getItem('firstName');
+          const savedLastName = localStorage.getItem('lastName');
 
-        if (token && savedRole && savedFirstName && savedLastName) {
-          setIsAuthenticated(true);
-          setUserRole(savedRole);
-          setFirstName(savedFirstName);
-          setLastName(savedLastName);
+          if (token && savedRole && savedFirstName && savedLastName) {
+            setIsAuthenticated(true);
+            setUserRole(savedRole);
+            setFirstName(savedFirstName);
+            setLastName(savedLastName);
+          }
+        } else {
+          // For Mobile (React Native): Use AsyncStorage
+          const token = await AsyncStorage.getItem('token');
+          const savedRole = await AsyncStorage.getItem('role');
+          const savedFirstName = await AsyncStorage.getItem('firstName');
+          const savedLastName = await AsyncStorage.getItem('lastName');
+
+          if (token && savedRole && savedFirstName && savedLastName) {
+            setIsAuthenticated(true);
+            setUserRole(savedRole);
+            setFirstName(savedFirstName);
+            setLastName(savedLastName);
+          }
         }
       } catch (error) {
         console.error('Failed to load auth data', error);
       }
     };
+
     loadAuthData();
   }, []);
+
+  const saveAuthData = async (role: string, firstName: string, lastName: string, token: string) => {
+    if (Platform.OS === 'web') {
+      // For Web: Save to localStorage
+      localStorage.setItem('token', token);
+      localStorage.setItem('role', role);
+      localStorage.setItem('firstName', firstName);
+      localStorage.setItem('lastName', lastName);
+    } else {
+      // For Mobile: Save to AsyncStorage
+      await AsyncStorage.setItem('token', token);
+      await AsyncStorage.setItem('role', role);
+      await AsyncStorage.setItem('firstName', firstName);
+      await AsyncStorage.setItem('lastName', lastName);
+    }
+  };
 
   return (
     <AuthContext.Provider
@@ -68,6 +99,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setLastName,
         isAuthenticated,
         setIsAuthenticated,
+        saveAuthData, // Function to save auth data for login
       }}
     >
       {children}

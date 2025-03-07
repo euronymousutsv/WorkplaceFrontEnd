@@ -44,11 +44,11 @@ const Notification = ({ isNotificationOpen, toggleNotification }: { isNotificati
 const styles = StyleSheet.create({
   notification: {
     position: 'absolute',
-    top: 75,
+    top: 47,
     right: 0,
     bottom: 0,
     backgroundColor: '#FDFDFF',
-    height: '88.6%',
+    height: '92%',
     width: '60%',  // Half width of the screen
     borderRadius: 20,
     borderLeftWidth: 1,

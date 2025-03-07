@@ -29,12 +29,13 @@ const AppNavigator = () => {
   return (
     <Stack.Navigator>
       {/* Public Routes */}
-      <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="EmployeeDashboard" component={EmployeeDashboard} options={{ headerShown: false }} />
+      {/* <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="SignUp" component={SignupScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="SignUp" component={SignupScreen} options={{ headerShown: false }} /> */}
 
       {/* Conditional Routes */}
-      {isAuthenticated && (
+      {/* {isAuthenticated && (
         <>
           {userRole === 'admin' && (
             <Stack.Screen name="AdminDashboard" component={AdminDashboard} options={{ headerShown: false }} />
@@ -46,7 +47,7 @@ const AppNavigator = () => {
             <Stack.Screen name="EmployeeDashboard" component={EmployeeDashboard} options={{ headerShown: false }} />
           )}
         </>
-      )}
+      )} */}
     </Stack.Navigator>
   );
 };
