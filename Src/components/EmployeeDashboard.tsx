@@ -6,6 +6,12 @@ import { Ionicons } from '@expo/vector-icons';
 import Menu from './Menu';
 import Notification from './Notification';
 import ChatWindow from './ChatWindow';
+import { mockShifts } from '../data/mockShifts';
+import { Shift } from '.././types/Shift'; 
+import ShiftCard from './ShiftCard';
+import SchedulesScreen from './SchedulesScreen';
+import IncomeScreen from './IncomeScreen';
+
 
 const PrimaryColor = '#4A90E2';
 const AccentColor = '#2ECC71';
@@ -134,12 +140,23 @@ const EmployeeDashboard: React.FC = () => {
 
           {/* Content Rendering Based on Active Tab */}
           <View style={styles.contentContainer}>
-            {contentTab === 'dashboard' && <Text>Dashboard Content</Text>}
-            {contentTab === 'schedules' && <Text>Schedules Content</Text>}
-            {contentTab === 'income' && <Text>Income Content</Text>}
+          {contentTab === 'dashboard' && (
+            <>
+            <Text style={styles.sectionTitle}> -------- Your Shifts: -------- </Text>
+            {mockShifts.length > 0 ? (
+            mockShifts.map((shift) => (
+            <ShiftCard key={shift.id} shift={shift} />
+          ))
+        ) : (
+          <Text style={styles.noShiftsText}>No shifts available for you.</Text>
+          )}
+          </>
+          )}
+            {contentTab === 'schedules' && <SchedulesScreen />}
+            {contentTab === 'income' && <IncomeScreen />}
           </View>
 
-          {/* Action Buttons Section */}
+          {/* Action Buttons Section
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={[styles.button, { backgroundColor: clockedIn ? ButtonRed : AccentColor }]}
@@ -149,7 +166,7 @@ const EmployeeDashboard: React.FC = () => {
             </TouchableOpacity>
             
             
-          </View>
+          </View> */}
         </ScrollView>
       )}
 
@@ -260,25 +277,42 @@ const styles = StyleSheet.create({
     marginTop: 20,
     paddingHorizontal: 20,
   },
-  buttonContainer: {
-    marginTop: 20,
-    marginBottom: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    alignItems: 'center',
+
+  sectionTitle: {
+    fontSize: 10,
+    fontWeight: 'light',
+    color: '#393D3F',
+    left: 120,
+    marginBottom: 12,
+    marginTop: -30,
   },
-  button: {
-    backgroundColor: AccentColor,
-    padding: 15,
-    borderRadius: 20,
-    marginBottom: 15,
-    width: '40%',
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: 'white',
+  
+  noShiftsText: {
     fontSize: 16,
+    color: '#8E9196',
+    textAlign: 'center',
+    marginVertical: 20,
   },
+  
+  // buttonContainer: {
+  //   marginTop: 20,
+  //   marginBottom: 20,
+  //   flexDirection: 'row',
+  //   justifyContent: 'space-evenly',
+  //   alignItems: 'center',
+  // },
+  // button: {
+  //   backgroundColor: AccentColor,
+  //   padding: 15,
+  //   borderRadius: 20,
+  //   marginBottom: 15,
+  //   width: '40%',
+  //   alignItems: 'center',
+  // },
+  // buttonText: {
+  //   color: 'white',
+  //   fontSize: 16,
+  // },
 });
 
 export default EmployeeDashboard;

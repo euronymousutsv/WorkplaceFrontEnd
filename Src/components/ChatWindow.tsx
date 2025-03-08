@@ -96,7 +96,7 @@ const ChatWindow = ({ activeChannelId, activeChannelName, hideBottomNav }: ChatW
   // Send photo message handler
   const handlePhotoSend = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images', 'videos'],
       allowsEditing: true,
       quality: 0.8,
     });
