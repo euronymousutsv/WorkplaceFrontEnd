@@ -8,6 +8,8 @@ import SignupScreen from './src/screens/SignupScreen';
 import AdminDashboard from './src/components/AdminDashboard';
 import EmployeeDashboard from './src/components/EmployeeDashboard';
 import ManagerDashboard from './src/components/ManagerDashboard';
+import LeaveScreen from './src/components/LeaveScreen';
+import { RootStackParamList } from './src/types/navigationTypes';
 
 // Create a stack navigator
 const Stack = createStackNavigator();
@@ -30,6 +32,8 @@ const AppNavigator = () => {
     <Stack.Navigator>
       {/* Public Routes */}
       <Stack.Screen name="EmployeeDashboard" component={EmployeeDashboard} options={{ headerShown: false }} />
+      
+      
       {/* <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
       <Stack.Screen name="SignUp" component={SignupScreen} options={{ headerShown: false }} /> */}

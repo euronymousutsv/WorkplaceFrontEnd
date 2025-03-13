@@ -11,6 +11,7 @@ import { Shift } from '.././types/Shift';
 import ShiftCard from './ShiftCard';
 import SchedulesScreen from './SchedulesScreen';
 import IncomeScreen from './IncomeScreen';
+import LeaveScreen from './LeaveScreen';
 
 
 const PrimaryColor = '#4A90E2';
@@ -23,8 +24,8 @@ const ActiveTabColor = '#88B6EC';
 const EmployeeDashboard: React.FC = () => {
   const { firstName, lastName } = useAuth();
   const [clockedIn, setClockedIn] = useState(false);
-  const [activeTab, setActiveTab] = useState('home');
-  const [contentTab, setContentTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState<string>('home');
+  const [contentTab, setContentTab] = useState<string>('dashboard');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   
@@ -99,6 +100,8 @@ const EmployeeDashboard: React.FC = () => {
       ) : (
         // Regular Dashboard View
         <ScrollView style={styles.scrollContainer}>
+          {activeTab === 'home' && (
+            <>
           {/* Header Section */}
           <View style={styles.header}>
             <TouchableOpacity style={styles.menuButton} onPress={toggleMenu}>
@@ -137,6 +140,7 @@ const EmployeeDashboard: React.FC = () => {
               </TouchableOpacity>
             </View>
           </View>
+          
 
           {/* Content Rendering Based on Active Tab */}
           <View style={styles.contentContainer}>
@@ -167,8 +171,19 @@ const EmployeeDashboard: React.FC = () => {
             
             
           </View> */}
+          </>
+          )}
+          {activeTab === 'leave' && (
+            <LeaveScreen 
+              toggleMenu={toggleMenu} 
+              toggleNotification={toggleNotification} 
+            />
+          )}
+
         </ScrollView>
       )}
+
+      
 
        {/* Bottom Navigation */}
        {!isChatView && (
