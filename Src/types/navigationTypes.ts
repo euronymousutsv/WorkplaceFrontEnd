@@ -6,5 +6,6 @@ export type RootStackParamList = {
     AdminDashboard: undefined;
     ManagerDashboard: undefined;
     EmployeeDashboard: undefined;
+    LeaveScreen: undefined;
   };
   
