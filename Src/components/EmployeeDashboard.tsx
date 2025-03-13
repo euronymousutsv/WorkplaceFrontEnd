@@ -12,6 +12,7 @@ import ShiftCard from './ShiftCard';
 import SchedulesScreen from './SchedulesScreen';
 import IncomeScreen from './IncomeScreen';
 import LeaveScreen from './LeaveScreen';
+import ProfileScreen from './ProfileScreen';
 
 
 const PrimaryColor = '#4A90E2';
@@ -175,6 +176,13 @@ const EmployeeDashboard: React.FC = () => {
           )}
           {activeTab === 'leave' && (
             <LeaveScreen 
+              toggleMenu={toggleMenu} 
+              toggleNotification={toggleNotification} 
+            />
+          )}
+
+          {activeTab === 'profile' && (
+            <ProfileScreen 
               toggleMenu={toggleMenu} 
               toggleNotification={toggleNotification} 
             />
