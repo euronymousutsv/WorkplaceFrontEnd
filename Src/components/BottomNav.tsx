@@ -1,8 +1,7 @@
-// src/components/BottomNav.tsx
-
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import LeaveScreen from './LeaveScreen';
 
 interface BottomNavProps {
   activeTab: string;
@@ -13,15 +12,19 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, handleTabChange }) => 
   return (
     <View style={styles.bottomNavContainer}>
       <TouchableOpacity
-        style={[styles.navButton, activeTab === 'home' && styles.activeNavButton]}
-        onPress={() => handleTabChange('home')}
+        style={[styles.navButton, activeTab === 'home' &&  styles.activeNavButton]}
+        onPress={() => 
+          handleTabChange('home')
+          }
       >
         <Ionicons name="home-outline" size={24} color="gray" />
         <Text style={styles.navButtonText}>Home</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.navButton, activeTab === 'leave' && styles.activeNavButton]}
-        onPress={() => handleTabChange('leave')}
+        onPress={() => 
+          handleTabChange('leave')
+        }
       >
         <Ionicons name="airplane-outline" size={24} color="gray" />
         <Text style={styles.navButtonText}>Leave</Text>
