@@ -1,60 +1,70 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Platform } from 'react-native';
-import axios from '../config/axiosConfig';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Ionicons } from '@expo/vector-icons';  // Correct import for Ionicons
-import { useAuth } from '../context/AuthContext'; // Assuming you have the AuthContext to manage role
-import JWT from 'expo-jwt';  // Correct import for jwt-decode
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Platform,
+} from "react-native";
+import axios from "../config/axiosConfig";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Ionicons } from "@expo/vector-icons"; // Correct import for Ionicons
+import { useAuth } from "../context/AuthContext"; // Assuming you have the AuthContext to manage role
+import JWT from "expo-jwt"; // Correct import for jwt-decode
+import { loginUser } from "../api/auth/authApi";
+import { saveToken } from "../api/auth/token";
 
 const LoginScreen = ({ navigation }: { navigation: any }) => {
-  const { setUserRole, setIsAuthenticated } = useAuth();  // Get AuthContext functions
-  const [Email, setEmail] = useState('');
-  const [Password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const { setUserRole, setIsAuthenticated } = useAuth(); // Get AuthContext functions
+  const [Email, setEmail] = useState("");
+  const [Password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
 
   const handleLogin = async () => {
     try {
-      console.log('Login attempt with:', { Email, Password });
+      console.log("Login attempt with:", { Email, Password });
 
-      // Send login request to backend
-      const response = await axios.post('http://workerapi-env.eba-srhtzvap.ap-southeast-2.elasticbeanstalk.com/api/employees/login', {
-        Email,
-        Password,
-      });
+      const response = await loginUser(Email, Password);
 
-      console.log('Backend Response:', response.data); // Log the entire response
+      const accessToken = response.data?.accessToken ?? "";
+      const refreshToken = response.data?.refreshToken ?? "";
 
-      const { token } = response.data;
-
-      if (token) {
-        console.log('Token received:', token);  // Log the token
+      if (accessToken) {
+        // these token will be able to access the application
+        // An access token will give access to the application wheras, an refresh token will beuised to generate a new accesstoken.
+        // accessToken will be valid for short amount of time while the refresh tokenw ill be valid for longer duration.
+        // This makes it easir for user to not ogin time and again.
+        saveToken("accessToken", accessToken);
+        saveToken("refreshToken", refreshToken);
 
         // Decode the JWT token to extract role and other details
-        const decodedToken = JWT.decode(token, null);  // Use default() if you're importing with * as
-        console.log('Decoded Token:', decodedToken);  // Log the entire decoded token
+        const decodedToken = JWT.decode(accessToken, null); // Use default() if you're importing with * as
+        console.log("Decoded Token:", decodedToken); // Log the entire decoded token
 
-        const roleID = decodedToken.RoleID;  // Assuming role is stored as "RoleID" in the token payload
-        console.log('Decoded role:', roleID);  // Log the decoded role
+        const roleID = decodedToken.RoleID; // Assuming role is stored as "RoleID" in the token payload
+        console.log("Decoded role:", roleID); // Log the decoded role
 
         // Map RoleID to a string role
         const roleMap = {
-          1: 'manger',
-          2: 'admin',
-          3: 'employee',
+          1: "manger",
+          2: "admin",
+          3: "employee",
         };
-        const role = roleMap[roleID as keyof typeof roleMap] || 'employee';  // Default to 'employee' if RoleID is unknown
-        console.log('Decoded role:', role);  // Log the mapped role
+        const role = roleMap[roleID as keyof typeof roleMap] || "employee"; // Default to 'employee' if RoleID is unknown
+        console.log("Decoded role:", role); // Log the mapped role
 
         // Platform-based login restrictions
-        if (Platform.OS === 'web') {
-          if (role === 'employee') {
-            setError('Employees cannot log in from the web.');
+        if (Platform.OS === "web") {
+          if (role === "employee") {
+            setError("Employees cannot log in from the web.");
             return;
           }
-        } else if (Platform.OS === 'ios' || Platform.OS === 'android') {
-          if (role === 'admin' || role === 'manager') {
-            setError('Admins and Managers can only log in from the web.');
+        } else if (Platform.OS === "ios" || Platform.OS === "android") {
+          if (role === "admin" || role === "manager") {
+            setError("Admins and Managers can only log in from the web.");
             return;
           }
         }
@@ -62,12 +72,12 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
         // Ensure role exists before continuing
         if (role) {
           // Store the token in AsyncStorage (for mobile) or localStorage (for web)
-          if (Platform.OS === 'web') {
-            localStorage.setItem('token', token);  // For Web, use localStorage
-            localStorage.setItem('role', role);  // Store role in localStorage
+          if (Platform.OS === "web") {
+            localStorage.setItem("token", accessToken); // For Web, use localStorage
+            localStorage.setItem("role", role); // Store role in localStorage
           } else {
-            await AsyncStorage.setItem('token', token);  // For Mobile, use AsyncStorage
-            await AsyncStorage.setItem('role', role.toString());  // Store role in AsyncStorage
+            await AsyncStorage.setItem("token", accessToken); // For Mobile, use AsyncStorage
+            await AsyncStorage.setItem("role", role.toString()); // Store role in AsyncStorage
           }
 
           // Set role in the global AuthContext
@@ -75,36 +85,40 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
           setIsAuthenticated(true);
 
           // Log context values to confirm they are updated
-          console.log('Context updated - User Role:', role);
-          console.log('Context updated - Is Authenticated:', true);
+          console.log("Context updated - User Role:", role);
+          console.log("Context updated - Is Authenticated:", true);
 
           // //Navigate based on role
-          if (role === 'admin') {
-            navigation.navigate('AdminDashboard');
-          } else if (role === 'manager') {
-            navigation.navigate('ManagerDashboard');
-          } else if (role === 'employee') {
-            navigation.navigate('EmployeeDashboard');
+          if (role === "admin") {
+            navigation.navigate("AdminDashboard");
+          } else if (role === "manager") {
+            navigation.navigate("ManagerDashboard");
+          } else if (role === "employee") {
+            navigation.navigate("EmployeeDashboard");
           }
 
-          
-          console.log('Authenticated state updated. Redirecting to dashboard...');
+          console.log(
+            "Authenticated state updated. Redirecting to dashboard..."
+          );
         } else {
-          setError('No role in token');
-          console.error('No role found in token');
+          setError("No role in token");
+          console.error("No role found in token");
         }
       } else {
-        setError('No token received');
-        console.error('No token received from backend');
+        setError("No token received");
+        console.error("No token received from backend");
       }
     } catch (err) {
-      console.error('Error during login:', err);
-      setError('Invalid credentials');
+      console.error("Error during login:", err);
+      setError("Invalid credentials");
     }
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+    >
       {/* Welcome Text */}
       <View style={styles.welcomeContainer}>
         <Text style={styles.welcomeText}>Welcome back!</Text>
@@ -127,8 +141,15 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
             value={Password}
             onChangeText={setPassword}
           />
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-            <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={24} color="gray" />
+          <TouchableOpacity
+            onPress={() => setShowPassword(!showPassword)}
+            style={styles.eyeIcon}
+          >
+            <Ionicons
+              name={showPassword ? "eye-off" : "eye"}
+              size={24}
+              color="gray"
+            />
           </TouchableOpacity>
         </View>
 
@@ -156,7 +177,7 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
         {/* Don't have an account */}
         <View style={styles.signupContainer}>
           <Text>Don't have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+          <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
             <Text style={styles.link}>Sign Up</Text>
           </TouchableOpacity>
         </View>
@@ -170,103 +191,103 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#FDFDFF', // Off-White background
+    backgroundColor: "#FDFDFF", // Off-White background
   },
   contentContainer: {
     flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingBottom: 20,
-    fontSize: Platform.OS === 'web' ? 16 : 10,
-    flexDirection: Platform.OS === 'web' ? 'row' : 'column', // Row for web, column for mobile
+    fontSize: Platform.OS === "web" ? 16 : 10,
+    flexDirection: Platform.OS === "web" ? "row" : "column", // Row for web, column for mobile
   },
   welcomeContainer: {
-    width: Platform.OS === 'web' ? '40%' : '100%', // Make "Welcome back" take up 40% width on web, full width on mobile
+    width: Platform.OS === "web" ? "40%" : "100%", // Make "Welcome back" take up 40% width on web, full width on mobile
     marginBottom: 20,
-    textAlign: Platform.OS === 'web' ? 'left' : 'center', // Left aligned for web, center for mobile
+    textAlign: Platform.OS === "web" ? "left" : "center", // Left aligned for web, center for mobile
   },
   welcomeText: {
-    fontSize: Platform.OS === 'web' ? 30 : 24,
-    fontWeight: 'bold',
-    color: '#393D3F', // Charcoal Grey
+    fontSize: Platform.OS === "web" ? 30 : 24,
+    fontWeight: "bold",
+    color: "#393D3F", // Charcoal Grey
     marginBottom: 20,
   },
   formContainer: {
-    width: Platform.OS === 'web' ? '60%' : '100%', // Form takes 60% width on web, full width on mobile
-    alignItems: 'center',
-    marginTop: Platform.OS === 'web' ? '5%' : '10%', // Add space on top for web
+    width: Platform.OS === "web" ? "60%" : "100%", // Form takes 60% width on web, full width on mobile
+    alignItems: "center",
+    marginTop: Platform.OS === "web" ? "5%" : "10%", // Add space on top for web
   },
   input: {
-    width: '100%',
-    padding: Platform.OS === 'web' ? 15 : 20, // Larger padding for mobile
+    width: "100%",
+    padding: Platform.OS === "web" ? 15 : 20, // Larger padding for mobile
     borderWidth: 3,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     marginBottom: 15,
     borderRadius: 25,
   },
   passwordContainer: {
-    width: '100%',
-    position: 'relative',
+    width: "100%",
+    position: "relative",
   },
   eyeIcon: {
-    position: 'absolute',
+    position: "absolute",
     right: 10,
-    top: Platform.OS === 'web' ? 15 : 20, // Adjust position for web
+    top: Platform.OS === "web" ? 15 : 20, // Adjust position for web
   },
   button: {
-    backgroundColor: '#4A90E2',
-    padding: Platform.OS === 'web' ? 15 : 20, // Larger padding for mobile
+    backgroundColor: "#4A90E2",
+    padding: Platform.OS === "web" ? 15 : 20, // Larger padding for mobile
     borderRadius: 25, // Rounded corners
-    width: '100%',
-    alignItems: 'center',
+    width: "100%",
+    alignItems: "center",
     marginTop: 20,
     marginBottom: 30,
   },
   buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
   },
   socialLoginContainer: {
-    width: '100%',
-    alignItems: 'center',
+    width: "100%",
+    alignItems: "center",
     marginBottom: 20,
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     gap: 10,
   },
   socialButton: {
-    width: '15%',
-    padding: Platform.OS === 'web' ? 10 : 15, // Larger padding for mobile
+    width: "15%",
+    padding: Platform.OS === "web" ? 10 : 15, // Larger padding for mobile
     borderRadius: 25,
-    backgroundColor: '#4A90E2', // Light Blue background for social buttons
-    alignItems: 'center',
+    backgroundColor: "#4A90E2", // Light Blue background for social buttons
+    alignItems: "center",
     marginBottom: 10,
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
   },
   appleButton: {
-    backgroundColor: '#000000', // Black for Apple button
+    backgroundColor: "#000000", // Black for Apple button
   },
   googleButton: {
-    backgroundColor: '#DB4437', // Red for Google button
+    backgroundColor: "#DB4437", // Red for Google button
   },
   orLoginText: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#393D3F', // Charcoal Grey
+    fontWeight: "bold",
+    color: "#393D3F", // Charcoal Grey
     marginVertical: 10, // Space between the buttons and text
   },
 
   errorText: {
-    color: 'red',
+    color: "red",
     marginBottom: 10,
   },
   link: {
-    color: '#007bff', // Blue 
-    textDecorationLine: 'underline',
+    color: "#007bff", // Blue
+    textDecorationLine: "underline",
   },
   signupContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginTop: 100,
   },
 });
