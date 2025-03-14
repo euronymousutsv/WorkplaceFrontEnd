@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform, Dimensions } from 'react-native';
-import axios from '../utils/axiosConfig'; // Assuming you're using axios for API calls
+import axios from '../config/axiosConfig'; // Assuming you're using axios for API calls
 
 const { width, height } = Dimensions.get('window');
 const isLandscape = width > height; // Check if the screen is in landscape mode

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-import { mockShifts } from '../data/mockShifts';
-import ShiftCard from './ShiftCard';
+import { mockShifts } from '../../../mockData/mockShifts';
+import ShiftCard from '../components/ShiftCard';
 
 const SchedulesScreen: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);

@@ -1,4 +1,4 @@
-import { Shift } from '.././types/Shift'; // Import the Shift type from the types folder
+import { Shift } from '../types/Shift'; // Import the Shift type from the types folder
 export const mockShifts: Shift[] = [
   {
     id: 'shift1',

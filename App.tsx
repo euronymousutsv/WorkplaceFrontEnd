@@ -5,10 +5,10 @@ import { AuthProvider, useAuth } from './src/context/AuthContext'; // Import the
 import LoginScreen from './src/screens/LoginScreen';
 import WelcomeScreen from './src/screens/WelcomeScreen';
 import SignupScreen from './src/screens/SignupScreen';
-import AdminDashboard from './src/components/AdminDashboard';
-import EmployeeDashboard from './src/components/EmployeeDashboard';
-import ManagerDashboard from './src/components/ManagerDashboard';
-import LeaveScreen from './src/components/LeaveScreen';
+import AdminDashboard from './src/web/adminDashboard/AdminDashboard';
+import EmployeeDashboard from './src/mobile/employeeDashboard/screens/EmployeeDashboard';
+import ManagerDashboard from './src/web/managerDashboard/ManagerDashboard';
+import LeaveScreen from './src/mobile/employeeDashboard/screens/LeaveScreen';
 import { RootStackParamList } from './src/types/navigationTypes';
 
 // Create a stack navigator

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { mockIncome } from '../data/mockIncome';
+import { mockIncome } from '../../../mockData/mockIncome';
 import { Ionicons } from '@expo/vector-icons';
 
 const IncomeScreen: React.FC = () => {

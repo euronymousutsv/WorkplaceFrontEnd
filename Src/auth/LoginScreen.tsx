@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Platform } from 'react-native';
-import axios from '../utils/axiosConfig';
+import axios from '../config/axiosConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';  // Correct import for Ionicons
 import { useAuth } from '../context/AuthContext'; // Assuming you have the AuthContext to manage role

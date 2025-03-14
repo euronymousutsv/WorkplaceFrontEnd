@@ -1,4 +1,4 @@
-import { mockShifts } from './mockShifts';
+import { mockShifts } from '././mockShifts';
 
 const HOURLY_RATE = 30; // Example hourly rate
 
