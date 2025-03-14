@@ -80,7 +80,7 @@ const ProfileScreen = ({ toggleMenu, toggleNotification }: { toggleMenu: () => v
         {/* Profile Picture */}
         <TouchableOpacity onPress={handleProfilePicture} style={styles.profilePicContainer}>
           <Image 
-            source={profilePic ? { uri: profilePic } : require('../../../assets/wpslogo.png')} 
+            source={profilePic ? { uri: profilePic } : require('../../../../assets/wpslogo.png')} 
             style={styles.profilePic} 
           />
           <Ionicons name="camera" size={24} color="white" style={styles.cameraIcon} />

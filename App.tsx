@@ -2,12 +2,12 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { AuthProvider, useAuth } from './src/context/AuthContext'; // Import the AuthContext to get role and auth state
-import LoginScreen from './src/screens/LoginScreen';
-import WelcomeScreen from './src/screens/WelcomeScreen';
-import SignupScreen from './src/screens/SignupScreen';
-import AdminDashboard from './src/web/adminDashboard/AdminDashboard';
+import LoginScreen from './src/auth/LoginScreen';
+import WelcomeScreen from './src/auth/WelcomeScreen';
+import SignupScreen from './src/auth/SignupScreen';
+import AdminDashboard from './src/web/adminDashboard/screens/AdminDashboard';
 import EmployeeDashboard from './src/mobile/employeeDashboard/screens/EmployeeDashboard';
-import ManagerDashboard from './src/web/managerDashboard/ManagerDashboard';
+import ManagerDashboard from './src/web/managerDashboard/screens/ManagerDashboard';
 import LeaveScreen from './src/mobile/employeeDashboard/screens/LeaveScreen';
 import { RootStackParamList } from './src/types/navigationTypes';
 
