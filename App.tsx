@@ -1,7 +1,5 @@
 import React from "react";
-import { NavigationContainer } from "@react-navigation/native";
-import { createStackNavigator } from "@react-navigation/stack";
-import { AuthProvider, useAuth } from "./Src/context/AuthContext"; // Import the AuthContext to get role and auth state
+
 import LoginScreen from "./Src/auth/LoginScreen";
 import WelcomeScreen from "./Src/auth/WelcomeScreen";
 import SignupScreen from "./Src/auth/SignupScreen";
@@ -10,18 +8,26 @@ import EmployeeDashboard from "./Src/mobile/employeeDashboard/screens/EmployeeDa
 import ManagerDashboard from "./Src/web/managerDashboard/screens/ManagerDashboard";
 import LeaveScreen from "./Src/mobile/employeeDashboard/screens/LeaveScreen";
 import { RootStackParamList } from "./Src/types/navigationTypes";
+import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
+import { AuthProvider, useAuth } from "./Src/context/AuthContext";
+import ChatScreen from "./Src/auth/Chat";
 
 // Create a stack navigator
 const Stack = createStackNavigator();
 
+// const App = () => {
+//   return (
+//     <AuthProvider>
+//       <NavigationContainer>
+//         <AppNavigator />
+//       </NavigationContainer>
+//     </AuthProvider>
+//   );
+// };
+
 const App = () => {
-  return (
-    <AuthProvider>
-      <NavigationContainer>
-        <AppNavigator />
-      </NavigationContainer>
-    </AuthProvider>
-  );
+  return <ChatScreen />;
 };
 
 // Centralized AppNavigator for role-based navigation
