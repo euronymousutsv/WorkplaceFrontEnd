@@ -15,9 +15,19 @@ export const API = axios.create({
 export const loginUser = async (
   email: string,
   password: string
-): Promise<ApiResponse<LoginResponse>> => {
-  const response = await API.post("/api/v1/auth/login", { email, password });
-  return response.data;
+): Promise<any> => {
+  try {
+    const response = await API.post("/api/v1/auth/login", { email, password });
+    const res = response.data as ApiResponse<LoginResponse>;
+    return res;
+  } catch (error) {
+    if (error instanceof AxiosError) {
+      const err = error.response?.data as ApiError<{}>;
+      return new ApiError(err.statusCode, {}, err.message);
+    } else {
+      return new ApiError(400, {}, "Something went wrong");
+    }
+  }
 };
 
 export const registerUser = async (userData: RegisterRequest) => {
@@ -27,22 +37,13 @@ export const registerUser = async (userData: RegisterRequest) => {
     console.log("Response received:", response);
 
     if (response.status !== 200) {
-      console.log("Response status is not 200:", response.status);
-      const { statusCode, message } = response.data;
-      console.log("Error data:", { statusCode, message });
-
-      throw new ApiError(statusCode, {}, message);
-    } else {
-      console.log("Registration successful:", response.data);
-
       const res = response.data as RegisterResponse;
       return res;
     }
   } catch (error) {
     if (error instanceof AxiosError) {
-      return error;
-    } else if (error instanceof ApiError) {
-      return error;
+      const err = error.response?.data as ApiError<{}>;
+      return new ApiError(err.statusCode, {}, err.message);
     } else {
       return new ApiError(400, {}, "Something went wrong");
     }

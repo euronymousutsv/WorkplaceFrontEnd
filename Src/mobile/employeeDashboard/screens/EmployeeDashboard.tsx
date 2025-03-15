@@ -1,38 +1,44 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
-import { useAuth } from '../../../context/AuthContext';
-import BottomNav from '../components/BottomNav';
-import { Ionicons } from '@expo/vector-icons';
-import Menu from '../components/Menu';
-import Notification from '../components/Notification';
-import ChatWindow from '../components/ChatWindow';
-import { mockShifts } from '../../../mockData/mockShifts';
-// import { Shift } from '../types/Shift'; 
-import ShiftCard from '../components/ShiftCard';
-import SchedulesScreen from './SchedulesScreen';
-import IncomeScreen from './IncomeScreen';
-import LeaveScreen from './LeaveScreen';
-import ProfileScreen from './ProfileScreen';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+} from "react-native";
+import { useAuth } from "../../../context/AuthContext";
+import BottomNav from "../components/BottomNav";
+import { Ionicons } from "@expo/vector-icons";
+import Menu from "../components/Menu";
+import Notification from "../components/Notification";
+import ChatWindow from "../components/ChatWindow";
+import { mockShifts } from "../../../mockData/mockShifts";
+// import { Shift } from '../types/Shift';
+import ShiftCard from "../components/ShiftCard";
+import SchedulesScreen from "./SchedulesScreen";
+import IncomeScreen from "./IncomeScreen";
+import LeaveScreen from "./LeaveScreen";
+import ProfileScreen from "./ProfileScreen";
 
-
-const PrimaryColor = '#4A90E2';
-const AccentColor = '#2ECC71';
-const BackgroundColor = '#FDFDFF';
-const TextColor = '#393D3F';
-const ButtonRed = '#D9534F';
-const ActiveTabColor = '#88B6EC';
+const PrimaryColor = "#4A90E2";
+const AccentColor = "#2ECC71";
+const BackgroundColor = "#FDFDFF";
+const TextColor = "#393D3F";
+const ButtonRed = "#D9534F";
+const ActiveTabColor = "#88B6EC";
 
 const EmployeeDashboard: React.FC = () => {
   const { firstName, lastName } = useAuth();
   const [clockedIn, setClockedIn] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>('home');
-  const [contentTab, setContentTab] = useState<string>('dashboard');
+  const [activeTab, setActiveTab] = useState<string>("home");
+  const [contentTab, setContentTab] = useState<string>("dashboard");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  
+
   // Chat state
   const [activeChannelId, setActiveChannelId] = useState<string | null>(null); // Default channel
-  const [activeChannelName, setActiveChannelName] = useState(''); // Default channel name
+  const [activeChannelName, setActiveChannelName] = useState(""); // Default channel name
   const [isChatView, setIsChatView] = useState(false);
 
   const handleClockInOut = () => {
@@ -41,12 +47,12 @@ const EmployeeDashboard: React.FC = () => {
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
-    if (tab === 'home') {
-      setContentTab('dashboard');
+    if (tab === "home") {
+      setContentTab("dashboard");
       setIsChatView(false);
       setActiveChannelId(null);
-      setActiveChannelName('');
-    } else if (tab === 'chat') {
+      setActiveChannelName("");
+    } else if (tab === "chat") {
       setIsChatView(true);
     }
   };
@@ -80,20 +86,20 @@ const EmployeeDashboard: React.FC = () => {
               <Ionicons name="menu" size={24} color="white" />
             </TouchableOpacity>
             <Text style={styles.headerText}>{activeChannelName}</Text>
-            <TouchableOpacity 
-              style={styles.backButton} 
+            <TouchableOpacity
+              style={styles.backButton}
               onPress={() => {
                 setIsChatView(false);
                 setActiveChannelId(null);
-                setActiveChannelName('');
+                setActiveChannelName("");
               }}
             >
               <Ionicons name="arrow-back" size={24} color="white" />
             </TouchableOpacity>
           </View>
-          
-          <ChatWindow 
-            activeChannelId={activeChannelId || ''} 
+
+          <ChatWindow
+            activeChannelId={activeChannelId || ""}
             activeChannelName={activeChannelName}
             hideBottomNav={() => setIsChatView(true)}
           />
@@ -101,67 +107,103 @@ const EmployeeDashboard: React.FC = () => {
       ) : (
         // Regular Dashboard View
         <ScrollView style={styles.scrollContainer}>
-          {activeTab === 'home' && (
+          {activeTab === "home" && (
             <>
-          {/* Header Section */}
-          <View style={styles.header}>
-            <TouchableOpacity style={styles.menuButton} onPress={toggleMenu}>
-              <Ionicons name="menu" size={24} color="white" />
-            </TouchableOpacity>
-            <Text style={styles.headerText}>Welcome, {firstName} {lastName}!</Text>
-            <TouchableOpacity style={styles.notificationButton} onPress={toggleNotification}>
-              <Ionicons name="notifications" size={24} color="white" />
-            </TouchableOpacity>
-
-            {/* Tabs Section inside the header */}
-            <View style={styles.tabsContainer}>
-              <TouchableOpacity
-                style={[styles.tab, contentTab === 'dashboard' && styles.activeTab]}
-                onPress={() => handleContentTabChange('dashboard')}
-              >
-                <Text style={[styles.tabText, contentTab === 'dashboard' && styles.activeTabText]}>
-                  Dashboard
+              {/* Header Section */}
+              <View style={styles.header}>
+                <TouchableOpacity
+                  style={styles.menuButton}
+                  onPress={toggleMenu}
+                >
+                  <Ionicons name="menu" size={24} color="white" />
+                </TouchableOpacity>
+                <Text style={styles.headerText}>
+                  Welcome, {firstName} {lastName}!
                 </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.tab, contentTab === 'schedules' && styles.activeTab]}
-                onPress={() => handleContentTabChange('schedules')}
-              >
-                <Text style={[styles.tabText, contentTab === 'schedules' && styles.activeTabText]}>
-                  Schedules
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.tab, contentTab === 'income' && styles.activeTab]}
-                onPress={() => handleContentTabChange('income')}
-              >
-                <Text style={[styles.tabText, contentTab === 'income' && styles.activeTabText]}>
-                  Income
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-          
+                <TouchableOpacity
+                  style={styles.notificationButton}
+                  onPress={toggleNotification}
+                >
+                  <Ionicons name="notifications" size={24} color="white" />
+                </TouchableOpacity>
 
-          {/* Content Rendering Based on Active Tab */}
-          <View style={styles.contentContainer}>
-          {contentTab === 'dashboard' && (
-            <>
-            <Text style={styles.sectionTitle}> -------- Your Shifts: -------- </Text>
-            {mockShifts.length > 0 ? (
-            mockShifts.map((shift) => (
-            <ShiftCard key={shift.id} shift={shift} />
-          ))
-        ) : (
-          <Text style={styles.noShiftsText}>No shifts available for you.</Text>
-          )}
-          </>
-          )}
-            {contentTab === 'schedules' && <SchedulesScreen />}
-            {contentTab === 'income' && <IncomeScreen />}
-          </View>
+                {/* Tabs Section inside the header */}
+                <View style={styles.tabsContainer}>
+                  <TouchableOpacity
+                    style={[
+                      styles.tab,
+                      contentTab === "dashboard" && styles.activeTab,
+                    ]}
+                    onPress={() => handleContentTabChange("dashboard")}
+                  >
+                    <Text
+                      style={[
+                        styles.tabText,
+                        contentTab === "dashboard" && styles.activeTabText,
+                      ]}
+                    >
+                      Dashboard
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.tab,
+                      contentTab === "schedules" && styles.activeTab,
+                    ]}
+                    onPress={() => handleContentTabChange("schedules")}
+                  >
+                    <Text
+                      style={[
+                        styles.tabText,
+                        contentTab === "schedules" && styles.activeTabText,
+                      ]}
+                    >
+                      Schedules
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.tab,
+                      contentTab === "income" && styles.activeTab,
+                    ]}
+                    onPress={() => handleContentTabChange("income")}
+                  >
+                    <Text
+                      style={[
+                        styles.tabText,
+                        contentTab === "income" && styles.activeTabText,
+                      ]}
+                    >
+                      Income
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
 
-          {/* Action Buttons Section
+              {/* Content Rendering Based on Active Tab */}
+              <View style={styles.contentContainer}>
+                {contentTab === "dashboard" && (
+                  <>
+                    <Text style={styles.sectionTitle}>
+                      {" "}
+                      -------- Your Shifts: --------{" "}
+                    </Text>
+                    {mockShifts.length > 0 ? (
+                      mockShifts.map((shift) => (
+                        <ShiftCard key={shift.id} shift={shift} />
+                      ))
+                    ) : (
+                      <Text style={styles.noShiftsText}>
+                        No shifts available for you.
+                      </Text>
+                    )}
+                  </>
+                )}
+                {contentTab === "schedules" && <SchedulesScreen />}
+                {contentTab === "income" && <IncomeScreen />}
+              </View>
+
+              {/* Action Buttons Section
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={[styles.button, { backgroundColor: clockedIn ? ButtonRed : AccentColor }]}
@@ -172,42 +214,42 @@ const EmployeeDashboard: React.FC = () => {
             
             
           </View> */}
-          </>
+            </>
           )}
-          {activeTab === 'leave' && (
-            <LeaveScreen 
-              toggleMenu={toggleMenu} 
-              toggleNotification={toggleNotification} 
+          {activeTab === "leave" && (
+            <LeaveScreen
+              toggleMenu={toggleMenu}
+              toggleNotification={toggleNotification}
             />
           )}
 
-          {activeTab === 'profile' && (
-            <ProfileScreen 
-              toggleMenu={toggleMenu} 
-              toggleNotification={toggleNotification} 
+          {activeTab === "profile" && (
+            <ProfileScreen
+              toggleMenu={toggleMenu}
+              toggleNotification={toggleNotification}
             />
           )}
-
         </ScrollView>
       )}
 
-      
-
-       {/* Bottom Navigation */}
-       {!isChatView && (
+      {/* Bottom Navigation */}
+      {!isChatView && (
         <BottomNav activeTab={activeTab} handleTabChange={handleTabChange} />
       )}
 
       {/* Menu - Side Menu with slide-in animation */}
-      <Menu 
-        isMenuOpen={isMenuOpen} 
-        toggleMenu={toggleMenu} 
+      <Menu
+        isMenuOpen={isMenuOpen}
+        toggleMenu={toggleMenu}
         onChannelSelect={handleChannelSelect}
-        activeChannel={activeChannelId || ''}
+        activeChannel={activeChannelId || ""}
       />
-      
+
       {/* Show Notifications if it's open */}
-      <Notification isNotificationOpen={isNotificationOpen} toggleNotification={toggleNotification} />
+      <Notification
+        isNotificationOpen={isNotificationOpen}
+        toggleNotification={toggleNotification}
+      />
     </SafeAreaView>
   );
 };
@@ -229,11 +271,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderBottomLeftRadius: 40,
     borderBottomRightRadius: 40,
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 20,
-    width: '100%',
+    width: "100%",
   },
   chatViewContainer: {
     flex: 1,
@@ -242,36 +284,36 @@ const styles = StyleSheet.create({
     backgroundColor: PrimaryColor,
     paddingVertical: 20,
     paddingHorizontal: 10,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
   },
   backButton: {
-    position: 'absolute',
+    position: "absolute",
     right: 10,
     top: 20,
   },
   headerText: {
-    color: 'white',
+    color: "white",
     fontSize: 22,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 10,
   },
   menuButton: {
-    position: 'absolute',
+    position: "absolute",
     left: 10,
     top: 20,
   },
   notificationButton: {
-    position: 'absolute',
+    position: "absolute",
     right: 10,
     top: 20,
   },
   tabsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    width: '100%',
+    flexDirection: "row",
+    justifyContent: "center",
+    width: "100%",
     marginTop: 10,
   },
   tab: {
@@ -280,13 +322,13 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   tabText: {
-    backgroundColor: '#88B6EC',
+    backgroundColor: "#88B6EC",
     borderRadius: 10,
     padding: 10,
-    width: '100%',
-    textAlign: 'center',
+    width: "100%",
+    textAlign: "center",
     fontSize: 10,
-    color: 'white',
+    color: "white",
   },
   activeTab: {
     borderBottomWidth: 2,
@@ -303,20 +345,20 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontSize: 10,
-    fontWeight: 'light',
-    color: '#393D3F',
+    fontWeight: "light",
+    color: "#393D3F",
     left: 120,
     marginBottom: 12,
     marginTop: -30,
   },
-  
+
   noShiftsText: {
     fontSize: 16,
-    color: '#8E9196',
-    textAlign: 'center',
+    color: "#8E9196",
+    textAlign: "center",
     marginVertical: 20,
   },
-  
+
   // buttonContainer: {
   //   marginTop: 20,
   //   marginBottom: 20,

@@ -15,6 +15,8 @@ import { useAuth } from "../context/AuthContext"; // Assuming you have the AuthC
 import JWT from "expo-jwt"; // Correct import for jwt-decode
 import { loginUser } from "../api/auth/authApi";
 import { saveToken } from "../api/auth/token";
+import { ApiError, ApiResponse } from "../api/utils/apiResponse";
+import api from "../config/axiosConfig";
 
 const LoginScreen = ({ navigation }: { navigation: any }) => {
   const { setUserRole, setIsAuthenticated } = useAuth(); // Get AuthContext functions
@@ -26,87 +28,87 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
   const handleLogin = async () => {
     try {
       console.log("Login attempt with:", { Email, Password });
-
       const response = await loginUser(Email, Password);
 
-      const accessToken = response.data?.accessToken ?? "";
-      const refreshToken = response.data?.refreshToken ?? "";
+      if ("statusCode" in response && "data" in response) {
+        const accessToken = response.data?.accessToken ?? "";
+        const refreshToken = response.data?.refreshToken ?? "";
 
-      if (accessToken) {
-        // these token will be able to access the application
-        // An access token will give access to the application wheras, an refresh token will beuised to generate a new accesstoken.
-        // accessToken will be valid for short amount of time while the refresh tokenw ill be valid for longer duration.
-        // This makes it easir for user to not ogin time and again.
-        saveToken("accessToken", accessToken);
-        saveToken("refreshToken", refreshToken);
+        if (accessToken) {
+          // these token will be able to access the application
+          // An access token will give access to the application wheras, an refresh token will beuised to generate a new accesstoken.
+          // accessToken will be valid for short amount of time while the refresh tokenw ill be valid for longer duration.
+          // This makes it easir for user to not ogin time and again.
+          saveToken("accessToken", accessToken);
+          saveToken("refreshToken", refreshToken);
 
-        // Decode the JWT token to extract role and other details
-        const decodedToken = JWT.decode(accessToken, null); // Use default() if you're importing with * as
-        console.log("Decoded Token:", decodedToken); // Log the entire decoded token
+          // Decode the JWT token to extract role and other details
+          const decodedToken = JWT.decode(accessToken, null); // Use default() if you're importing with * as
+          console.log("Decoded Token:", decodedToken); // Log the entire decoded token
 
-        const roleID = decodedToken.RoleID; // Assuming role is stored as "RoleID" in the token payload
-        console.log("Decoded role:", roleID); // Log the decoded role
+          const roleID = decodedToken.RoleID; // Assuming role is stored as "RoleID" in the token payload
+          console.log("Decoded role:", roleID); // Log the decoded role
 
-        // Map RoleID to a string role
-        const roleMap = {
-          1: "manger",
-          2: "admin",
-          3: "employee",
-        };
-        const role = roleMap[roleID as keyof typeof roleMap] || "employee"; // Default to 'employee' if RoleID is unknown
-        console.log("Decoded role:", role); // Log the mapped role
+          // Map RoleID to a string role
+          const roleMap = {
+            1: "manger",
+            2: "admin",
+            3: "employee",
+          };
+          const role = roleMap[roleID as keyof typeof roleMap] || "employee"; // Default to 'employee' if RoleID is unknown
+          console.log("Decoded role:", role); // Log the mapped role
 
-        // Platform-based login restrictions
-        if (Platform.OS === "web") {
-          if (role === "employee") {
-            setError("Employees cannot log in from the web.");
-            return;
-          }
-        } else if (Platform.OS === "ios" || Platform.OS === "android") {
-          if (role === "admin" || role === "manager") {
-            setError("Admins and Managers can only log in from the web.");
-            return;
-          }
-        }
-
-        // Ensure role exists before continuing
-        if (role) {
-          // Store the token in AsyncStorage (for mobile) or localStorage (for web)
+          // Platform-based login restrictions
           if (Platform.OS === "web") {
-            localStorage.setItem("token", accessToken); // For Web, use localStorage
-            localStorage.setItem("role", role); // Store role in localStorage
-          } else {
-            await AsyncStorage.setItem("token", accessToken); // For Mobile, use AsyncStorage
-            await AsyncStorage.setItem("role", role.toString()); // Store role in AsyncStorage
+            if (role === "employee") {
+              setError("Employees cannot log in from the web.");
+              return;
+            }
+          } else if (Platform.OS === "ios" || Platform.OS === "android") {
+            if (role === "admin" || role === "manager") {
+              setError("Admins and Managers can only log in from the web.");
+              return;
+            }
           }
 
-          // Set role in the global AuthContext
-          setUserRole(role);
-          setIsAuthenticated(true);
+          // Ensure role exists before continuing
+          if (role) {
+            // Store the token in AsyncStorage (for mobile) or localStorage (for web)
+            if (Platform.OS === "web") {
+              localStorage.setItem("token", accessToken); // For Web, use localStorage
+              localStorage.setItem("role", role); // Store role in localStorage
+            } else {
+              await AsyncStorage.setItem("token", accessToken); // For Mobile, use AsyncStorage
+              await AsyncStorage.setItem("role", role.toString()); // Store role in AsyncStorage
+            }
 
-          // Log context values to confirm they are updated
-          console.log("Context updated - User Role:", role);
-          console.log("Context updated - Is Authenticated:", true);
+            // Set role in the global AuthContext
+            setUserRole(role);
+            setIsAuthenticated(true);
 
-          // //Navigate based on role
-          if (role === "admin") {
-            navigation.navigate("AdminDashboard");
-          } else if (role === "manager") {
-            navigation.navigate("ManagerDashboard");
-          } else if (role === "employee") {
-            navigation.navigate("EmployeeDashboard");
+            // Log context values to confirm they are updated
+            console.log("Context updated - User Role:", role);
+            console.log("Context updated - Is Authenticated:", true);
+
+            // //Navigate based on role
+            if (role === "admin") {
+              navigation.navigate("AdminDashboard");
+            } else if (role === "manager") {
+              navigation.navigate("ManagerDashboard");
+            } else if (role === "employee") {
+              navigation.navigate("EmployeeDashboard");
+            }
+
+            console.log(
+              "Authenticated state updated. Redirecting to dashboard..."
+            );
           }
-
-          console.log(
-            "Authenticated state updated. Redirecting to dashboard..."
-          );
-        } else {
-          setError("No role in token");
-          console.error("No role found in token");
         }
-      } else {
-        setError("No token received");
+      } else if (response instanceof ApiError) {
+        setError(response.message);
         console.error("No token received from backend");
+      } else {
+        console.log("Aadas");
       }
     } catch (err) {
       console.error("Error during login:", err);
