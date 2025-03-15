@@ -29,7 +29,7 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
     try {
       console.log("Login attempt with:", { Email, Password });
       const response = await loginUser(Email, Password);
-
+      console.log(response);
       if ("statusCode" in response && "data" in response) {
         const accessToken = response.data?.accessToken ?? "";
         const refreshToken = response.data?.refreshToken ?? "";

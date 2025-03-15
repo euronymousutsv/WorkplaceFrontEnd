@@ -17,14 +17,14 @@ export interface joinAServerResponse {
 export const API = axios.create({
   baseURL:
     // "https://8c1f-2406-2d40-4d55-6c10-bdc3-9abf-864e-c64f.ngrok-free.app",
-    "http://localhost:3000/api/v1/",
+    "http://localhost:3000/api/v1",
 
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-const getLoggedInUserServer = async () => {
+export const getLoggedInUserServer = async () => {
   try {
     const accessToken = (await getToken("accessToken")) ?? "";
     const response = await API.get("/server/getLoggedInUserServer", {
@@ -43,7 +43,7 @@ const getLoggedInUserServer = async () => {
   }
 };
 
-const joinAServer = async (inviteCode: string) => {
+export const joinAServer = async (inviteCode: string) => {
   try {
     const accessToken = (await getToken("accessToken")) ?? "";
     const response = await API.post("/server/joinAServer", {

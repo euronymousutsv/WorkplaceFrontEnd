@@ -16,19 +16,19 @@ import ChatScreen from "./Src/auth/Chat";
 // Create a stack navigator
 const Stack = createStackNavigator();
 
-// const App = () => {
-//   return (
-//     <AuthProvider>
-//       <NavigationContainer>
-//         <AppNavigator />
-//       </NavigationContainer>
-//     </AuthProvider>
-//   );
-// };
-
 const App = () => {
-  return <ChatScreen />;
+  return (
+    <AuthProvider>
+      <NavigationContainer>
+        <AppNavigator />
+      </NavigationContainer>
+    </AuthProvider>
+  );
 };
+
+// const App = () => {
+//   return <ChatScreen />;
+// };
 
 // Centralized AppNavigator for role-based navigation
 const AppNavigator = () => {

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -20,6 +20,10 @@ import SchedulesScreen from "./SchedulesScreen";
 import IncomeScreen from "./IncomeScreen";
 import LeaveScreen from "./LeaveScreen";
 import ProfileScreen from "./ProfileScreen";
+import { getLoggedInUserServer } from "../../../api/server/serverApi";
+import { ApiError, ApiResponse } from "../../../api/utils/apiResponse";
+import { getToken, saveToken } from "../../../api/auth/token";
+import { getAllChannelForCurrentServer } from "../../../api/server/channelApi";
 
 const PrimaryColor = "#4A90E2";
 const AccentColor = "#2ECC71";
@@ -75,6 +79,22 @@ const EmployeeDashboard: React.FC = () => {
     setActiveChannelName(channelName);
     setIsChatView(true);
   };
+
+  const handleGetServerDetail = async () => {
+    const res = await getLoggedInUserServer();
+    if (res instanceof ApiError) {
+      console.log(res.message);
+    } else if ("statusCode" in res && "data" in res) {
+      const serverId = res.data.serverId;
+      saveToken("serverId", serverId);
+    } else {
+      console.log("Something went wrong");
+    }
+  };
+
+  useEffect(() => {
+    handleGetServerDetail();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
