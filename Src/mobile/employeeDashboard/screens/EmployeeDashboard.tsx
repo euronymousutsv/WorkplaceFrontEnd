@@ -24,6 +24,8 @@ import { getLoggedInUserServer } from "../../../api/server/serverApi";
 import { ApiError, ApiResponse } from "../../../api/utils/apiResponse";
 import { getToken, saveToken } from "../../../api/auth/token";
 import { getAllChannelForCurrentServer } from "../../../api/server/channelApi";
+import { getShiftsForLoggedInUser, Shifts } from "../../../api/auth/shiftApi";
+import { Shift } from "../../../types/Shift";
 
 const PrimaryColor = "#4A90E2";
 const AccentColor = "#2ECC71";
@@ -92,7 +94,23 @@ const EmployeeDashboard: React.FC = () => {
     }
   };
 
+  const [Shifts, setShifts] = useState<Shifts[]>([]);
+  const handleGetCurrentUserRosterDetails = async () => {
+    const res = await getShiftsForLoggedInUser();
+    if (res instanceof ApiError) {
+      console.log(res.message);
+    } else if ("statusCode" in res && "data" in res) {
+      const data = res.data as Shifts[];
+      // setShifts(data);
+      console.log(setShifts((prevShifts) => [...prevShifts, ...data]));
+    } else {
+      console.log("Something went wrong");
+    }
+  };
+
   useEffect(() => {
+    handleGetCurrentUserRosterDetails();
+
     handleGetServerDetail();
   }, []);
 
@@ -208,8 +226,8 @@ const EmployeeDashboard: React.FC = () => {
                       {" "}
                       -------- Your Shifts: --------{" "}
                     </Text>
-                    {mockShifts.length > 0 ? (
-                      mockShifts.map((shift) => (
+                    {Shifts.length > 0 ? (
+                      Shifts.map((shift) => (
                         <ShiftCard key={shift.id} shift={shift} />
                       ))
                     ) : (

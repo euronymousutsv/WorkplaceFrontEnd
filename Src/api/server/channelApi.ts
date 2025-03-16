@@ -1,10 +1,10 @@
 import axios, { AxiosError } from "axios";
 import { ApiError, ApiResponse } from "../utils/apiResponse";
 
-export interface getAllChannelForCurrentServerResponse {
+export type getAllChannelForCurrentServerResponse = {
   id: string;
   name: string;
-}
+};
 const API = axios.create({
   baseURL:
     // "https://8c1f-2406-2d40-4d55-6c10-bdc3-9abf-864e-c64f.ngrok-free.app",
@@ -21,9 +21,8 @@ export const getAllChannelForCurrentServer = async (serverId: string) => {
       params: { serverId },
     });
 
-    const res = response.data as ApiResponse<
-      [getAllChannelForCurrentServerResponse]
-    >;
+    const res = response.data as [getAllChannelForCurrentServerResponse];
+
     return res;
   } catch (error) {
     if (error instanceof AxiosError) {
