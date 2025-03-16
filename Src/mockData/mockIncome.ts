@@ -1,4 +1,4 @@
-import { mockShifts } from '././mockShifts';
+import { mockShifts } from "./mockShifts";
 
 const HOURLY_RATE = 30; // Example hourly rate
 
@@ -7,18 +7,21 @@ const getFirstWednesday = (year: number, month: number): Date => {
   const firstDay = new Date(year, month, 1);
   const dayOfWeek = firstDay.getDay();
   let firstWednesday = new Date(firstDay);
-  
+
   if (dayOfWeek <= 3) {
     firstWednesday.setDate(firstDay.getDate() + (3 - dayOfWeek)); // Move forward to Wednesday
   } else {
     firstWednesday.setDate(firstDay.getDate() + (10 - dayOfWeek)); // Move to next week's Wednesday
   }
-  
+
   return firstWednesday;
 };
 
 // Function to generate 2-week pay periods for a given year and month
-const generatePayPeriods = (year: number, month: number): { start: Date, end: Date }[] => {
+const generatePayPeriods = (
+  year: number,
+  month: number
+): { start: Date; end: Date }[] => {
   const payPeriods = [];
   let periodStart = getFirstWednesday(year, month);
 
@@ -43,9 +46,12 @@ const groupShiftsByPayPeriod = (shifts: any[]) => {
 
   const incomeGroups: { [key: string]: any } = {};
 
-  shifts.forEach(shift => {
+  shifts.forEach((shift) => {
     const shiftDate = new Date(shift.startTime);
-    const payPeriods = generatePayPeriods(shiftDate.getFullYear(), shiftDate.getMonth());
+    const payPeriods = generatePayPeriods(
+      shiftDate.getFullYear(),
+      shiftDate.getMonth()
+    );
 
     // Find the pay period that contains the shift
     for (const period of payPeriods) {
@@ -62,7 +68,9 @@ const groupShiftsByPayPeriod = (shifts: any[]) => {
         }
 
         // Calculate earnings for this shift
-        const hoursWorked = (shift.endTime.getTime() - shift.startTime.getTime()) / (1000 * 60 * 60);
+        const hoursWorked =
+          (shift.endTime.getTime() - shift.startTime.getTime()) /
+          (1000 * 60 * 60);
         const earnings = hoursWorked * HOURLY_RATE;
 
         // Add shift to this pay period

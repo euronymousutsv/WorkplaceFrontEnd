@@ -102,7 +102,7 @@ const EmployeeDashboard: React.FC = () => {
     } else if ("statusCode" in res && "data" in res) {
       const data = res.data as Shifts[];
       // setShifts(data);
-      console.log(setShifts((prevShifts) => [...prevShifts, ...data]));
+      setShifts((prevShifts) => [...prevShifts, ...data]);
     } else {
       console.log("Something went wrong");
     }

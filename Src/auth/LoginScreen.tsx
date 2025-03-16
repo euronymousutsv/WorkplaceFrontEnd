@@ -8,15 +8,14 @@ import {
   ScrollView,
   Platform,
 } from "react-native";
-import axios from "../config/axiosConfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons"; // Correct import for Ionicons
 import { useAuth } from "../context/AuthContext"; // Assuming you have the AuthContext to manage role
 import JWT from "expo-jwt"; // Correct import for jwt-decode
-import { loginUser } from "../api/auth/authApi";
+
 import { saveToken } from "../api/auth/token";
 import { ApiError, ApiResponse } from "../api/utils/apiResponse";
-import api from "../config/axiosConfig";
+import { loginUser } from "../api/auth/authApi";
 
 const LoginScreen = ({ navigation }: { navigation: any }) => {
   const { setUserRole, setIsAuthenticated } = useAuth(); // Get AuthContext functions
