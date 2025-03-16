@@ -26,20 +26,51 @@ export class Shifts {
   officeId: string;
   startTime: string;
   endTime: string;
+  officeLocation: OfficeLocation;
 
   constructor(
     id: string,
     employeeId: string,
     officeId: string,
     startTime: string,
-    endTime: string
+    endTime: string,
+    officeLocation: OfficeLocation
   ) {
     this.id = id;
     this.employeeId = employeeId;
     this.officeId = officeId;
     this.startTime = startTime;
     this.endTime = endTime;
+    this.officeLocation = officeLocation;
   }
+}
+class OfficeLocation {
+  id: string;
+  name: string;
+  latitude: string;
+  longitude: string;
+  radius: number;
+
+  constructor(
+    id: string,
+    name: string,
+    latitude: string,
+    longitude: string,
+    radius: number
+  ) {
+    this.id = id;
+    this.name = name;
+    this.latitude = latitude;
+    this.longitude = longitude;
+    this.radius = radius;
+  }
+
+  // You can also add any methods to manipulate or display the data as needed
+  getCoordinates(): string {
+    return `Latitude: ${this.latitude}, Longitude: ${this.longitude}`;
+  }
+
+  // You can implement any other methods you need for your application
 }
 
 export const getShiftsForLoggedInUser = async () => {

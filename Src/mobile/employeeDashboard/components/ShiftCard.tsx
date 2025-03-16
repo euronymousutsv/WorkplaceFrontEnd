@@ -36,8 +36,8 @@ const ShiftCard = ({ shift }: { shift: Shifts }) => {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.location}>{"Kathmandu"}</Text>
-      <Text style={styles.description}>{"shift.description"}</Text>
+      <Text style={styles.location}>{shift.officeLocation.name}</Text>
+      {/* <Text style={styles.description}>{"shift.description"}</Text> */}
 
       <View style={styles.timeContainer}>
         <Ionicons name="time-outline" size={16} color="#4A90E2" />
