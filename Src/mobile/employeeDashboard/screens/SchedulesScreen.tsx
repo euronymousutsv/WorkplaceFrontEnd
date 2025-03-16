@@ -1,20 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-import { mockShifts } from '../../../mockData/mockShifts';
+import { getShiftsForLoggedInUser } from '../../../api/auth/shiftApi'; // Import your fetch function
 import ShiftCard from '../components/ShiftCard';
+import { ApiError } from '../../../api/utils/apiResponse'; // Import for error handling
 
 const SchedulesScreen: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [shifts, setShifts] = useState<any[]>([]); // To store shifts from the backend
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
 
-  const markedDates = mockShifts.reduce((dates, shift) => {
-    const date = shift.startTime.toISOString().split('T')[0];
+  // Fetch shifts when the component mounts
+  useEffect(() => {
+    const fetchShifts = async () => {
+      setLoading(true);
+      const res = await getShiftsForLoggedInUser();
+      if (res instanceof ApiError) {
+        console.log(res.message);
+        setError('Error fetching shifts');
+      } else if ('statusCode' in res && 'data' in res) {
+        setShifts(res.data); // Set the fetched shifts
+      } else {
+        setError('Something went wrong');
+      }
+      setLoading(false);
+    };
+
+    fetchShifts();
+  }, []);
+
+  // Mark dates with shifts
+  const markedDates = shifts.reduce((dates, shift) => {
+    const date = new Date(shift.startTime).toISOString().split('T')[0];
     dates[date] = { marked: true, dotColor: '#4A90E2' };
     return dates;
   }, {} as Record<string, any>);
 
-  const shiftsForSelectedDate = mockShifts.filter(
-    shift => shift.startTime.toISOString().split('T')[0] === selectedDate
+  // Filter shifts for the selected date
+  const shiftsForSelectedDate = shifts.filter(
+    shift => new Date(shift.startTime).toISOString().split('T')[0] === selectedDate
   );
 
   return (
@@ -36,7 +61,11 @@ const SchedulesScreen: React.FC = () => {
       </Text>
 
       <ScrollView style={styles.shiftsContainer}>
-        {shiftsForSelectedDate.length > 0 ? (
+        {loading ? (
+          <Text>Loading...</Text>
+        ) : error ? (
+          <Text style={styles.errorText}>{error}</Text>
+        ) : shiftsForSelectedDate.length > 0 ? (
           shiftsForSelectedDate.map(shift => (
             <ShiftCard key={shift.id} shift={shift} />
           ))
@@ -69,6 +98,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 16,
     color: '#8E9196',
+    marginTop: 20,
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
     marginTop: 20,
   },
 });

@@ -1,17 +1,17 @@
 import React from "react";
 
-import LoginScreen from "./Src/auth/LoginScreen";
-import WelcomeScreen from "./Src/auth/WelcomeScreen";
-import SignupScreen from "./Src/auth/SignupScreen";
-import AdminDashboard from "./Src/web/adminDashboard/screens/AdminDashboard";
-import EmployeeDashboard from "./Src/mobile/employeeDashboard/screens/EmployeeDashboard";
-import ManagerDashboard from "./Src/web/managerDashboard/screens/ManagerDashboard";
-import LeaveScreen from "./Src/mobile/employeeDashboard/screens/LeaveScreen";
-import { RootStackParamList } from "./Src/types/navigationTypes";
+import LoginScreen from "./src/auth/LoginScreen";
+import WelcomeScreen from "./src/auth/WelcomeScreen";
+import SignupScreen from "./src/auth/SignupScreen";
+import AdminDashboard from "./src/web/adminDashboard/screens/AdminDashboard";
+import EmployeeDashboard from "./src/mobile/employeeDashboard/screens/EmployeeDashboard";
+import ManagerDashboard from "./src/web/managerDashboard/screens/ManagerDashboard";
+import LeaveScreen from "./src/mobile/employeeDashboard/screens/LeaveScreen";
+import { RootStackParamList } from "./src/types/navigationTypes";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import { AuthProvider, useAuth } from "./Src/context/AuthContext";
-import ChatScreen from "./Src/auth/Chat";
+import { AuthProvider, useAuth } from "./src/context/AuthContext";
+import ChatScreen from "./src/auth/Chat";
 
 // Create a stack navigator
 const Stack = createStackNavigator();
