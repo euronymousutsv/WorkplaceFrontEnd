@@ -91,11 +91,14 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
 
             // //Navigate based on role
             if (role === "admin") {
-              navigation.navigate("AdminDashboard");
+              navigation.replace("AdminDashboard");
             } else if (role === "manager") {
-              navigation.navigate("ManagerDashboard");
+              navigation.replace("ManagerDashboard");
             } else if (role === "employee") {
-              navigation.navigate("EmployeeDashboard");
+              navigation.reset({
+                index: 0,
+                routes: [{ name: "EmployeeDashboard" }],
+              });
             }
 
             console.log(
@@ -114,7 +117,6 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
       setError("Invalid credentials");
     }
   };
-
   return (
     <ScrollView
       style={styles.container}

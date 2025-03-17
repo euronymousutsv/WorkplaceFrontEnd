@@ -18,68 +18,6 @@ import { getToken } from "../../../api/auth/token";
 import JwtDecode from "jwt-decode";
 import JWT from "expo-jwt";
 
-// // Define message structure
-// interface Message {
-//   id: string;
-//   user: string;
-//   message: string;
-//   timestamp: string;
-//   photo?: string;
-// }
-
-// Define structure of mock messages for different channels
-// interface MockMessages {
-//   welcome: Message[];
-//   main: Message[];
-//   private1: Message[];
-// }
-
-// // Mock messages data
-// const mockMessages: MockMessages = {
-//   welcome: [
-//     {
-//       id: "1",
-//       user: "Admin",
-//       message: "Welcome to the main channel!",
-//       timestamp: "2023-02-15 08:00",
-//     },
-//     {
-//       id: "2",
-//       user: "Employee1",
-//       message: "Hi everyone!",
-//       timestamp: "2023-02-15 08:05",
-//     },
-//   ],
-//   main: [
-//     {
-//       id: "1",
-//       user: "Manager",
-//       message: "Meeting at 10 AM tomorrow!",
-//       timestamp: "2023-02-15 08:30",
-//     },
-//     {
-//       id: "2",
-//       user: "Employee2",
-//       message: "Got it, thanks!",
-//       timestamp: "2023-02-15 08:45",
-//     },
-//   ],
-//   private1: [
-//     {
-//       id: "1",
-//       user: "Employee3",
-//       message: "I need help with a task.",
-//       timestamp: "2023-02-15 09:00",
-//     },
-//     {
-//       id: "2",
-//       user: "Employee4",
-//       message: "Sure, what’s the problem?",
-//       timestamp: "2023-02-15 09:05",
-//     },
-//   ],
-// };
-
 // Props for ChatWindow component
 type ChatWindowProps = {
   activeChannelId: string;
@@ -97,15 +35,18 @@ const ChatWindow = ({
 
   // const [chats, setChats] = useState<Message[]>([]);
 
-  const handleGetMesage = async () => {
+  const handleGetMessage = async () => {
     const res = await fetchChats(activeChannelId);
+
     if (res instanceof ApiError) {
       console.log(res.message, "...");
-    } else if ("statusCode" in res && "data" in res) {
-      console.log("dsds");
-      const data = res.data as Chats[];
-      console.log(data);
-      setMessages((prevMsg) => [...prevMsg, ...data]);
+    } else if (Array.isArray(res)) {
+      console.log("Chats fetched successfully:", res);
+      setMessages((prevMsg) => [...prevMsg, ...res]);
+
+      if (res.length > 1) {
+        console.log(res[1], "Additional chat log");
+      }
     }
   };
 
@@ -113,7 +54,7 @@ const ChatWindow = ({
 
   // Update messages when the active channel changes
   useEffect(() => {
-    handleGetMesage();
+    handleGetMessage();
     hideBottomNav();
   }, [activeChannelId, hideBottomNav]);
 
@@ -122,7 +63,7 @@ const ChatWindow = ({
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
-  }, [messages]);
+  }, []);
 
   // Send text message handler
   const handleSendMessage = () => {
@@ -136,15 +77,21 @@ const ChatWindow = ({
     const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
     const timeString = `${formattedHours}:${formattedMinutes} ${ampm}`;
 
-    const newMsg = new Chats({
-      messages: newMessage,
-      id: Date.now().toString(),
-      userId: "you",
+    const userId = getUserId();
+    const newText = new Chats({
+      id: timeString,
+      userId: userId,
+      message: newMessage,
       channelId: activeChannelId,
-      createdAt: timeString,
+      createdAt: minutes,
+      Employee: {
+        firstName: "You",
+        email: "",
+        profileImage: "",
+      },
     });
 
-    setMessages([...messages, newMsg]);
+    setMessages([...messages, newText]);
     setNewMessage("");
   };
 
@@ -157,14 +104,28 @@ const ChatWindow = ({
     });
 
     if (!result.canceled && result.assets && result.assets[0].uri) {
-      const photoMessage = {
+      const userId = getUserId();
+      const newText = new Chats({
         id: Date.now().toString(),
-        user: "You",
-        message: "",
-        photo: result.assets[0].uri,
-        timestamp: new Date().toLocaleTimeString(),
-      };
-      setMessages([...messages, photoMessage]);
+        userId: userId,
+        message: result.assets[0].uri,
+        channelId: activeChannelId,
+        createdAt: Date.now(),
+        Employee: {
+          firstName: "You",
+          email: "",
+          profileImage: "",
+        },
+      });
+
+      // const photoMessage = {
+      //   id: ,
+      //   user: "You",
+      //   message: "",
+      //   photo: result.assets[0].uri,
+      //   timestamp: new Date().toLocaleTimeString(),
+      // };
+      setMessages([...messages, newText]);
     }
   };
 
@@ -192,11 +153,14 @@ const ChatWindow = ({
             key={msg.id || index}
             style={[
               styles.messageWrapper,
-              msg.userId === "userId" && styles.myMessageWrapper,
+              msg.Employee?.firstName === "userId" && styles.myMessageWrapper,
             ]}
           >
             <View
-              style={[styles.message, msg.userId === "You" && styles.myMessage]}
+              style={[
+                styles.message,
+                msg.Employee?.firstName === "You" && styles.myMessage,
+              ]}
             >
               <View style={styles.messageHeader}>
                 <Text style={styles.messageUser}>

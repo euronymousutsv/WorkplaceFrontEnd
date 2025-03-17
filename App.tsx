@@ -26,10 +26,6 @@ const App = () => {
   );
 };
 
-// const App = () => {
-//   return <ChatScreen />;
-// };
-
 // Centralized AppNavigator for role-based navigation
 const AppNavigator = () => {
   const { userRole, isAuthenticated } = useAuth(); // Access userRole and isAuthenticated from context
@@ -37,11 +33,6 @@ const AppNavigator = () => {
   return (
     <Stack.Navigator>
       {/* Public Routes */}
-      {/* <Stack.Screen
-        name="EmployeeDashboard"
-        component={EmployeeDashboard}
-        options={{ headerShown: false }}
-      /> */}
 
       <Stack.Screen
         name="Welcome"
@@ -59,7 +50,7 @@ const AppNavigator = () => {
         options={{ headerShown: false }}
       />
 
-      {/* Conditional Routes */}
+      {/* Conditional Routes
       {isAuthenticated && (
         <>
           {userRole === "admin" && (
@@ -84,7 +75,25 @@ const AppNavigator = () => {
             />
           )}
         </>
-      )}
+      )} */}
+
+      <Stack.Screen
+        name="AdminDashboard"
+        component={AdminDashboard}
+        options={{ headerShown: false }}
+      />
+
+      <Stack.Screen
+        name="ManagerDashboard"
+        component={ManagerDashboard}
+        options={{ headerShown: false }}
+      />
+
+      <Stack.Screen
+        name="EmployeeDashboard"
+        component={EmployeeDashboard}
+        options={{ headerShown: false }}
+      />
     </Stack.Navigator>
   );
 };

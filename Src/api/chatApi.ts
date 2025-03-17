@@ -48,20 +48,21 @@ const API = axios.create({
 export const fetchChats = async (channelId: string) => {
   try {
     const response = await API.get("chat/fetchChats/" + channelId, {
-      params: {
-        limit: 20,
-        page: 1,
-      },
+      params: { limit: 20, page: 1 },
     });
-    const res = response.data as ApiResponse<[chat]>;
 
-    return res;
+    // Debugging the API response
+    const { chats, page, limit, totalPages, totalChats } = response.data.data;
+    console.log("API Response :", chats);
+    const chatRes = chats as Chats[];
+    // Check if 'chats' exists in the response and is an array
+
+    return chatRes; // Return the array of chats
   } catch (error) {
     if (error instanceof AxiosError) {
       const err = error.response?.data as ApiError<{}>;
       return new ApiError(err.statusCode, {}, err.message);
-    } else {
-      return new ApiError(400, {}, "Something went wrong");
     }
+    return new ApiError(400, {}, "Something went wrong");
   }
 };
