@@ -263,6 +263,7 @@ const EmployeeDashboard: React.FC = () => {
 
           {activeTab === "profile" && (
             <ProfileScreen
+              // navigation={null}
               toggleMenu={toggleMenu}
               toggleNotification={toggleNotification}
             />
