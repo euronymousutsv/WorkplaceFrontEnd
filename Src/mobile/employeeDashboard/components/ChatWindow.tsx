@@ -17,6 +17,7 @@ import { ApiError } from "../../../api/utils/apiResponse";
 import { getToken } from "../../../api/auth/token";
 import JwtDecode from "jwt-decode";
 import JWT from "expo-jwt";
+import socket from "../../../config/Socket";
 
 // Props for ChatWindow component
 type ChatWindowProps = {
@@ -65,6 +66,17 @@ const ChatWindow = ({
     }, 100);
   }, []);
 
+  useEffect(() => {
+    socket.on("receiveMessage", (message: Chats) => {
+      setMessages((prevMessages) => [...prevMessages, message]);
+    });
+    return () => {
+      if (socket) {
+        socket.disconnect();
+      }
+    };
+  });
+
   // Send text message handler
   const handleSendMessage = () => {
     if (newMessage.trim() === "") return;
@@ -90,7 +102,9 @@ const ChatWindow = ({
         profileImage: "",
       },
     });
-
+    if (socket) {
+      socket.emit("sendMessage", newText);
+    }
     setMessages([...messages, newText]);
     setNewMessage("");
   };
@@ -117,7 +131,9 @@ const ChatWindow = ({
           profileImage: "",
         },
       });
-
+      if (socket) {
+        socket.emit("sendMessage", newText);
+      }
       // const photoMessage = {
       //   id: ,
       //   user: "You",
