@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -6,33 +6,68 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   Image, 
-  ScrollView 
+  ScrollView, 
+  Alert, 
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import JWT from 'expo-jwt';  // Import expo-jwt to decode the token
+import { getToken, deleteToken } from '../../../api/auth/token';  // Import getToken to access the token directly
+import { getCurrentUserDetails } from '../../../api/auth/profileApi';  // Import API call to fetch user details
+import { editCurrentUserDetail } from '../../../api/auth/profileApi';  // Import API for editing details
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../../../types/navigationTypes';
 
-// Mock user data (Replace with backend later)
-const mockUser = {
-  profilePic: null,
-  fullName: 'John Doe',
-  employeeId: 'EMP12345',
-  role: 'Employee',
-  email: 'johndoe@example.com',
-  phone: '+61 400 123 456',
-  workLocation: 'Melbourne, Australia',
-  employmentType: 'Full-Time',
-  joinDate: 'January 10, 2023',
-};
 
-const ProfileScreen = ({ toggleMenu, toggleNotification }: { toggleMenu: () => void, toggleNotification: () => void }) => {
-  const [profilePic, setProfilePic] = useState<string | null>(mockUser.profilePic);
+const ProfileScreen = ({  toggleMenu, toggleNotification }: {  toggleMenu: () => void, toggleNotification: () => void }) => {
 
-  // State for password change
+  const [profilePic, setProfilePic] = useState<string | null>(null);
+  const [userDetails, setUserDetails] = useState<any>(null);  // Store user details
+  const [loading, setLoading] = useState<boolean>(true);  // Loading state for fetching user details
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState(''); 
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
-  // Handle profile picture selection
+
+  // Fetch user details and token from storage
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      try {
+        const accessToken = await getToken("accessToken");
+        if (!accessToken) {
+          alert("Token is missing. Please log in again.");
+          return;
+        }
+
+        // Extract userId from decoded JWT token
+        const decodedToken = JWT.decode(accessToken, null);
+        const userId = decodedToken?.userId;
+
+        if (userId) {
+          const response = await getCurrentUserDetails(userId, accessToken);
+          // console.log("Fetched User Details:", response); // Log the entire response
+  
+          if (response?.data) {
+            setUserDetails(response.data); // Set only the 'data' part of the response
+          } else {
+            setUserDetails(null);
+          }
+        } else {
+          setUserDetails(null);
+        }
+      } catch (error) {
+        console.error("Error fetching user details:", error);
+        setUserDetails(null);
+      }
+      setLoading(false);
+    };
+  
+    fetchUserDetails();
+  }, []);
+
   const handleProfilePicture = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -46,8 +81,7 @@ const ProfileScreen = ({ toggleMenu, toggleNotification }: { toggleMenu: () => v
     }
   };
 
-  // Handle Change Password
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmNewPassword) {
       alert('Please fill in all fields');
       return;
@@ -56,12 +90,69 @@ const ProfileScreen = ({ toggleMenu, toggleNotification }: { toggleMenu: () => v
       alert('New passwords do not match');
       return;
     }
-    alert('Password changed successfully! (Backend integration needed)');
-    // Reset fields
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmNewPassword('');
+
+    try {
+      // Call the backend API to change password
+      const accessToken = await getToken("accessToken");
+      // Ensure we have a valid access token
+    if (!accessToken) {
+      alert('Token is missing. Please log in again.');
+      return;
+    }
+      const decodedToken = JWT.decode(accessToken, null);
+      const userId = decodedToken?.userId;
+
+      if (userId) {
+        const response = await editCurrentUserDetail(userId, accessToken, currentPassword, 'password', newPassword);
+        
+        if (response.statusCode === 200) {
+          alert('Password changed successfully!');
+          setCurrentPassword('');
+          setNewPassword('');
+          setConfirmNewPassword('');
+        } else {
+          alert(response.message || 'Failed to change password');
+        }
+      } else {
+        alert('User not found');
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(error.message || 'Something went wrong');
+      } else {
+        alert('Something went wrong');
+      }
+    }
   };
+
+  if (loading) {
+    return <ActivityIndicator size="large" color="#4A90E2" style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }} />;
+  }
+
+  if (!userDetails) {
+    return <Text>Failed to load user details.</Text>;
+  }
+  const handleLogout = async () => {
+    try {
+      // Delete the access token
+      await deleteToken("accessToken");
+      // Uncomment if you're using refresh token as well
+      // await deleteToken("refreshToken");
+  
+      // Debugging: Log to check if the token is deleted
+      const accessToken = await getToken("accessToken");
+      console.log("Token after deletion:", accessToken);  // Should return null if token is deleted
+  
+      navigation.reset({
+        index: 0,  // Set the active screen to 0 (the Login screen)
+        routes: [{ name: 'Login' }],
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      alert('Failed to logout');
+    }
+  };
+  
 
   return (
     <View style={styles.container}>
@@ -78,7 +169,7 @@ const ProfileScreen = ({ toggleMenu, toggleNotification }: { toggleMenu: () => v
 
       <ScrollView contentContainerStyle={styles.content}>
         {/* Profile Picture */}
-        <TouchableOpacity onPress={handleProfilePicture} style={styles.profilePicContainer}>
+        <TouchableOpacity onPress={handleProfilePicture} style={styles.profilePicContainer}> 
           <Image 
             source={profilePic ? { uri: profilePic } : require('../../../../assets/wpslogo.png')} 
             style={styles.profilePic} 
@@ -87,39 +178,42 @@ const ProfileScreen = ({ toggleMenu, toggleNotification }: { toggleMenu: () => v
         </TouchableOpacity>
 
         {/* User Info */}
-        <Text style={styles.name}>{mockUser.fullName}</Text>
-        <Text style={styles.role}>{mockUser.role}</Text>
+        <Text style={styles.name}>{userDetails?.firstName} {userDetails?.lastName} </Text>
+        <Text style={styles.role}>{userDetails?.role } </Text>
 
         {/* Info Cards */}
         <View style={styles.infoCard}>
           <Ionicons name="id-card-outline" size={22} color="#4A90E2" />
-          <Text style={styles.infoText}>Employee ID: {mockUser.employeeId}</Text>
+          <Text style={styles.infoText}>Employee ID: {userDetails?.id} </Text>
         </View>
 
         <View style={styles.infoCard}>
           <Ionicons name="mail-outline" size={22} color="#4A90E2" />
-          <Text style={styles.infoText}>Email: {mockUser.email}</Text>
+          <Text style={styles.infoText}>Email: {userDetails?.email}</Text>
         </View>
 
         <View style={styles.infoCard}>
           <Ionicons name="call-outline" size={22} color="#4A90E2" />
-          <Text style={styles.infoText}>Phone: {mockUser.phone}</Text>
+          <Text style={styles.infoText}>Phone: {userDetails?.phoneNumber}</Text>
         </View>
 
-        <View style={styles.infoCard}>
+        {/* Work Location not implemented yet on backend */}
+
+        {/* <View style={styles.infoCard}>
           <Ionicons name="business-outline" size={22} color="#4A90E2" />
-          <Text style={styles.infoText}>Work Location: {mockUser.workLocation}</Text>
-        </View>
+          <Text style={styles.infoText}>Work Location: {userDetails?.workLocation}</Text>
+        </View> */}
 
         <View style={styles.infoCard}>
           <Ionicons name="calendar-outline" size={22} color="#4A90E2" />
-          <Text style={styles.infoText}>Employment Type: {mockUser.employmentType}</Text>
+          <Text style={styles.infoText}>Employment Status: {userDetails?.employmentStatus}</Text>
         </View>
-
-        <View style={styles.infoCard}>
+        
+        {/* Join date not implemented yet on backend */}
+        {/* <View style={styles.infoCard}>
           <Ionicons name="time-outline" size={22} color="#4A90E2" />
-          <Text style={styles.infoText}>Joined On: {mockUser.joinDate}</Text>
-        </View>
+          <Text style={styles.infoText}>Joined On: {userDetails?.joinDate}</Text>
+        </View> */}
 
         {/* Change Password Section */}
         <View style={styles.section}>
@@ -155,7 +249,7 @@ const ProfileScreen = ({ toggleMenu, toggleNotification }: { toggleMenu: () => v
         </View>
 
         {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutButton}>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={22} color="white" />
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
