@@ -12,6 +12,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import ChatScreen from "./src/auth/Chat";
+import InviteCodeScreen from "./src/auth/InviteCodeScreen";
 
 // Create a stack navigator
 const Stack = createStackNavigator();
@@ -51,6 +52,11 @@ const AppNavigator = () => {
       <Stack.Screen
         name="Login"
         component={LoginScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="InviteCode"
+        component={InviteCodeScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen

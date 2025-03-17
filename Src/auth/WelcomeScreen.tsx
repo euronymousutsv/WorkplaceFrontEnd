@@ -45,10 +45,10 @@ const WelcomeScreen = ({ navigation }: { navigation: any }) => {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => navigation.navigate('SignUp')}
+            onPress={() => navigation.navigate('InviteCode')}
             style={[styles.button, { backgroundColor: '#D5B942' }]} // Gold for Sign Up
           >
-            <Text style={styles.buttonText}>Register</Text>
+            <Text style={styles.buttonText1}>Register with Invite Code  </Text>
           </TouchableOpacity>
         </View>
       )}
@@ -114,6 +114,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 18,
+  },
+  buttonText1: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: 'bold',
+
   },
 });
 

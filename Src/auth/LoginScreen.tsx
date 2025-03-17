@@ -164,22 +164,22 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
         </TouchableOpacity>
 
         {/* Or login with text */}
-        <Text style={styles.orLoginText}>or login with:</Text>
+        {/* <Text style={styles.orLoginText}>or login with:</Text> */}
 
         {/* Social Media Logos (Apple and Google) */}
-        <View style={styles.socialLoginContainer}>
+        {/* <View style={styles.socialLoginContainer}>
           <TouchableOpacity style={[styles.socialButton, styles.appleButton]}>
             <Ionicons name="logo-apple" size={24} color="white" />
           </TouchableOpacity>
           <TouchableOpacity style={[styles.socialButton, styles.googleButton]}>
             <Ionicons name="logo-google" size={24} color="white" />
           </TouchableOpacity>
-        </View>
+        </View> */}
 
         {/* Don't have an account */}
         <View style={styles.signupContainer}>
-          <Text>Don't have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
+          <Text>Have a invite code? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate("InviteCode")}>
             <Text style={styles.link}>Sign Up</Text>
           </TouchableOpacity>
         </View>
