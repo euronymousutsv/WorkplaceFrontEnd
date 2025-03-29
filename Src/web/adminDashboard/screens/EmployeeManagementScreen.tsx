@@ -98,6 +98,7 @@ const EmployeeManagementScreen = () => {
     }
   };
 
+  //validation
   const validateEmail = (email: string) => /^\S+@\S+\.\S+$/.test(email);
   const validatePhone = (phone: string) => /^\d{10}$/.test(phone);
 
