@@ -7,5 +7,9 @@ export type RootStackParamList = {
     ManagerDashboard: undefined;
     EmployeeDashboard: undefined;
     LeaveScreen: undefined;
+    SchedulesScreen: undefined;
+    ClockInOutScreen: undefined;
+    EmployeeManagementScreen: undefined;
+    SettingsScreen:undefined;
   };
   

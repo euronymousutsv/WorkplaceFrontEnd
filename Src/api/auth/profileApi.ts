@@ -2,7 +2,9 @@ import axios, { AxiosError } from "axios";
 import { getToken } from "./token";  // Assuming you have this method to get the token
 
 export const API = axios.create({
-  baseURL: "https://8c1f-2406-2d40-4d55-6c10-bdc3-9abf-864e-c64f.ngrok-free.app", // Change to your actual backend URL
+  baseURL: 
+  "https://workplace-zdzja.ondigitalocean.app",
+//   "https://8c1f-2406-2d40-4d55-6c10-bdc3-9abf-864e-c64f.ngrok-free.app", // Change to your actual backend URL
   headers: {
     "Content-Type": "application/json",
   },

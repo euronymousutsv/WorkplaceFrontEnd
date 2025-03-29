@@ -4,7 +4,8 @@ import { getToken } from "./token";
 
 export const API = axios.create({
   baseURL:
-    "https://8c1f-2406-2d40-4d55-6c10-bdc3-9abf-864e-c64f.ngrok-free.app",
+  "https://workplace-zdzja.ondigitalocean.app",
+    // "https://8c1f-2406-2d40-4d55-6c10-bdc3-9abf-864e-c64f.ngrok-free.app",
     // "http://localhost:3000",
 
   headers: {
@@ -23,6 +24,7 @@ type getShiftsForLoggedInUserResponse = {
 export class Shifts {
   id: string;
   employeeId: string;
+  employeeName: string;
   officeId: string;
   startTime: string;
   endTime: string;
@@ -31,6 +33,7 @@ export class Shifts {
   constructor(
     id: string,
     employeeId: string,
+    employeeName: string,
     officeId: string,
     startTime: string,
     endTime: string,
@@ -38,6 +41,7 @@ export class Shifts {
   ) {
     this.id = id;
     this.employeeId = employeeId;
+    this.employeeName = employeeName;
     this.officeId = officeId;
     this.startTime = startTime;
     this.endTime = endTime;
@@ -65,12 +69,12 @@ class OfficeLocation {
     this.radius = radius;
   }
 
-  // You can also add any methods to manipulate or display the data as needed
+  
   getCoordinates(): string {
     return `Latitude: ${this.latitude}, Longitude: ${this.longitude}`;
   }
 
-  // You can implement any other methods you need for your application
+  
 }
 
 export const getShiftsForLoggedInUser = async () => {
@@ -91,3 +95,83 @@ export const getShiftsForLoggedInUser = async () => {
     }
   }
 };
+
+//for manager/admin: fetch all shifts for all users
+export const getShiftsForAllUsers = async () => {
+  try {
+    const accessToken = (await getToken("accessToken")) ?? "";
+    const response = await API.get("api/roster/", {
+      params: { accessToken },
+    });
+    const res = response.data as ApiResponse<Shifts[]>;
+    return res;
+  }catch (error) {
+    if (error instanceof AxiosError) {
+      const err = error.response?.data as ApiError<{}>;
+      return new ApiError(err.statusCode, {}, err.message);
+    }
+    else {
+      return new ApiError(400, {}, "Something went wrong");
+    }
+  }
+};
+
+//for manager/admin: create a shift
+export const createShift = async (employeeId: string, officeId: string, startTime: string, endTime: string) => {
+  try {
+    const accessToken = (await getToken("accessToken")) ?? "";
+    const response = await API.post("api/roster/createShift", {employeeId, officeId, startTime, endTime}, {
+      params: { accessToken },
+    });
+    const res = response.data as ApiResponse<Shifts>;
+    return res;
+  }catch (error) {
+    if (error instanceof AxiosError) {
+      const err = error.response?.data as ApiError<{}>;
+      return new ApiError(err.statusCode, {}, err.message);
+    }
+    else {
+      return new ApiError(400, {}, "Something went wrong");
+    }
+  }
+};
+
+//for manager/admin: update a shift
+export const updateShift = async (shiftId: string, employeeId: string, officeId: string, startTime: string, endTime: string) => {
+  try {
+    const accessToken = (await getToken("accessToken")) ?? "";
+    const response = await API.put("api/roster/updateShift/${shiftId}", {shiftId, employeeId, officeId, startTime, endTime}, {
+      params: { accessToken },
+    });
+    const res = response.data as ApiResponse<Shifts>;
+    return res;
+  }catch (error) {
+    if (error instanceof AxiosError) {
+      const err = error.response?.data as ApiError<{}>;
+      return new ApiError(err.statusCode, {}, err.message);
+    }
+    else {
+      return new ApiError(400, {}, "Something went wrong");
+    }
+  }
+}
+
+//for manager/admin: delete a shift
+export const deleteShift = async (shiftId: string) => {
+  try {
+    const accessToken = (await getToken("accessToken")) ?? "";
+    const response = await API.delete("api/roster/deleteShift", {
+      params: {accessToken },
+    });
+    const res = response.data as ApiResponse<Shifts>;
+    return res;
+  }catch (error) {
+    if (error instanceof AxiosError) {
+      const err = error.response?.data as ApiError<{}>;
+      return new ApiError(err.statusCode, {}, err.message);
+    }
+    else {
+      return new ApiError(400, {}, "Something went wrong");
+    }
+  }
+}

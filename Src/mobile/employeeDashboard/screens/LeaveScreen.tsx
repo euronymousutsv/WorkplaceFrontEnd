@@ -44,7 +44,7 @@ const LeaveScreen: React.FC<{ toggleMenu: () => void; toggleNotification: () => 
 
   return (
     <View style={styles.container}>
-      {/* ✅ Header Section */}
+      {/* Header Section */}
       <View style={styles.header}>
         {/* Menu Button (Left Side) */}
         <TouchableOpacity style={styles.menuButton} onPress={toggleMenu}>
@@ -60,7 +60,7 @@ const LeaveScreen: React.FC<{ toggleMenu: () => void; toggleNotification: () => 
         </TouchableOpacity>
       </View>
 
-      {/* ✅ Leave Form Section */}
+      {/* Leave Form Section */}
       <ScrollView style={styles.contentContainer}>
         <Text style={styles.sectionTitle}>Apply for Leave</Text>
 

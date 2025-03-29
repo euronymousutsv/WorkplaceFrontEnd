@@ -1,172 +1,214 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, FlatList } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  Animated,
+  FlatList,
+  ScrollView,
+  Dimensions,
+  Platform,
+} from 'react-native';
+import Sidebar from '../components/Sidebar';
+import Header from '../components/Header';
+import {
+  PrimaryColor,
+  AccentColor,
+  BackgroundColor,
+  TextColor,
+  ButtonRed,
+} from '../../../utils/color';
 
 const AdminDashboard: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState('Dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const sidebarWidth = new Animated.Value(250);
+  const mainContentPadding = new Animated.Value(250);
+  const [isMobile, setIsMobile] = useState(false);
+
+  const screenWidth = Dimensions.get('window').width;
+
+  useEffect(() => {
+    if (screenWidth <= 768) {
+      setIsMobile(true);
+      setIsSidebarOpen(false);
+    } else {
+      setIsMobile(false);
+      setIsSidebarOpen(true);
+    }
+  }, [screenWidth]);
+
+  useEffect(() => {
+    Animated.timing(sidebarWidth, {
+      toValue: isSidebarOpen ? 250 : 0,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+
+    Animated.timing(mainContentPadding, {
+      toValue: isSidebarOpen ? 250 : 0,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  }, [isSidebarOpen]);
+
+  const handleTabChange = (tab: string) => {
+    setSelectedTab(tab);
+  };
+
   const alerts = [
-    { text: "Pranish was supposed to start working at 10. He has not clocked in yet.", time: "60 mins ago", type: "alert" },
-    { text: "Pranish has requested for a leave this saturday", time: "10 min ago", type: "notification" },
-    { text: "Sabin mentioned you in #Channel1", time: "10 min ago", type: "notification" }
+    {
+      text: 'Pranish was supposed to start working at 10. He has not clocked in yet.',
+      time: '60 mins ago',
+      type: 'alert',
+    },
+    {
+      text: 'Pranish has requested for a leave this Saturday',
+      time: '10 min ago',
+      type: 'notification',
+    },
+    {
+      text: 'Sabin mentioned you in #Channel1',
+      time: '10 min ago',
+      type: 'notification',
+    },
   ];
-  const toDos = [
-    { task: "Place an order for tomorrow", due: "Due today" }
-  ];
+
+  const toDos = [{ task: 'Place an order for tomorrow', due: 'Due today' }];
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.dashboardContainer}>
-        {/* Sidebar (Left Section) */}
-        <View style={styles.sidebar}>
-          <Text style={styles.logo}>WorkHive</Text>
-          <View style={styles.navLinks}>
-            <TouchableOpacity style={styles.navLink}>
-              <Text style={styles.navLinkText}>Dashboard</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.navLink}>
-              <Text style={styles.navLinkText}>Schedules</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.navLink}>
-              <Text style={styles.navLinkText}>Clock in/out</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.navLink}>
-              <Text style={styles.navLinkText}>Gross Payment</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.navLink}>
-              <Text style={styles.navLinkText}>To do</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.navLink}>
-              <Text style={styles.navLinkText}>Leave Request</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.navLink}>
-              <Text style={styles.navLinkText}>Employee Manage..</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.navLink}>
-              <Text style={styles.navLinkText}>Performance Manage.</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.navLink}>
-              <Text style={styles.navLinkText}>Setting</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+      {/* Header */}
+      <Header isSidebarOpen={isSidebarOpen} toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
 
-        {/* Main Dashboard Content (Right Section) */}
-        <View style={styles.mainContent}>
-          {/* Alert Section */}
-          <View style={styles.alertSection}>
-            <Text style={styles.sectionTitle}>Alert</Text>
-            <Text style={styles.alertText}>Pranish was supposed to start working at 10. He has not clocked in yet.</Text>
-            <Text style={styles.time}>60 mins ago</Text>
+      {/* Sidebar */}
+      <Sidebar
+        isOpen={isSidebarOpen}
+        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        selectedTab={selectedTab}
+        handleTabChange={handleTabChange}
+      />
+
+      {/* Main Content */}
+      <Animated.View style={[styles.mainContent, { paddingLeft: isMobile ? 0 : mainContentPadding }]}>
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+
+          {/* Welcome Banner */}
+          <View style={styles.welcomeBanner}>
+            <Text style={styles.welcomeTitle}>Welcome, Admin 👋</Text>
+            <Text style={styles.welcomeSubtitle}>
+              Here's an overview of what’s happening today.
+            </Text>
+          </View>
+
+          {/* Alert */}
+          <View style={[styles.card, styles.alertCard]}>
+            <Text style={styles.cardTitle}>Alert</Text>
+            <Text style={styles.alertText}>{alerts[0].text}</Text>
+            <Text style={styles.timestamp}>{alerts[0].time}</Text>
           </View>
 
           {/* Notifications */}
-          <View style={styles.notificationsSection}>
-            <Text style={styles.sectionTitle}>Notifications</Text>
-            {alerts.map((alert, index) => (
-              <View key={index} style={[styles.notification, alert.type === "alert" && styles.alertNotification]}>
-                <Text>{alert.text}</Text>
-                <Text style={styles.time}>{alert.time}</Text>
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Notifications</Text>
+            {alerts.slice(1).map((alert, index) => (
+              <View key={index} style={styles.notificationItem}>
+                <Text style={styles.notificationText}>{alert.text}</Text>
+                <Text style={styles.timestamp}>{alert.time}</Text>
               </View>
             ))}
           </View>
 
-          {/* To-Do Section */}
-          <View style={styles.toDoSection}>
-            <Text style={styles.sectionTitle}>To-do’s</Text>
+          {/* To-do’s */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>To-do’s</Text>
             <FlatList
               data={toDos}
               renderItem={({ item }) => (
-                <View style={styles.toDoItem}>
-                  <Text>{item.task}</Text>
-                  <Text style={styles.dueText}>{item.due}</Text>
+                <View style={styles.todoItem}>
+                  <Text style={styles.todoText}>{item.task}</Text>
+                  <Text style={styles.timestamp}>{item.due}</Text>
                 </View>
               )}
-              keyExtractor={(item, index) => index.toString()}
+              keyExtractor={(_, index) => index.toString()}
             />
           </View>
-        </View>
-      </View>
+        </ScrollView>
+      </Animated.View>
     </SafeAreaView>
   );
 };
 
-// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-  },
-  dashboardContainer: {
     flexDirection: 'row',
-    height: '100%',
-  },
-  sidebar: {
-    width: '25%',
-    backgroundColor: '#F2F2F2',
-    paddingTop: 50,
-    paddingLeft: 10,
-    paddingRight: 10,
-    height: '100%',
-  },
-  logo: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  navLinks: {
-    marginTop: 20,
-  },
-  navLink: {
-    marginBottom: 15,
-  },
-  navLinkText: {
-    fontSize: 16,
-    color: '#393D3F',
+    backgroundColor: BackgroundColor,
   },
   mainContent: {
     flex: 1,
-    padding: 20,
+    marginTop: 60,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    marginLeft: 30,
   },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 10,
+  scrollContainer: {
+    paddingBottom: 100,
   },
-  alertSection: {
-    backgroundColor: '#FFEBEB',
-    padding: 15,
+  welcomeBanner: {
     marginBottom: 20,
-    borderRadius: 8,
+  },
+  welcomeTitle: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: TextColor,
+  },
+  welcomeSubtitle: {
+    fontSize: 16,
+    color: '#6C6C6C',
+  },
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 18,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  alertCard: {
+    borderLeftWidth: 5,
+    borderLeftColor: ButtonRed,
+    backgroundColor: '#FFEBEB',
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: TextColor,
+    marginBottom: 10,
   },
   alertText: {
     fontSize: 16,
-    color: '#FF0000',
+    color: ButtonRed,
   },
-  time: {
-    fontSize: 12,
-    color: '#6C6C6C',
-  },
-  notificationsSection: {
-    marginBottom: 20,
-  },
-  notification: {
-    backgroundColor: '#F5F5F5',
-    padding: 15,
-    marginBottom: 10,
-    borderRadius: 8,
-  },
-  alertNotification: {
-    backgroundColor: '#FFD2D2',
-  },
-  toDoSection: {
-    backgroundColor: '#F9F9F9',
-    padding: 15,
-    borderRadius: 8,
-  },
-  toDoItem: {
+  notificationItem: {
     marginBottom: 15,
   },
-  dueText: {
+  notificationText: {
+    fontSize: 16,
+    color: TextColor,
+  },
+  todoItem: {
+    marginBottom: 15,
+  },
+  todoText: {
+    fontSize: 16,
+    color: TextColor,
+  },
+  timestamp: {
     fontSize: 12,
     color: '#6C6C6C',
   },

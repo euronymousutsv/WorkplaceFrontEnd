@@ -13,6 +13,11 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import ChatScreen from "./src/auth/Chat";
 import InviteCodeScreen from "./src/auth/InviteCodeScreen";
+import SchedulesScreen from "./src/web/adminDashboard/screens/SchedulesScreen";
+import ClockInOutScreen from "./src/web/adminDashboard/screens/ClockInOutScreen";
+import EmployeeManagementScreen from "./src/web/adminDashboard/screens/EmployeeManagementScreen";
+import SettingsScreen from "./src/web/adminDashboard/screens/SettingsScreen";
+
 
 // Create a stack navigator
 const Stack = createStackNavigator();
@@ -36,15 +41,17 @@ const AppNavigator = () => {
   const { userRole, isAuthenticated } = useAuth(); // Access userRole and isAuthenticated from context
 
   return (
+    
     <Stack.Navigator>
       {/* Public Routes */}
-      {/* <Stack.Screen
-        name="EmployeeDashboard"
-        component={EmployeeDashboard}
-        options={{ headerShown: false }}
-      /> */}
-
       <Stack.Screen
+        name="AdminDashboard"
+        component={AdminDashboard}
+        options={{ headerShown: false }}
+      />
+      
+
+       {/* <Stack.Screen
         name="Welcome"
         component={WelcomeScreen}
         options={{ headerShown: false }}
@@ -63,10 +70,10 @@ const AppNavigator = () => {
         name="SignUp"
         component={SignupScreen}
         options={{ headerShown: false }}
-      />
+      /> */}
 
       {/* Conditional Routes */}
-      {isAuthenticated && (
+       {/* {isAuthenticated && (
         <>
           {userRole === "admin" && (
             <Stack.Screen
@@ -89,9 +96,34 @@ const AppNavigator = () => {
               options={{ headerShown: false }}
             />
           )}
+          
         </>
-      )}
+        
+      )}  */}
+      <Stack.Screen
+            name="SchedulesScreen"
+            component={SchedulesScreen}
+            options={{ headerShown: false }}
+          />
+      <Stack.Screen
+        name= "ClockInOutScreen"
+        component={ClockInOutScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name= "EmployeeManagementScreen"
+        component={EmployeeManagementScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name= "SettingsScreen"
+        component={SettingsScreen}
+        options={{ headerShown: false }}
+      />
     </Stack.Navigator>
+
+    
+    
   );
 };
 
