@@ -67,6 +67,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, selectedTab, h
         navigation.navigate('ClockInOutScreen');  // Navigate to ClockInOutScreen
       } else if (tab ==="EmployeeManagement") {
         navigation.navigate('EmployeeManagementScreen'); // Navigate to EmployeeManagementScreen
+        } else if (tab ==="GrossPaymentScreen") {
+        navigation.navigate('GrossPaymentScreen');
+    } else if (tab ==="LeaveRequestScreen") {
+        navigation.navigate('LeaveRequestScreen');
       }else if (tab === "Settings") {
         navigation.navigate('SettingsScreen');
       }
@@ -96,14 +100,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, selectedTab, h
             <Text style={styles.menuText}>Clock In/Out</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.menuItem, selectedTab === 'Payments' && styles.activeMenuItem]}
-            onPress={() => handleMenuItemClick('Payments')}
+            style={[styles.menuItem, selectedTab === 'GrossPayment' && styles.activeMenuItem]}
+            onPress={() => handleMenuItemClick('GrossPaymentScreen')}
           >
             <Text style={styles.menuText}>Gross Payment</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.menuItem, selectedTab === 'LeaveRequest' && styles.activeMenuItem]}
-            onPress={() => handleMenuItemClick('LeaveRequest', )}
+            onPress={() => handleMenuItemClick('LeaveRequestScreen', )}
           >
             <Text style={styles.menuText}>Leave Request</Text>
           </TouchableOpacity>

@@ -17,6 +17,8 @@ import SchedulesScreen from "./src/web/adminDashboard/screens/SchedulesScreen";
 import ClockInOutScreen from "./src/web/adminDashboard/screens/ClockInOutScreen";
 import EmployeeManagementScreen from "./src/web/adminDashboard/screens/EmployeeManagementScreen";
 import SettingsScreen from "./src/web/adminDashboard/screens/SettingsScreen";
+import GrossPaymentScreen from "./src/web/adminDashboard/screens/GrossPaymentScreen";
+import LeaveRequestScreen from "./src/web/adminDashboard/screens/LeaveRequestScreen";
 
 
 // Create a stack navigator
@@ -118,6 +120,16 @@ const AppNavigator = () => {
       <Stack.Screen
         name= "SettingsScreen"
         component={SettingsScreen}
+        options={{ headerShown: false }}
+      />
+       <Stack.Screen
+        name= "GrossPaymentScreen"
+        component={GrossPaymentScreen}
+        options={{ headerShown: false }}
+      />
+       <Stack.Screen
+        name= "LeaveRequestScreen"
+        component={LeaveRequestScreen}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>
