@@ -1,66 +1,143 @@
-// components/ScheduleTable.tsx
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-
-interface Schedule {
-  id: number;
-  employee: string;
-  start: string;
-  end: string;
-  location: string;
-  desc: string;
-}
+import React, { useState, useEffect } from 'react';
+import { View, Modal, Text, TextInput, Button, StyleSheet, TouchableOpacity } from 'react-native';
 
 interface Props {
-  schedules: Schedule[];
+  visible: boolean;
+  onClose: () => void;
+  onSave: (newSchedule: any) => void;
+  employees: string[];
+  locations: string[];
+  selectedEmployee?: string;
+  selectedDate?: string;
 }
 
-const ScheduleTable: React.FC<Props> = ({ schedules }) => {
-  return (
-    <View style={styles.table}>
-      <View style={styles.headerRow}>
-        <Text style={styles.headerCell}>Employee</Text>
-        <Text style={styles.headerCell}>Start</Text>
-        <Text style={styles.headerCell}>End</Text>
-        <Text style={styles.headerCell}>Location</Text>
-        <Text style={styles.headerCell}>Description</Text>
-      </View>
+const CreateScheduleModal: React.FC<Props> = ({
+  visible,
+  onClose,
+  onSave,
+  employees,
+  locations,
+  selectedEmployee,
+  selectedDate,
+}) => {
+  const [employee, setEmployee] = useState(selectedEmployee || '');
+  const [location, setLocation] = useState('');
+  const [desc, setDesc] = useState('');
+  const [start, setStart] = useState('');
+  const [end, setEnd] = useState('');
 
-      {schedules.map((schedule) => (
-        <View key={schedule.id} style={styles.dataRow}>
-          <Text style={styles.cell}>{schedule.employee}</Text>
-          <Text style={styles.cell}>{schedule.start}</Text>
-          <Text style={styles.cell}>{schedule.end}</Text>
-          <Text style={styles.cell}>{schedule.location}</Text>
-          <Text style={styles.cell}>{schedule.desc}</Text>
+  useEffect(() => {
+    if (visible) {
+      setEmployee(selectedEmployee || '');
+      setStart(selectedDate ? `${selectedDate}T09:00:00` : '');
+      setEnd(selectedDate ? `${selectedDate}T17:00:00` : '');
+      setLocation('');
+      setDesc('');
+    }
+  }, [visible, selectedEmployee, selectedDate]);
+
+  const handleSave = () => {
+    if (employee && location && desc && start && end) {
+      onSave({ employee, location, desc, start, end });
+    }
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent>
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Create Schedule</Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Employee"
+            value={employee}
+            onChangeText={setEmployee}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Location"
+            value={location}
+            onChangeText={setLocation}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Description"
+            value={desc}
+            onChangeText={setDesc}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Start Time (YYYY-MM-DDTHH:MM:SS)"
+            value={start}
+            onChangeText={setStart}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="End Time (YYYY-MM-DDTHH:MM:SS)"
+            value={end}
+            onChangeText={setEnd}
+          />
+
+          <View style={styles.buttonRow}>
+            <TouchableOpacity onPress={onClose} style={[styles.button, styles.cancel]}>
+              <Text style={styles.buttonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleSave} style={[styles.button, styles.save]}>
+              <Text style={styles.buttonText}>Save</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      ))}
-    </View>
+      </View>
+    </Modal>
   );
 };
 
+
+
 const styles = StyleSheet.create({
-  table: { minWidth: 600 },
-  headerRow: {
-    flexDirection: 'row',
-    backgroundColor: '#f1f1f1',
-    paddingVertical: 10,
-  },
-  headerCell: {
+  modalContainer: {
     flex: 1,
+    backgroundColor: '#00000099',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 20,
+    width: '90%',
+  },
+  modalTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
-    paddingHorizontal: 8,
+    marginBottom: 12,
   },
-  dataRow: {
-    flexDirection: 'row',
+  input: {
     borderBottomWidth: 1,
-    borderColor: '#eee',
-    paddingVertical: 10,
+    borderColor: '#ccc',
+    paddingVertical: 8,
+    marginBottom: 12,
   },
-  cell: {
-    flex: 1,
-    paddingHorizontal: 8,
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+  },
+  button: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+  },
+  cancel: {
+    backgroundColor: '#ccc',
+  },
+  save: {
+    backgroundColor: '#4A90E2',
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });
-
-export default ScheduleTable;
+export default CreateScheduleModal;

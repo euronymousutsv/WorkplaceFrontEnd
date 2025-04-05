@@ -19,6 +19,7 @@ import EmployeeManagementScreen from "./src/web/adminDashboard/screens/EmployeeM
 import SettingsScreen from "./src/web/adminDashboard/screens/SettingsScreen";
 import GrossPaymentScreen from "./src/web/adminDashboard/screens/GrossPaymentScreen";
 import LeaveRequestScreen from "./src/web/adminDashboard/screens/LeaveRequestScreen";
+import Toast from 'react-native-toast-message';
 
 
 // Create a stack navigator
@@ -29,6 +30,7 @@ const App = () => {
     <AuthProvider>
       <NavigationContainer>
         <AppNavigator />
+        <Toast/>
       </NavigationContainer>
     </AuthProvider>
   );
