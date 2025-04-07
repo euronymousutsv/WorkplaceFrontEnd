@@ -14,6 +14,11 @@ import InviteCodeScreen from "./src/auth/InviteCodeScreen";
 import SignupScreen from "./src/auth/SignupScreen";
 import { SearchedServerScreen } from "./src/auth/SearchedServerScreen";
 import { searchServer } from "./src/api/server/serverApi";
+import SignupFirstScreen from "./src/auth/SignupFirst";
+import SignupSecondScreen from "./src/auth/SignupSecond";
+import SignupPhoneScreen from "./src/auth/SignupPhone";
+import SignupPasswordScreen from "./src/auth/SignupPassword";
+import { SignupProvider } from "./src/auth/SignUpContext";
 
 // Create a stack navigator
 const Stack = createStackNavigator();
@@ -22,7 +27,9 @@ const App = () => {
   return (
     <AuthProvider>
       <NavigationContainer>
-        <AppNavigator />
+        <SignupProvider>
+          <AppNavigator />
+        </SignupProvider>
         <Toast />
       </NavigationContainer>
     </AuthProvider>
@@ -61,6 +68,41 @@ const AppNavigator = () => {
         name="SignUp"
         component={SignupScreen}
         options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Signup1"
+        component={SignupFirstScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Signup2"
+        component={SignupSecondScreen}
+        options={{
+          headerShown: true,
+          headerShadowVisible: false,
+          headerBackTitle: "back",
+          title: "",
+        }}
+      />
+      <Stack.Screen
+        name="SignupPhone"
+        component={SignupPhoneScreen}
+        options={{
+          headerShown: true,
+          headerShadowVisible: false,
+          headerBackTitle: "back",
+          title: "",
+        }}
+      />
+      <Stack.Screen
+        name="SignupPassword"
+        component={SignupPasswordScreen}
+        options={{
+          headerShown: true,
+          headerShadowVisible: false,
+          headerBackTitle: "back",
+          title: "",
+        }}
       />
 
       {/* Conditional Routes

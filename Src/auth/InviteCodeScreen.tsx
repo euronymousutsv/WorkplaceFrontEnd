@@ -16,12 +16,14 @@ import Toast from "react-native-toast-message";
 import { KeyboardAvoidingView } from "react-native";
 import SignupScreen from "./SignupScreen";
 import { SearchedServerScreen } from "./SearchedServerScreen";
+import { useSignup } from "./SignUpContext";
 
 const InviteCodeScreen = ({ navigation }: { navigation: any }) => {
   const [inviteCode, setInviteCode] = useState<string>(""); // Store invite code input
-
+  const { updateFormData } = useSignup();
   const handleSubmit = async () => {
     try {
+      updateFormData("inviteLink", inviteCode);
       if (inviteCode.length !== 8) {
         Alert.alert("Error", "Invite code must be 8 characters long.");
       } else {
@@ -113,16 +115,16 @@ const styles = StyleSheet.create({
   input: {
     width: "80%",
     padding: Platform.OS === "web" ? 15 : 20, // Larger padding for mobile
-    borderWidth: 3,
+    borderWidth: 1,
     borderColor: "#ccc",
-    marginBottom: 15,
-    borderRadius: 25,
+    marginBottom: 5,
+    borderRadius: 5,
     fontSize: 16,
   },
   submitButton: {
     backgroundColor: "#4A90E2",
     padding: Platform.OS === "web" ? 15 : 20, // Larger padding for mobile
-    borderRadius: 25,
+    borderRadius: 5,
     width: "80%",
     alignItems: "center",
     marginTop: 20,

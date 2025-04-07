@@ -17,6 +17,7 @@ export interface RegisterRequest {
   email: string;
   phoneNumber: string;
   password: string;
+  inviteLink: string;
 }
 
 export interface SendOTPRequest {

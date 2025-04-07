@@ -31,11 +31,12 @@ export const SearchedServerScreen = ({ navigation }: { navigation: any }) => {
         <TouchableOpacity
           style={styles.filledButton}
           onPress={() => {
-            navigation.navigate("SignUp");
+            navigation.navigate("Signup1");
           }}
         >
           <Text style={styles.buttonText}>Create an Account</Text>
         </TouchableOpacity>
+
         <Button
           title="Cancel"
           onPress={() => {

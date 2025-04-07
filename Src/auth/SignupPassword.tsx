@@ -12,28 +12,52 @@ import {
   SafeAreaView,
 } from "react-native";
 import { useSignup } from "./SignUpContext";
+import { registerUser } from "../api/auth/authApi";
+import { RegisterRequest } from "../api/auth/auth";
+import { AxiosError } from "axios";
+import { ApiError } from "../api/utils/apiResponse";
 import Toast from "react-native-toast-message";
 
 const { width, height } = Dimensions.get("window");
 const isLandscape = width > height;
 
-export const SignupFirstScreen = ({ navigation }: { navigation: any }) => {
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const { updateFormData } = useSignup();
+export const SignupPasswordScreen = ({ navigation }: { navigation: any }) => {
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-  const handleNext = () => {
-    if (!firstName || !lastName) {
-      Toast.show({
-        text1: "Please fill all fields to continue.",
-        type: "error",
-        position: "bottom",
-      });
-      return;
+  const { updateFormData, formData } = useSignup();
+
+  const handleSignup = async () => {
+    // update the password
+
+    try {
+      updateFormData("password", password);
+      const response = await registerUser(formData as RegisterRequest);
+      console.log("--------------------");
+
+      console.log(formData);
+      console.log("--------------------");
+
+      if (response instanceof ApiError || response instanceof AxiosError) {
+        Toast.show({
+          text1: response.message,
+          type: "error",
+          position: "bottom",
+        });
+        console.log(response);
+      } else {
+        navigation.navigate("Login");
+        Toast.show({
+          text1: response.message,
+          type: "success",
+          position: "bottom",
+        });
+      }
+
+      // Redirect user after successful signup (you can adjust the flow)
+    } catch (err) {
+      console.error("Signup error:", err);
     }
-    updateFormData("firstName", firstName);
-    updateFormData("lastName", lastName);
-    navigation.navigate("Signup2");
   };
 
   return (
@@ -53,47 +77,38 @@ export const SignupFirstScreen = ({ navigation }: { navigation: any }) => {
             { flexDirection: Platform.OS === "web" ? "row" : "column" },
           ]}
         >
-          {/* Left Side: Create Account Text */}
-          <View style={styles.leftSide}>
-            <Text style={styles.serverName}>Fairy Tail</Text>
-
-            <Text style={styles.subTitle}>
-              Sign up to create your account and start your journey!
-            </Text>
-          </View>
-
           {/* Right Side: Signup Form */}
           <View style={styles.formContainer}>
-            {/* First Name Input */}
+            {/* Password Input */}
             <TextInput
               style={styles.input}
-              placeholder="First Name"
-              value={firstName}
-              onChangeText={setFirstName}
+              placeholder="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
             />
 
-            {/* First Name Input */}
+            {/* Confirm Password Input */}
             <TextInput
               style={styles.input}
-              placeholder="Last Name"
-              value={lastName}
-              onChangeText={setLastName}
+              placeholder="Confirm Password"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry
             />
-
-            {/* Signup Button */}
-            <TouchableOpacity onPress={handleNext} style={styles.button}>
+            {/* Next Button */}
+            <TouchableOpacity onPress={handleSignup} style={styles.button}>
               <Text style={styles.buttonText}>Continue</Text>
             </TouchableOpacity>
 
+            <View style={styles.footer}>
+              <Text>Already have an account? </Text>
+              <TouchableOpacity onPress={handleSignup}>
+                <Text style={styles.link}>Login</Text>
+              </TouchableOpacity>
+            </View>
+
             {/* back to previous screen */}
-            <TouchableOpacity
-              onPress={() => {
-                navigation.goBack();
-              }}
-              style={styles.secondaryButton}
-            >
-              <Text style={styles.secondaryButtonText}>Cancel</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </SafeAreaView>
@@ -134,28 +149,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  //   title: {
-  //     fontSize: 24,
-  //     fontWeight: "bold",
-  //     marginBottom: 10,
-  //     color: "#393D3F", // Charcoal Grey
-  //     textAlign: Platform.OS === "web" ? "left" : "center", // Align to left for web
-  //   },
-
-  serverName: {
-    fontSize: 40,
-    fontWeight: "bold",
-    marginBottom: 0,
-    color: "#393D3F", // Charcoal Grey
-    textAlign: Platform.OS === "web" ? "left" : "center", // Align to left for web
-  },
-
-  subTitle: {
-    fontSize: 20,
-    marginBottom: 10,
-    color: "#393D3F", // Charcoal Grey
-    // textAlign: Platform.OS === "web" ? "left" : "center", // Align to left for web
-  },
 
   input: {
     width: "100%",
@@ -176,7 +169,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 18,
   },
 
   secondaryButton: {
@@ -190,7 +183,7 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     color: "#4A90E2",
-    fontSize: 16,
+    fontSize: 20,
   },
   errorText: {
     color: "red",
@@ -208,4 +201,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SignupFirstScreen;
+export default SignupPasswordScreen;
