@@ -18,3 +18,18 @@ export interface RegisterRequest {
   phoneNumber: string;
   password: string;
 }
+
+export interface SendOTPRequest {
+  phoneNumber: string;
+}
+
+export interface VerifyOTPRequest {
+  phoneNumber: string;
+  code: string;
+}
+
+export interface EditUserDetailRequest {
+  editType: string;
+  newDetail: string;
+  password: string;
+}

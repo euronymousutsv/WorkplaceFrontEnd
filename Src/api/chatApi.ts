@@ -45,6 +45,15 @@ const API = axios.create({
   },
 });
 
+API.interceptors.request.use(async (config) => {
+  const token = await getToken("accessToken");
+  console.log("the token is :::::", token);
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export const fetchChats = async (channelId: string) => {
   try {
     const response = await API.get("chat/fetchChats/" + channelId, {

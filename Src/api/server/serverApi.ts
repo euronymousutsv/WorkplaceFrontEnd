@@ -24,9 +24,18 @@ export const API = axios.create({
   },
 });
 
+API.interceptors.request.use(async (config) => {
+  const token = await getToken("accessToken");
+  console.log("the token is :::::", token);
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export const getLoggedInUserServer = async () => {
   try {
-    const accessToken = (await getToken("accessToken")) ?? "";
+    const accessToken = await getToken("accessToken");
     const response = await API.get("/server/getLoggedInUserServer", {
       params: { accessToken },
     });
@@ -45,7 +54,7 @@ export const getLoggedInUserServer = async () => {
 
 export const joinAServer = async (inviteCode: string) => {
   try {
-    const accessToken = (await getToken("accessToken")) ?? "";
+    const accessToken = await getToken("accessToken");
     const response = await API.post("/server/joinServer", {
       accessToken,
       inviteCode,

@@ -8,6 +8,10 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import Toast from "react-native-toast-message";
+import WelcomeScreen from "./src/auth/WelcomeScreen";
+import LoginScreen from "./src/auth/LoginScreen";
+import InviteCodeScreen from "./src/auth/InviteCodeScreen";
+import SignupScreen from "./src/auth/SignupScreen";
 
 // Create a stack navigator
 const Stack = createStackNavigator();
@@ -30,13 +34,13 @@ const AppNavigator = () => {
   return (
     <Stack.Navigator>
       {/* Public Routes */}
-      <Stack.Screen
+      {/* <Stack.Screen
         name="AdminDashboard"
         component={AdminDashboard}
         options={{ headerShown: false }}
-      />
+      />  */}
 
-      {/* <Stack.Screen
+      <Stack.Screen
         name="Welcome"
         component={WelcomeScreen}
         options={{ headerShown: false }}
@@ -55,7 +59,7 @@ const AppNavigator = () => {
         name="SignUp"
         component={SignupScreen}
         options={{ headerShown: false }}
-      /> */}
+      />
 
       {/* Conditional Routes
       // {isAuthenticated && (
@@ -85,6 +89,11 @@ const AppNavigator = () => {
       // )} */}
 
       <Stack.Screen
+        name="EmployeeDashboard"
+        component={EmployeeDashboard}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
         name="AdminDashboard"
         component={AdminDashboard}
         options={{ headerShown: false }}
@@ -93,12 +102,6 @@ const AppNavigator = () => {
       <Stack.Screen
         name="ManagerDashboard"
         component={ManagerDashboard}
-        options={{ headerShown: false }}
-      />
-
-      <Stack.Screen
-        name="EmployeeDashboard"
-        component={EmployeeDashboard}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>
