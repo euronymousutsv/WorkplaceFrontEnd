@@ -16,14 +16,12 @@ import Toast from "react-native-toast-message";
 
 const { width, height } = Dimensions.get("window");
 const isLandscape = width > height;
-
+export const validateEmail = (email: string): boolean => {
+  const emailPattern =
+    /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  return emailPattern.test(email.toLocaleLowerCase());
+};
 export const SignupSecondScreen = ({ navigation }: { navigation: any }) => {
-  const validateEmail = (email: string): boolean => {
-    const emailPattern =
-      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-    return emailPattern.test(email.toLocaleLowerCase());
-  };
-
   const [email, setEmail] = useState("");
 
   const { updateFormData } = useSignup();

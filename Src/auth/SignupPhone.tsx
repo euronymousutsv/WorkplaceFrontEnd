@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   SafeAreaView,
   Modal,
+  Alert,
 } from "react-native";
 import { useSignup } from "./SignUpContext";
 import Toast from "react-native-toast-message";
@@ -42,12 +43,13 @@ export const SignupPhoneScreen = ({ navigation }: { navigation: any }) => {
   }
 
   const handleNext = () => {
-    updateFormData("phoneNumber", phone);
+    updateFormData("phoneNumber", "+61" + phone);
     setPhoneVerificationModelVisible(false);
     navigation.navigate("SignupPassword");
   };
 
-  const handleSendVerification = () => {
+  const handleSendVerification = async () => {
+    console.log("Pressed");
     if (!phone) {
       Toast.show({
         text1: "Enter your phone number first",
@@ -65,8 +67,7 @@ export const SignupPhoneScreen = ({ navigation }: { navigation: any }) => {
       });
       return;
     }
-    sendVerification(phone);
-    setPhoneVerificationModelVisible(true);
+    await sendVerification(phone);
   };
 
   const sendVerification = async (phoneNumber: string) => {
@@ -74,7 +75,7 @@ export const SignupPhoneScreen = ({ navigation }: { navigation: any }) => {
       if (!phoneNumber.startsWith("+61")) {
         phoneNumber = "+61" + phoneNumber;
       }
-
+      console.log(phoneNumber);
       const res = await sendOTP({ phoneNumber: phoneNumber });
       if (res.success) {
         Toast.show({
@@ -82,7 +83,9 @@ export const SignupPhoneScreen = ({ navigation }: { navigation: any }) => {
           type: "success",
           position: "bottom",
         });
+        setPhoneVerificationModelVisible(true);
       } else if (res instanceof ApiError) {
+        console.log(res.message);
         Toast.show({
           text1: res.message,
           type: "error",
@@ -98,7 +101,7 @@ export const SignupPhoneScreen = ({ navigation }: { navigation: any }) => {
     }
   };
 
-  const verifyOtp = async (phoneNumber: string) => {
+  const handleOtpVerification = async (phoneNumber: string) => {
     try {
       if (!phoneNumber.startsWith("+61")) {
         phoneNumber = "+61" + phoneNumber;
@@ -109,20 +112,20 @@ export const SignupPhoneScreen = ({ navigation }: { navigation: any }) => {
         phoneNumber: phoneNumber,
       });
       if (res.success) {
+        handleNext();
         Toast.show({
           text1: res.message,
           type: "success",
           position: "bottom",
         });
-
-        handleNext();
       } else if (res instanceof ApiError) {
-        console.log(res.message);
-        Toast.show({
-          text1: res.message,
-          type: "error",
-          position: "bottom",
-        });
+        Alert.alert(res.message);
+
+        // Toast.show({
+        //   text1: res.message,
+        //   type: "error",
+        //   position: "bottom",
+        // });
       }
     } catch (err) {
       Toast.show({
@@ -168,7 +171,7 @@ export const SignupPhoneScreen = ({ navigation }: { navigation: any }) => {
 
               {/* Open Verification Modal Button */}
               <TouchableOpacity
-                onPress={handleSendVerification}
+                onPress={() => handleSendVerification()}
                 style={styles.button}
               >
                 <Text style={styles.buttonText}>Continue</Text>
@@ -196,7 +199,6 @@ export const SignupPhoneScreen = ({ navigation }: { navigation: any }) => {
       >
         <View style={styles.container}>
           <View style={styles.formContainer}>
-            {/* First Name Input */}
             <Text style={styles.verificationText}>
               A 6 digit verification code has been sent to your phone.
             </Text>
@@ -209,8 +211,10 @@ export const SignupPhoneScreen = ({ navigation }: { navigation: any }) => {
               onChangeText={setVerification}
             />
 
-            {/* Signup Button */}
-            <TouchableOpacity onPress={verifyOtp} style={styles.button}>
+            <TouchableOpacity
+              onPress={() => handleOtpVerification(phone)}
+              style={styles.button}
+            >
               <Text style={styles.buttonText}>Verify </Text>
             </TouchableOpacity>
 
@@ -310,6 +314,7 @@ const styles = StyleSheet.create({
     textAlign: "left",
     marginTop: 5,
     marginBottom: 10,
+    padding: 10,
   },
   button: {
     backgroundColor: "#4A90E2",

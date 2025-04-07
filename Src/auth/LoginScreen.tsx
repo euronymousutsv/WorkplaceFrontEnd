@@ -5,8 +5,9 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
   Platform,
+  KeyboardAvoidingView,
+  ActivityIndicator,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons"; // Correct import for Ionicons
@@ -16,16 +17,34 @@ import JWT from "expo-jwt"; // Correct import for jwt-decode
 import { saveToken } from "../api/auth/token";
 import { ApiError, ApiResponse } from "../api/utils/apiResponse";
 import { loginUser } from "../api/auth/authApi";
+import { validateEmail } from "./SignupSecond";
 
 const LoginScreen = ({ navigation }: { navigation: any }) => {
   const { setUserRole, setIsAuthenticated } = useAuth(); // Get AuthContext functions
-  const [Email, setEmail] = useState("bs12@gmail.com");
+  const [Email, setEmail] = useState("11111@gmail.com");
   const [Password, setPassword] = useState("Abcde1@345");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
+  // activity indicator
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     try {
+      if (!Email || !Password) {
+        setError("Email and Password must be filled");
+        return;
+      }
+      if (!validateEmail(Email)) {
+        setError("Please enter a valid email.");
+        return;
+      }
+
+      if (Password.length < 8) {
+        setError("Password length should be at least 8 characters.");
+        return;
+      }
+
+      setLoading(true);
       console.log("Login attempt with:", { Email, Password });
       const response = await loginUser(Email, Password);
       console.log(response);
@@ -129,59 +148,63 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
       console.error("Error during login:", err);
       setError("Invalid credentials");
     }
+
+    setLoading(false);
   };
   return (
-    <ScrollView
+    <KeyboardAvoidingView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
     >
-      {/* Welcome Text */}
-      <View style={styles.welcomeContainer}>
-        <Text style={styles.welcomeText}>Welcome back!</Text>
-      </View>
-
-      {/* Form (Email, Password) */}
-      <View style={styles.formContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter your email"
-          value={Email}
-          onChangeText={setEmail}
-        />
-
-        <View style={styles.passwordContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter your password"
-            secureTextEntry={!showPassword}
-            value={Password}
-            onChangeText={setPassword}
-          />
-          <TouchableOpacity
-            onPress={() => setShowPassword(!showPassword)}
-            style={styles.eyeIcon}
-          >
-            <Ionicons
-              name={showPassword ? "eye-off" : "eye"}
-              size={24}
-              color="gray"
+      {!loading && (
+        <View>
+          {/* Welcome Text */}
+          <View style={styles.welcomeContainer}>
+            <Text style={styles.welcomeText}>Welcome!</Text>
+            <Text style={styles.welcomeText2}>Sign in to your account</Text>
+          </View>
+          {/* Form (Email, Password) */}
+          <View style={styles.formContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your email"
+              value={Email}
+              onChangeText={setEmail}
             />
-          </TouchableOpacity>
-        </View>
 
-        {/* Error Message */}
-        {error && <Text style={styles.errorText}>{error}</Text>}
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your password"
+                secureTextEntry={!showPassword}
+                value={Password}
+                onChangeText={setPassword}
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.eyeIcon}
+              >
+                <Ionicons
+                  name={showPassword ? "eye-off" : "eye"}
+                  size={24}
+                  color="gray"
+                />
+              </TouchableOpacity>
+            </View>
 
-        {/* Login Button */}
-        <TouchableOpacity onPress={handleLogin} style={styles.button}>
-          <Text style={styles.buttonText}>Login</Text>
-        </TouchableOpacity>
+            {/* Error Message */}
+            {error && <Text style={styles.errorText}>{error}</Text>}
 
-        {/* Or login with text */}
-        {/* <Text style={styles.orLoginText}>or login with:</Text> */}
+            {/* Login Button */}
+            <TouchableOpacity onPress={handleLogin} style={styles.button}>
+              <Text style={styles.buttonText}>Login</Text>
+            </TouchableOpacity>
 
-        {/* Social Media Logos (Apple and Google) */}
-        {/* <View style={styles.socialLoginContainer}>
+            {/* Or login with text */}
+            {/* <Text style={styles.orLoginText}>or login with:</Text> */}
+
+            {/* Social Media Logos (Apple and Google) */}
+            {/* <View style={styles.socialLoginContainer}>
           <TouchableOpacity style={[styles.socialButton, styles.appleButton]}>
             <Ionicons name="logo-apple" size={24} color="white" />
           </TouchableOpacity>
@@ -190,15 +213,24 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
           </TouchableOpacity>
         </View> */}
 
-        {/* Don't have an account */}
-        <View style={styles.signupContainer}>
-          <Text>Have a invite code? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate("InviteCode")}>
-            <Text style={styles.link}>Sign Up</Text>
-          </TouchableOpacity>
+            {/* Don't have an account */}
+            <View style={styles.signupContainer}>
+              <Text>Have a invite code? </Text>
+              <TouchableOpacity
+                onPress={() => navigation.navigate("InviteCode")}
+              >
+                <Text style={styles.link}>Sign Up</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
-      </View>
-    </ScrollView>
+      )}
+      {loading && (
+        <ActivityIndicator
+          style={{ flex: 1, justifyContent: "center", alignContent: "center" }}
+        />
+      )}
+    </KeyboardAvoidingView>
   );
 };
 
@@ -207,6 +239,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    justifyContent: "center",
     backgroundColor: "#FDFDFF", // Off-White background
   },
   contentContainer: {
@@ -223,23 +256,28 @@ const styles = StyleSheet.create({
     textAlign: Platform.OS === "web" ? "left" : "center", // Left aligned for web, center for mobile
   },
   welcomeText: {
-    fontSize: Platform.OS === "web" ? 30 : 24,
+    fontSize: Platform.OS === "web" ? 30 : 40,
     fontWeight: "bold",
     color: "#393D3F", // Charcoal Grey
-    marginBottom: 20,
+    marginBottom: 0,
+  },
+  welcomeText2: {
+    fontSize: Platform.OS === "web" ? 30 : 24,
+    color: "#393D3F", // Charcoal Grey
+    marginBottom: 0,
   },
   formContainer: {
     width: Platform.OS === "web" ? "60%" : "100%", // Form takes 60% width on web, full width on mobile
     alignItems: "center",
-    marginTop: Platform.OS === "web" ? "5%" : "10%", // Add space on top for web
+    marginTop: Platform.OS === "web" ? "5%" : "5%", // Add space on top for web
   },
   input: {
     width: "100%",
     padding: Platform.OS === "web" ? 15 : 20, // Larger padding for mobile
-    borderWidth: 3,
+    borderWidth: 1,
     borderColor: "#ccc",
     marginBottom: 15,
-    borderRadius: 25,
+    borderRadius: 5,
   },
   passwordContainer: {
     width: "100%",
@@ -247,13 +285,13 @@ const styles = StyleSheet.create({
   },
   eyeIcon: {
     position: "absolute",
-    right: 10,
+    right: 20,
     top: Platform.OS === "web" ? 15 : 20, // Adjust position for web
   },
   button: {
     backgroundColor: "#4A90E2",
     padding: Platform.OS === "web" ? 15 : 20, // Larger padding for mobile
-    borderRadius: 25, // Rounded corners
+    borderRadius: 5, // Rounded corners
     width: "100%",
     alignItems: "center",
     marginTop: 20,
@@ -274,7 +312,7 @@ const styles = StyleSheet.create({
   socialButton: {
     width: "15%",
     padding: Platform.OS === "web" ? 10 : 15, // Larger padding for mobile
-    borderRadius: 25,
+    borderRadius: 5,
     backgroundColor: "#4A90E2", // Light Blue background for social buttons
     alignItems: "center",
     marginBottom: 10,
@@ -304,7 +342,7 @@ const styles = StyleSheet.create({
   },
   signupContainer: {
     flexDirection: "row",
-    marginTop: 100,
+    // marginTop: 100,
   },
 });
 

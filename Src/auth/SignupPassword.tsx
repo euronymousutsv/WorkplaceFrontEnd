@@ -10,6 +10,7 @@ import {
   Button,
   KeyboardAvoidingView,
   SafeAreaView,
+  Alert,
 } from "react-native";
 import { useSignup } from "./SignUpContext";
 import { registerUser } from "../api/auth/authApi";
@@ -31,19 +32,27 @@ export const SignupPasswordScreen = ({ navigation }: { navigation: any }) => {
     // update the password
 
     try {
-      updateFormData("password", password);
-      const response = await registerUser(formData as RegisterRequest);
-      console.log("--------------------");
-
-      console.log(formData);
-      console.log("--------------------");
-
-      if (response instanceof ApiError || response instanceof AxiosError) {
+      if (password !== confirmPassword) {
         Toast.show({
-          text1: response.message,
+          text1: "Both passwod must be same",
           type: "error",
           position: "bottom",
         });
+        return;
+      }
+
+      updateFormData("password", password);
+      const response = await registerUser(formData as RegisterRequest);
+
+      if (response instanceof ApiError || response instanceof AxiosError) {
+        Alert.alert(response.message);
+        // Toast.show({
+        //   text1: "Error",
+        //   text2: response.message,
+
+        //   type: "error",
+        //   position: "bottom",
+        // });
         console.log(response);
       } else {
         navigation.navigate("Login");

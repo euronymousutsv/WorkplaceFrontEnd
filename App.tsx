@@ -11,7 +11,6 @@ import Toast from "react-native-toast-message";
 import WelcomeScreen from "./src/auth/WelcomeScreen";
 import LoginScreen from "./src/auth/LoginScreen";
 import InviteCodeScreen from "./src/auth/InviteCodeScreen";
-import SignupScreen from "./src/auth/SignupScreen";
 import { SearchedServerScreen } from "./src/auth/SearchedServerScreen";
 import { searchServer } from "./src/api/server/serverApi";
 import SignupFirstScreen from "./src/auth/SignupFirst";
@@ -30,8 +29,8 @@ const App = () => {
         <SignupProvider>
           <AppNavigator />
         </SignupProvider>
-        <Toast />
       </NavigationContainer>
+      <Toast />
     </AuthProvider>
   );
 };
@@ -64,11 +63,8 @@ const AppNavigator = () => {
         component={InviteCodeScreen}
         options={{ headerShown: false }}
       />
-      <Stack.Screen
-        name="SignUp"
-        component={SignupScreen}
-        options={{ headerShown: false }}
-      />
+
+      {/* All Signup Screens */}
       <Stack.Screen
         name="Signup1"
         component={SignupFirstScreen}
