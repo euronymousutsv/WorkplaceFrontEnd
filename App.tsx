@@ -51,31 +51,31 @@ const AppNavigator = () => {
       />
 
       {/* Conditional Routes
-      {isAuthenticated && (
-        <>
-          {userRole === "admin" && (
-            <Stack.Screen
-              name="AdminDashboard"
-              component={AdminDashboard}
-              options={{ headerShown: false }}
-            />
-          )}
-          {userRole === "manager" && (
-            <Stack.Screen
-              name="ManagerDashboard"
-              component={ManagerDashboard}
-              options={{ headerShown: false }}
-            />
-          )}
-          {userRole === "employee" && (
-            <Stack.Screen
-              name="EmployeeDashboard"
-              component={EmployeeDashboard}
-              options={{ headerShown: false }}
-            />
-          )}
-        </>
-      )} */}
+      // {isAuthenticated && (
+      //   <>
+      //     {userRole === "admin" && (
+      //       <Stack.Screen
+      //         name="AdminDashboard"
+      //         component={AdminDashboard}
+      //         options={{ headerShown: false }}
+      //       />
+      //     )}
+      //     {userRole === "manager" && (
+      //       <Stack.Screen
+      //         name="ManagerDashboard"
+      //         component={ManagerDashboard}
+      //         options={{ headerShown: false }}
+      //       />
+      //     )}
+      //     {userRole === "employee" && (
+      //       <Stack.Screen
+      //         name="EmployeeDashboard"
+      //         component={EmployeeDashboard}
+      //         options={{ headerShown: false }}
+      //       />
+      //     )}
+      //   </>
+      // )} */}
 
       <Stack.Screen
         name="AdminDashboard"

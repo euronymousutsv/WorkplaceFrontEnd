@@ -16,8 +16,8 @@ export interface joinAServerResponse {
 
 export const API = axios.create({
   baseURL:
-    "https://8c1f-2406-2d40-4d55-6c10-bdc3-9abf-864e-c64f.ngrok-free.app/api/v1",
-  // "http://localhost:3000/api/v1",
+    // "https://8c1f-2406-2d40-4d55-6c10-bdc3-9abf-864e-c64f.ngrok-free.app/api/v1",
+    "http://localhost:3000/api/v1",
 
   headers: {
     "Content-Type": "application/json",
@@ -46,13 +46,13 @@ export const getLoggedInUserServer = async () => {
 export const joinAServer = async (inviteCode: string) => {
   try {
     const accessToken = (await getToken("accessToken")) ?? "";
-    const response = await API.post("/server/joinAServer", {
+    const response = await API.post("/server/joinServer", {
       accessToken,
       inviteCode,
     });
 
-    const res = response.data as ApiResponse<joinAServerResponse>;
-    return res;
+    const { data } = response.data.data;
+    return data;
   } catch (error) {
     if (error instanceof AxiosError) {
       const err = error.response?.data as ApiError<{}>;

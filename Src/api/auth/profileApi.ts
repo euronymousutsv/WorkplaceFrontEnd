@@ -1,15 +1,19 @@
 import axios, { AxiosError } from "axios";
-import { getToken } from "./token";  // Assuming you have this method to get the token
+import { getToken } from "./token"; // Assuming you have this method to get the token
 
 export const API = axios.create({
-  baseURL: "https://8c1f-2406-2d40-4d55-6c10-bdc3-9abf-864e-c64f.ngrok-free.app", // Change to your actual backend URL
+  // baseURL: "https://8c1f-2406-2d40-4d55-6c10-bdc3-9abf-864e-c64f.ngrok-free.app", // Change to actual backend URL
+  baseURL: "http://localhost:3000",
   headers: {
     "Content-Type": "application/json",
   },
 });
 
 // Fetch user details
-export const getCurrentUserDetails = async (userId: any, accessToken: string) => {
+export const getCurrentUserDetails = async (
+  userId: any,
+  accessToken: string
+) => {
   try {
     // Retrieve the access token
     const accessToken = await getToken("accessToken");
@@ -24,7 +28,7 @@ export const getCurrentUserDetails = async (userId: any, accessToken: string) =>
       },
     });
 
-    return response.data;  // Return the response containing the user details
+    return response.data; // Return the response containing the user details
   } catch (error) {
     if (error instanceof AxiosError) {
       const err = error.response?.data;
@@ -69,12 +73,12 @@ export const editCurrentUserDetail = async (
       }
     );
 
-    return response.data;  // Return the response containing the success message
+    return response.data; // Return the response containing the success message
   } catch (error) {
     if (error instanceof AxiosError) {
       const err = error.response?.data;
       console.error("Error updating user details:", err);
-      return err;  // Return the error response from the backend
+      return err; // Return the error response from the backend
     } else {
       console.error("Error:", error);
       return { message: "Something went wrong while updating the details." };

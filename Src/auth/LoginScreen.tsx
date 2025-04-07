@@ -44,17 +44,20 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
           // Decode the JWT token to extract role and other details
           const decodedToken = JWT.decode(accessToken, null); // Use default() if you're importing with * as
           console.log("Decoded Token:", decodedToken); // Log the entire decoded token
+          var role = "employee";
+          if (decodedToken.role) role = decodedToken.role;
 
-          const roleID = decodedToken.RoleID; // Assuming role is stored as "RoleID" in the token payload
-          console.log("Decoded role:", roleID); // Log the decoded role
+          // const role = decodedToken.Role; // Assuming role is stored as "RoleID" in the token payload
+          // console.log("Decoded role:", role); // Log the decoded role
 
-          // Map RoleID to a string role
-          const roleMap = {
-            1: "manger",
-            2: "admin",
-            3: "employee",
-          };
-          const role = roleMap[roleID as keyof typeof roleMap] || "employee"; // Default to 'employee' if RoleID is unknown
+          // // // Map RoleID to a string role
+          // // const roleMap = {
+          // //   1: "manger",
+          // //   2: "admin",
+          // //   3: "employee",
+          // // };
+
+          // const role = roleMap[roleID as keyof typeof roleMap] || "employee"; // Default to 'employee' if RoleID is unknown
           console.log("Decoded role:", role); // Log the mapped role
 
           // Platform-based login restrictions
@@ -91,7 +94,8 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
 
             // //Navigate based on role
             if (role === "admin") {
-              navigation.replace("AdminDashboard");
+              console.log("Admin is logging in...........");
+              navigation.navigate("AdminDashboard");
             } else if (role === "manager") {
               navigation.replace("ManagerDashboard");
             } else if (role === "employee") {
