@@ -1,17 +1,13 @@
 import React from "react";
 
-import LoginScreen from "./src/auth/LoginScreen";
-import WelcomeScreen from "./src/auth/WelcomeScreen";
-import SignupScreen from "./src/auth/SignupScreen";
 import AdminDashboard from "./src/web/adminDashboard/screens/AdminDashboard";
 import EmployeeDashboard from "./src/mobile/employeeDashboard/screens/EmployeeDashboard";
 import ManagerDashboard from "./src/web/managerDashboard/screens/ManagerDashboard";
-import LeaveScreen from "./src/mobile/employeeDashboard/screens/LeaveScreen";
-import { RootStackParamList } from "./src/types/navigationTypes";
+
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
-import ChatScreen from "./src/auth/Chat";
+import Toast from "react-native-toast-message";
 
 // Create a stack navigator
 const Stack = createStackNavigator();
@@ -21,6 +17,7 @@ const App = () => {
     <AuthProvider>
       <NavigationContainer>
         <AppNavigator />
+        <Toast />
       </NavigationContainer>
     </AuthProvider>
   );
@@ -33,8 +30,13 @@ const AppNavigator = () => {
   return (
     <Stack.Navigator>
       {/* Public Routes */}
-
       <Stack.Screen
+        name="AdminDashboard"
+        component={AdminDashboard}
+        options={{ headerShown: false }}
+      />
+
+      {/* <Stack.Screen
         name="Welcome"
         component={WelcomeScreen}
         options={{ headerShown: false }}
@@ -45,10 +47,15 @@ const AppNavigator = () => {
         options={{ headerShown: false }}
       />
       <Stack.Screen
+        name="InviteCode"
+        component={InviteCodeScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
         name="SignUp"
         component={SignupScreen}
         options={{ headerShown: false }}
-      />
+      /> */}
 
       {/* Conditional Routes
       // {isAuthenticated && (

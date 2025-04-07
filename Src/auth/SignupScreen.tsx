@@ -8,13 +8,14 @@ import {
   Platform,
   Dimensions,
 } from "react-native";
-import axios from "../config/axiosConfig"; // Assuming you're using axios for API calls
+import axios from "../config/axiosConfig"; // Import axios instance
 import { registerUser } from "../api/auth/authApi";
 import { ApiError } from "../api/utils/apiResponse";
 import { AxiosError } from "axios";
+import { Ionicons } from '@expo/vector-icons';
 
 const { width, height } = Dimensions.get("window");
-const isLandscape = width > height; // Check if the screen is in landscape mode
+const isLandscape = width > height; 
 
 const SignupScreen = ({ navigation }: { navigation: any }) => {
   const [firstName, setFirstName] = useState("");
@@ -49,8 +50,16 @@ const SignupScreen = ({ navigation }: { navigation: any }) => {
     }
   };
 
+  const handleBack = () => {
+    navigation.goBack(); // Go back to the previous screen
+  };
+
   return (
     <View style={styles.container}>
+      {/* Back Button */}
+      <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+        <Ionicons name="arrow-back" size={24} color="black" />
+      </TouchableOpacity>
       {/* Platform-specific Layout */}
       <View
         style={[
@@ -136,6 +145,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 20,
     backgroundColor: "#FDFDFF", // Off-White background
+    marginTop: -140,
   },
   rowContainer: {
     flexDirection: "column",
@@ -151,6 +161,10 @@ const styles = StyleSheet.create({
     alignItems: "flex-start", // Align text to the left on web
     width: Platform.OS === "web" ? "30%" : "50%",
     marginBottom: 60,
+  },
+  backButton: {
+    padding: 10,
+    marginTop: 30,  // Adjust for iOS devices
   },
   formContainer: {
     width: Platform.OS === "web" ? "60%" : "100%",
@@ -173,12 +187,13 @@ const styles = StyleSheet.create({
     borderRadius: 25,
   },
   button: {
-    backgroundColor: "#4A90E2", // Light Blue for the signup button
-    padding: 15,
+    backgroundColor: '#4A90E2',
+    padding: Platform.OS === 'web' ? 15 : 20, // Larger padding for mobile
     borderRadius: 25,
-    width: "100%",
-    alignItems: "center",
-    marginBottom: 20,
+    width: '100%',
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 30,
   },
   buttonText: {
     color: "#fff",

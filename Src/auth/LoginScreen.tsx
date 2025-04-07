@@ -44,19 +44,28 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
           // Decode the JWT token to extract role and other details
           const decodedToken = JWT.decode(accessToken, null); // Use default() if you're importing with * as
           console.log("Decoded Token:", decodedToken); // Log the entire decoded token
-          var role = "employee";
-          if (decodedToken.role) role = decodedToken.role;
+          // var role = "employee";
+          // if (decodedToken.role) role = decodedToken.role;
 
-          // const role = decodedToken.Role; // Assuming role is stored as "RoleID" in the token payload
-          // console.log("Decoded role:", role); // Log the decoded role
+          // // const role = decodedToken.Role; // Assuming role is stored as "RoleID" in the token payload
+          // // console.log("Decoded role:", role); // Log the decoded role
 
-          // // // Map RoleID to a string role
-          // // const roleMap = {
-          // //   1: "manger",
-          // //   2: "admin",
-          // //   3: "employee",
-          // // };
+          // // // // Map RoleID to a string role
+          // // // const roleMap = {
+          // // //   1: "manger",
+          // // //   2: "admin",
+          // // //   3: "employee",
+          // // // };
 
+          const role = decodedToken.role; // Assuming role is stored as "RoleID" in the token payload
+          console.log("Decoded role:", role); // Log the decoded role
+
+          // Map RoleID to a string role
+          // const roleMap = {
+          //   1: "manger",
+          //   2: "admin",
+          //   3: "employee",
+          // };
           // const role = roleMap[roleID as keyof typeof roleMap] || "employee"; // Default to 'employee' if RoleID is unknown
           console.log("Decoded role:", role); // Log the mapped role
 
@@ -169,22 +178,22 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
         </TouchableOpacity>
 
         {/* Or login with text */}
-        <Text style={styles.orLoginText}>or login with:</Text>
+        {/* <Text style={styles.orLoginText}>or login with:</Text> */}
 
         {/* Social Media Logos (Apple and Google) */}
-        <View style={styles.socialLoginContainer}>
+        {/* <View style={styles.socialLoginContainer}>
           <TouchableOpacity style={[styles.socialButton, styles.appleButton]}>
             <Ionicons name="logo-apple" size={24} color="white" />
           </TouchableOpacity>
           <TouchableOpacity style={[styles.socialButton, styles.googleButton]}>
             <Ionicons name="logo-google" size={24} color="white" />
           </TouchableOpacity>
-        </View>
+        </View> */}
 
         {/* Don't have an account */}
         <View style={styles.signupContainer}>
-          <Text>Don't have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
+          <Text>Have a invite code? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate("InviteCode")}>
             <Text style={styles.link}>Sign Up</Text>
           </TouchableOpacity>
         </View>

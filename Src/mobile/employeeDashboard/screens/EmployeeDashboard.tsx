@@ -13,8 +13,6 @@ import { Ionicons } from "@expo/vector-icons";
 import Menu from "../components/Menu";
 import Notification from "../components/Notification";
 import ChatWindow from "../components/ChatWindow";
-import { mockShifts } from "../../../mockData/mockShifts";
-// import { Shift } from '../types/Shift';
 import ShiftCard from "../components/ShiftCard";
 import SchedulesScreen from "./SchedulesScreen";
 import IncomeScreen from "./IncomeScreen";
@@ -240,18 +238,6 @@ const EmployeeDashboard: React.FC = () => {
                 {contentTab === "schedules" && <SchedulesScreen />}
                 {contentTab === "income" && <IncomeScreen />}
               </View>
-
-              {/* Action Buttons Section
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.button, { backgroundColor: clockedIn ? ButtonRed : AccentColor }]}
-              onPress={handleClockInOut}
-            >
-              <Text style={styles.buttonText}>{clockedIn ? 'Clock Out' : 'Clock In'}</Text>
-            </TouchableOpacity>
-            
-            
-          </View> */}
             </>
           )}
           {activeTab === "leave" && (
