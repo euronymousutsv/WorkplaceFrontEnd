@@ -118,14 +118,16 @@ export const editUserDetail = async (reqData: EditUserDetailRequest) => {
   }
 };
 
+// logs out an user
 export const logOutUser = async () => {
   try {
     const accessToken = await getToken("accessToken");
-    const response = await API.post<ApiResponse<{}>>("logOutUser", {
+    const response = await API.get<ApiResponse<{}>>("logOutUser", {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
     });
+
     return response.data;
   } catch (error) {
     if (error instanceof AxiosError) {

@@ -12,6 +12,8 @@ import WelcomeScreen from "./src/auth/WelcomeScreen";
 import LoginScreen from "./src/auth/LoginScreen";
 import InviteCodeScreen from "./src/auth/InviteCodeScreen";
 import SignupScreen from "./src/auth/SignupScreen";
+import { SearchedServerScreen } from "./src/auth/SearchedServerScreen";
+import { searchServer } from "./src/api/server/serverApi";
 
 // Create a stack navigator
 const Stack = createStackNavigator();
@@ -98,7 +100,13 @@ const AppNavigator = () => {
         component={AdminDashboard}
         options={{ headerShown: false }}
       />
-
+      <Stack.Screen
+        name="SearchedServer"
+        component={SearchedServerScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
       <Stack.Screen
         name="ManagerDashboard"
         component={ManagerDashboard}

@@ -11,6 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { getToken } from "../../../api/auth/token";
 import { getAllChannelForCurrentServer } from "../../../api/server/channelApi";
 import { ApiError } from "../../../api/utils/apiResponse";
+import { ChannelResponse } from "../../../api/server/server";
 
 const { width } = Dimensions.get("window");
 
@@ -35,15 +36,15 @@ const Menu = ({
   activeChannel,
 }: MenuProps) => {
   const slideAnimation = new Animated.Value(-width); // Start off-screen to the left
-  const [channels, setChannels] = useState([{}]);
+  const [channels, setChannels] = useState<ChannelResponse[]>([]);
 
   const handleGetAllChannels = async () => {
     const serverId = await getToken("serverId");
     const res = await getAllChannelForCurrentServer(serverId ?? "");
 
     if (res instanceof ApiError) {
-      console.log(res.message);
-    } else if ("statusCode" in res && "data" in res) {
+      console.log(res.message, "12121");
+    } else {
       res.data.forEach((channel) => {
         setChannels((prevChannels) => [...prevChannels, channel]);
       });

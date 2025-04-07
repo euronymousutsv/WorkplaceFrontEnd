@@ -1,17 +1,53 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  Platform,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { searchServer } from "../api/server/serverApi";
+import { ApiError, ApiResponse } from "../api/utils/apiResponse";
+import { SearchServerResponse } from "../api/server/server";
+import Toast from "react-native-toast-message";
+import { KeyboardAvoidingView } from "react-native";
+import SignupScreen from "./SignupScreen";
+import { SearchedServerScreen } from "./SearchedServerScreen";
 
 const InviteCodeScreen = ({ navigation }: { navigation: any }) => {
-  const [inviteCode, setInviteCode] = useState<string>(''); // Store invite code input
+  const [inviteCode, setInviteCode] = useState<string>(""); // Store invite code input
 
-  const handleSubmit = () => {
-    if (inviteCode.length !== 8) {
-      Alert.alert('Error', 'Invite code must be 8 characters long.');
-    } else {
-      console.log('Invite Code Submitted:', inviteCode);
-      // Navigate to the next screen or perform some other action after success
-      navigation.navigate('SignUp'); // Navigate to the signup screen
+  const handleSubmit = async () => {
+    try {
+      if (inviteCode.length !== 8) {
+        Alert.alert("Error", "Invite code must be 8 characters long.");
+      } else {
+        const res = await searchServer(inviteCode);
+        if (res instanceof ApiError) {
+          Toast.show({
+            type: "error",
+            text1: res.message,
+            position: "bottom",
+            swipeable: false,
+            bottomOffset: 40,
+          });
+        } else {
+          console.log(res.data.data.id);
+          // navigation.navigate("SignUp");
+          navigation.navigate("SearchedServer", {
+            searchServer: res.data.data,
+          });
+        }
+      }
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Something Went Wrong",
+        position: "bottom",
+      });
     }
   };
 
@@ -20,17 +56,20 @@ const InviteCodeScreen = ({ navigation }: { navigation: any }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
       {/* Back Button */}
       <TouchableOpacity style={styles.backButton} onPress={handleBack}>
         <Ionicons name="arrow-back" size={29} color="black" />
       </TouchableOpacity>
-
       {/* Invite Code Input Form */}
       <View style={styles.contentContainer}>
         <Text style={styles.title}>Enter Invite Code</Text>
 
         <TextInput
+          autoFocus={true}
           style={styles.input}
           placeholder="Enter 8-character invite code"
           value={inviteCode}
@@ -40,17 +79,17 @@ const InviteCodeScreen = ({ navigation }: { navigation: any }) => {
         />
 
         <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitButtonText}>Submit</Text>
+          <Text style={styles.submitButtonText}>Search</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FDFDFF', // Off-White background
+    backgroundColor: "#FDFDFF", // Off-White background
     padding: 20,
   },
   backButton: {
@@ -59,40 +98,40 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginTop: 50,
     flexGrow: 1,
   },
   title: {
-    fontSize: Platform.OS === 'web' ? 30 : 24,
-    fontWeight: 'bold',
-    color: '#393D3F', // Charcoal Grey
+    fontSize: Platform.OS === "web" ? 30 : 24,
+    fontWeight: "bold",
+    color: "#393D3F", // Charcoal Grey
     marginBottom: 20,
-    textAlign: 'center',
+    textAlign: "center",
   },
   input: {
-    width: '80%',
-    padding: Platform.OS === 'web' ? 15 : 20, // Larger padding for mobile
+    width: "80%",
+    padding: Platform.OS === "web" ? 15 : 20, // Larger padding for mobile
     borderWidth: 3,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     marginBottom: 15,
     borderRadius: 25,
     fontSize: 16,
   },
   submitButton: {
-    backgroundColor: '#4A90E2',
-    padding: Platform.OS === 'web' ? 15 : 20, // Larger padding for mobile
+    backgroundColor: "#4A90E2",
+    padding: Platform.OS === "web" ? 15 : 20, // Larger padding for mobile
     borderRadius: 25,
-    width: '80%',
-    alignItems: 'center',
+    width: "80%",
+    alignItems: "center",
     marginTop: 20,
     marginBottom: 30,
   },
   submitButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 });
 

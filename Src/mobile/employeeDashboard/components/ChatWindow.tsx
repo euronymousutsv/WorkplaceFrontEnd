@@ -12,12 +12,13 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { Chats, fetchChats } from "../../../api/chatApi";
+import { fetchChats } from "../../../api/chat/chatApi";
 import { ApiError } from "../../../api/utils/apiResponse";
 import { getToken } from "../../../api/auth/token";
 import JwtDecode from "jwt-decode";
 import JWT from "expo-jwt";
 import socket from "../../../config/Socket";
+import { FlatList } from "react-native";
 
 // Props for ChatWindow component
 type ChatWindowProps = {
@@ -38,15 +39,17 @@ const ChatWindow = ({
 
   const handleGetMessage = async () => {
     const res = await fetchChats(activeChannelId);
+    console.log(activeChannelId);
 
     if (res instanceof ApiError) {
       console.log(res.message, "...");
-    } else if (Array.isArray(res)) {
-      console.log("Chats fetched successfully:", res);
-      setMessages((prevMsg) => [...prevMsg, ...res]);
+    } else {
+      console.log("Chats fetched successfully:", res.data.chats, "-----------");
 
-      if (res.length > 1) {
-        console.log(res[1], "Additional chat log");
+      setMessages((prevMsg) => [...prevMsg, ...res.data.chats]);
+
+      if (res.data.chats.length > 1) {
+        console.log("Additional chat log");
       }
     }
   };
@@ -55,6 +58,7 @@ const ChatWindow = ({
 
   // Update messages when the active channel changes
   useEffect(() => {
+    setMessages([]);
     handleGetMessage();
     hideBottomNav();
   }, [activeChannelId, hideBottomNav]);
@@ -78,7 +82,7 @@ const ChatWindow = ({
   });
 
   // Send text message handler
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (newMessage.trim() === "") return;
 
     const now = new Date();
@@ -89,19 +93,23 @@ const ChatWindow = ({
     const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
     const timeString = `${formattedHours}:${formattedMinutes} ${ampm}`;
 
-    const userId = getUserId();
-    const newText = new Chats({
+    const userId = await getUserId();
+    const newText: Chats = {
       id: timeString,
-      userId: userId,
+
+      userId: userId ?? "",
       message: newMessage,
       channelId: activeChannelId,
-      createdAt: minutes,
+      createdAt: new Date(),
       Employee: {
         firstName: "You",
         email: "",
+        phoneNumber: "",
+        employmentStatus: "Active",
+        role: "employee",
         profileImage: "",
       },
-    });
+    };
     if (socket) {
       socket.emit("sendMessage", newText);
     }
@@ -119,18 +127,21 @@ const ChatWindow = ({
 
     if (!result.canceled && result.assets && result.assets[0].uri) {
       const userId = getUserId();
-      const newText = new Chats({
-        id: Date.now().toString(),
-        userId: userId,
-        message: result.assets[0].uri,
+      const newText: Chats = {
+        id: Date.now().toLocaleString(),
+        userId: (await userId) ?? "",
+        message: newMessage,
         channelId: activeChannelId,
-        createdAt: Date.now(),
+        createdAt: new Date(),
         Employee: {
           firstName: "You",
           email: "",
+          phoneNumber: "",
+          employmentStatus: "Active",
+          role: "employee",
           profileImage: "",
         },
-      });
+      };
       if (socket) {
         socket.emit("sendMessage", newText);
       }
@@ -163,41 +174,53 @@ const ChatWindow = ({
         <Text style={styles.channelName}>{activeChannelName}</Text>
       </View>
 
-      <ScrollView style={styles.messagesContainer} ref={scrollViewRef}>
-        {messages.map((msg, index) => (
+      <FlatList
+        style={styles.messagesContainer}
+        data={messages}
+        keyExtractor={(item, index) => item.id || index.toString()}
+        renderItem={({ item }) => (
           <View
-            key={msg.id || index}
             style={[
               styles.messageWrapper,
-              msg.Employee?.firstName === "userId" && styles.myMessageWrapper,
+              item.Employee?.firstName === "userId" && styles.myMessageWrapper,
             ]}
           >
             <View
               style={[
                 styles.message,
-                msg.Employee?.firstName === "You" && styles.myMessage,
+                item.Employee?.firstName === "You" && styles.myMessage,
               ]}
             >
               <View style={styles.messageHeader}>
                 <Text style={styles.messageUser}>
-                  {msg.Employee?.firstName}
+                  {item.Employee?.firstName}
                 </Text>
                 <Text style={styles.messageTime}>
-                  {new Date(msg.createdAt!).toLocaleTimeString()}
+                  {new Date(item.createdAt!).toLocaleTimeString()}
                 </Text>
               </View>
-              {msg.Employee?.profileImage ? (
+              {item.Employee?.profileImage ? (
                 <Image
-                  source={{ uri: msg.Employee.profileImage }}
+                  source={{ uri: item.Employee.profileImage }}
                   style={{ width: 200, height: 200, borderRadius: 8 }}
                 />
               ) : (
-                <Text style={styles.messageText}>{msg.message}</Text>
+                <Text style={styles.messageText}>{item.message}</Text>
               )}
             </View>
           </View>
-        ))}
-      </ScrollView>
+        )}
+        onContentSizeChange={() => {
+          // Scroll to the bottom after rendering new content
+          setTimeout(() => {
+            scrollViewRef.current?.scrollToEnd({ animated: true });
+          }, 100);
+        }}
+        // Additional FlatList props to improve scrolling performance
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+      />
 
       <View style={styles.inputContainer}>
         <TextInput
