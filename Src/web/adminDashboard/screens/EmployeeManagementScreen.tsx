@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   Modal,
   Alert,
+  Image,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import Header from "../components/Header";
@@ -17,58 +18,38 @@ import Sidebar from "../components/Sidebar";
 import { fetchAllUsers } from "../../../api/server/serverApi";
 import { ApiError, ApiResponse } from "../../../api/utils/apiResponse";
 import { AxiosError } from "axios";
+import { MaterialIcons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
 import { EmployeeDetails } from "../../../api/server/server";
+import { kickEmployee } from "../../../api/server/serverApi";
+
 
 interface Employee {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  role: string;
-  location: string;
-  status: string;
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    role: string;
+    
+    status: string;
+    profileImage?: string;
+    joinedDate?: string;
+    updatedDate?: string;
 }
 
-const initialEmployees: Employee[] = [
-  {
-    id: "EMP001",
-    name: "Sabin",
-    email: "sabin@example.com",
-    phone: "0412345678",
-    role: "Employee",
-    location: "Melbourne",
-    status: "Active",
-  },
-  {
-    id: "EMP002",
-    name: "Pranish",
-    email: "pranish@example.com",
-    phone: "0423456789",
-    role: "Manager",
-    location: "Sydney",
-    status: "On Leave",
-  },
-  {
-    id: "EMP003",
-    name: "Aashish",
-    email: "aashish@example.com",
-    phone: "0434567890",
-    role: "Employee",
-    location: "Geelong",
-    status: "Active",
-  },
-];
-
 const formFields: (keyof Employee)[] = [
-  "id",
-  "name",
-  "email",
-  "phone",
-  "role",
-  "location",
-  "status",
-];
+    "id",
+    "firstName",
+  "lastName",
+    "email",
+    "phone",
+    "role",
+    
+    "status",
+    
+  ];
+
 const roles = ["Choose Role", "Admin", "Manager", "Employee"];
 const statuses = [
   "Choose Employment Status",
@@ -84,16 +65,17 @@ const EmployeeManagementScreen = () => {
     Dimensions.get("window").width
   );
   const [search, setSearch] = useState("");
-  const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [formData, setFormData] = useState<Employee>({
     id: "",
-    name: "",
+    firstName: "",
+    lastName:"",
     email: "",
     phone: "",
     role: "",
-    location: "",
+    
     status: "",
   });
   const [errors, setErrors] = useState<{ [K in keyof Employee]?: string }>({});
@@ -102,11 +84,13 @@ const EmployeeManagementScreen = () => {
 
   const isMobile = screenWidth <= 768;
   const [employeesArr, setEmployeesArr] = useState<EmployeeDetails[]>([]);
+
+
   const handleFetchUsers = async () => {
     try {
       const res = await fetchAllUsers();
-      setEmployees([]);
-
+     
+  
       if (res instanceof ApiError || res instanceof AxiosError) {
         console.log(res.message);
         Toast.show({
@@ -116,7 +100,39 @@ const EmployeeManagementScreen = () => {
           position: "bottom",
         });
       } else {
-        setEmployeesArr(res.data);
+        
+        const employeeList: Employee[] = res.data.map((emp: EmployeeDetails) => {
+            
+    
+            return {
+              id: emp.Employee.id,
+            //   firstNamename: `${emp.Employee.firstName} ${emp.Employee.lastName}`,
+            firstName:emp.Employee.firstName,
+              lastName: emp.Employee.lastName,
+              email: emp.Employee.email,
+              phone: emp.Employee.phoneNumber,
+              role:
+                emp.Employee.role.charAt(0).toUpperCase() +
+                emp.Employee.role.slice(1),
+              
+              status:
+                typeof emp.Employee.employmentStatus === "string"
+                  ? emp.Employee.employmentStatus
+                  : Object.keys(emp.Employee.employmentStatus)[0],
+              profileImage: emp.Employee.profileImage ?? undefined,
+              joinedDate: emp.createdAt
+                ? new Date(emp.createdAt).toLocaleDateString()
+                : "Unknown",
+              updatedDate: emp.updatedAt
+                ? new Date(emp.updatedAt).toLocaleDateString()
+                : "Unknown",
+            };
+          });
+          
+          
+          console.log("✅ Mapped Employees:", employeeList);
+        setEmployees(employeeList);
+  
         Toast.show({
           text1: "Successfully fetched all employees",
           type: "success",
@@ -126,9 +142,10 @@ const EmployeeManagementScreen = () => {
         });
       }
     } catch (error) {
-      console.log("?....");
+      console.log("Unexpected error during fetchAllUsers()");
     }
   };
+  
 
   useEffect(() => {
     handleFetchUsers();
@@ -150,9 +167,9 @@ const EmployeeManagementScreen = () => {
   };
 
   const sortedEmployees = [...employees].sort((a, b) => {
-    if (!sortBy) return 0;
-    const fieldA = a[sortBy].toString().toLowerCase();
-    const fieldB = b[sortBy].toString().toLowerCase();
+    if (!formFields.includes(sortBy as keyof Employee)) return 0;
+    const fieldA = a[sortBy as keyof Employee]?.toString().toLowerCase() || "";
+    const fieldB = b[sortBy as keyof Employee]?.toString().toLowerCase() || "";
     if (fieldA < fieldB) return sortOrder === "asc" ? -1 : 1;
     if (fieldA > fieldB) return sortOrder === "asc" ? 1 : -1;
     return 0;
@@ -160,7 +177,7 @@ const EmployeeManagementScreen = () => {
 
   const filteredEmployees = sortedEmployees.filter(
     (emp: Employee) =>
-      emp.name.toLowerCase().includes(search.toLowerCase()) ||
+    //   emp.name.toLowerCase().includes(search.toLowerCase()) ||
       emp.id.toLowerCase().includes(search.toLowerCase()) ||
       emp.email.toLowerCase().includes(search.toLowerCase())
   );
@@ -175,19 +192,48 @@ const EmployeeManagementScreen = () => {
 
   const handleEdit = (emp: Employee) => {
     setEditingEmployee(emp);
-    setFormData(emp);
+    setFormData({
+      id: emp.id,
+      firstName: emp.firstName,
+      lastName: emp.lastName,
+      email: emp.email,
+      phone: emp.phone,
+      role: emp.role,
+      status: emp.status,
+      joinedDate: emp.joinedDate,
+      updatedDate: emp.updatedDate,
+      profileImage: emp.profileImage,
+    });
     setModalVisible(true);
     setErrors({});
   };
+  
 
-  const handleDelete = (empId: string) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this employee?"
-    );
-    if (confirmed) {
-      setEmployees((prev) => prev.filter((emp) => emp.id !== empId));
+  const handleKickEmployee = async (userId: string) => {
+    try {
+      const res = await kickEmployee(userId);
+      if (res instanceof ApiError || res instanceof AxiosError) {
+        Toast.show({
+          text1: "Error",
+          text2: res.message,
+          type: "error",
+          position: "bottom",
+        });
+      } else {
+        Toast.show({
+          text1: "Employee removed successfully",
+          type: "success",
+          position: "bottom",
+        });
+  
+        // remove employee from local state
+        setEmployees((prev) => prev.filter((emp) => emp.id !== userId));
+      }
+    } catch (error) {
+      console.error("Unexpected error while kicking employee:", error);
     }
   };
+  
 
   //validation
   const validateEmail = (email: string) => /^\S+@\S+\.\S+$/.test(email);
@@ -235,11 +281,12 @@ const EmployeeManagementScreen = () => {
     setEditingEmployee(null);
     setFormData({
       id: "",
-      name: "",
+      firstName: "",
+      lastName:"",
       email: "",
       phone: "",
       role: "",
-      location: "",
+      
       status: "",
     });
     setErrors({});
@@ -265,6 +312,14 @@ const EmployeeManagementScreen = () => {
     }
   };
 
+  const getInitials = (name: string) =>
+    name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
+  
+
   return (
     <SafeAreaView style={styles.container}>
       <Header
@@ -284,7 +339,12 @@ const EmployeeManagementScreen = () => {
           { marginLeft: isMobile ? 0 : isSidebarOpen ? 250 : 0 },
         ]}
       >
-        <Text style={styles.title}>Employee Management</Text>
+        <Text style={styles.title}>Employee Management
+        <TouchableOpacity onPress={handleFetchUsers} style={styles.reloadIcon}>
+            <MaterialIcons name="refresh" size={24} color="#4A90E2" />
+          </TouchableOpacity>
+        </Text>
+       
 
         <View style={{ paddingHorizontal: 20, marginTop: 20 }}>
           <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}>
@@ -310,11 +370,12 @@ const EmployeeManagementScreen = () => {
               setEditingEmployee(null);
               setFormData({
                 id: "",
-                name: "",
+                firstName: "",
+                lastName:"",
                 email: "",
                 phone: "",
                 role: "",
-                location: "",
+                
                 status: "",
               });
               setModalVisible(true);
@@ -326,44 +387,64 @@ const EmployeeManagementScreen = () => {
         </View>
 
         <ScrollView horizontal={!isMobile}>
-          <View style={styles.table}>
+        <View style={styles.table}>
             <View style={styles.tableHeader}>
-              {formFields.map((field) => (
-                <TouchableOpacity
-                  key={field}
-                  style={styles.headerCell}
-                  onPress={() => handleSort(field)}
-                >
-                  <Text style={{ fontWeight: "bold", textAlign: "center" }}>
-                    {field.toUpperCase()}{" "}
-                    {sortBy === field ? (sortOrder === "asc" ? "↑" : "↓") : ""}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-              <Text style={styles.headerCell}>Actions</Text>
+            
+  <Text style={styles.headerCell}>ID</Text>
+  <Text style={styles.headerCell}>NAME</Text>
+  <Text style={styles.headerCell}>EMAIL</Text>
+  <Text style={styles.headerCell}>PHONE</Text>
+  <Text style={styles.headerCell}>ROLE</Text>
+  
+  <Text style={styles.headerCell}>STATUS</Text>
+  <Text style={styles.headerCell}>JOINED DATE</Text>
+  <Text style={styles.headerCell}>UPDATED DATE</Text>
+  <Text style={styles.headerCell}>ACTIONS</Text>
+
+
             </View>
 
             {filteredEmployees.map((emp, index) => (
               <View key={index} style={styles.row}>
-                <Text style={styles.cell}>{emp.id}</Text>
-                <Text style={styles.cell}>{emp.name}</Text>
-                <Text style={styles.cell}>{emp.email}</Text>
-                <Text style={styles.cell}>{emp.phone}</Text>
-                <View style={[styles.cell, styles.roleBadgeWrapper]}>
-                  <Text style={[styles.roleBadge, getRoleBadgeStyle(emp.role)]}>
-                    {emp.role}
-                  </Text>
-                </View>
-                <Text style={styles.cell}>{emp.location}</Text>
-                <Text style={styles.cell}>{emp.status}</Text>
+                {formFields.map((field) => {
+                  if (field === "firstName") {
+                    return (
+                      <View key="name" style={[styles.cell, styles.nameCell]}>
+                        {emp.profileImage ? (
+                          <Image source={{ uri: emp.profileImage }} style={styles.avatar} />
+                        ) : (
+                          <View style={styles.initialsCircle}>
+                            <Text style={styles.initialsText}>{getInitials(emp.firstName + " " + emp.lastName)}</Text>
+                          </View>
+                        )}
+                        <Text style={styles.nameText}>{emp.firstName} {emp.lastName}</Text>
+                      </View>
+                    );
+                  } else if (field === "lastName") {
+                    return null;
+                  } else if (field === "role") {
+                    return (
+                      <View key={field} style={[styles.cell, styles.roleBadgeWrapper]}>
+                        <Text style={[styles.roleBadge, getRoleBadgeStyle(emp.role)]}>
+                          {emp.role}
+                        </Text>
+                      </View>
+                    );
+                  }
+                  return (
+                    <Text key={field} style={styles.cell}>{emp[field] || "-"}</Text>
+                  );
+                })}
+                {/* Show these two fields separately */}
+    <Text style={styles.cell}>{emp.joinedDate || "-"}</Text>
+    <Text style={styles.cell}>{emp.updatedDate || "-"}</Text>
+
                 <View style={styles.actionButtons}>
                   <TouchableOpacity onPress={() => handleEdit(emp)}>
                     <Text style={styles.actionText}>Edit</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => handleDelete(emp.id)}>
-                    <Text style={[styles.actionText, { color: "red" }]}>
-                      Delete
-                    </Text>
+                  <TouchableOpacity onPress={() => handleKickEmployee(emp.id)}>
+                    <Text style={[styles.actionText, { color: "red" }]}>Delete</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -502,13 +583,14 @@ const styles = StyleSheet.create({
   headerCell: {
     flex: 1,
     fontWeight: "bold",
-    paddingHorizontal: 8,
+    paddingHorizontal: 68,
     textAlign: "center",
   },
   cell: {
     flex: 1,
-    paddingHorizontal: 8,
+    // paddingHorizontal: 20,
     textAlign: "center",
+    
   },
   actionButtons: {
     flex: 1,
@@ -552,6 +634,42 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 6,
+  },
+  reloadIcon: {
+    marginLeft: 10,
+
+    // padding: 4,
+  },
+  avatarCell: {
+    width: 60,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  initialsCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#ccc",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  initialsText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  nameText: {
+    fontWeight: "500",
+  },
+  nameCell: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 8,
   },
 });
 

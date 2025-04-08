@@ -14,8 +14,8 @@ import { getToken } from "./token";
 const API = axios.create({
   baseURL:
     // "https://8c1f-2406-2d40-4d55-6c10-bdc3-9abf-864e-c64f.ngrok-free.app",
-    // "https://workplace-zdzja.ondigitalocean.app/api/v1/auth/",
-    "http://localhost:3000/api/v1/auth/",
+    "https://workplace-zdzja.ondigitalocean.app/api/v1/auth/",
+    // "http://localhost:3000/api/v1/auth/",
 
   headers: {
     "Content-Type": "application/json",
