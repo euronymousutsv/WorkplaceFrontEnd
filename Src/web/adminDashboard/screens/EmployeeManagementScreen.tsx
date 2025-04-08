@@ -237,7 +237,9 @@ const EmployeeManagementScreen = () => {
 
   //validation
   const validateEmail = (email: string) => /^\S+@\S+\.\S+$/.test(email);
-  const validatePhone = (phone: string) => /^\d{10}$/.test(phone);
+  const validatePhone = (phone: string) => 
+    /^(\+614|614|04)\d{8}$/.test(phone);
+  
 
   const validateForm = () => {
     const newErrors: { [K in keyof Employee]?: string } = {};
