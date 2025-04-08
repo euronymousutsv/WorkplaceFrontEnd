@@ -24,7 +24,9 @@ import { getToken, saveToken } from "../../../api/auth/token";
 import { getAllChannelForCurrentServer } from "../../../api/server/channelApi";
 import { getShiftsForLoggedInUser, Shifts } from "../../../api/auth/shiftApi";
 import { Shift } from "../../../types/Shift";
-
+// Only import react-native-gesture-handler on native platforms
+import "react-native-gesture-handler";
+import AdminDashboard from "../../../web/adminDashboard/screens/AdminDashboard";
 const PrimaryColor = "#4A90E2";
 const AccentColor = "#2ECC71";
 const BackgroundColor = "#FDFDFF";
@@ -153,9 +155,9 @@ const EmployeeDashboard: React.FC = () => {
                 >
                   <Ionicons name="menu" size={24} color="white" />
                 </TouchableOpacity>
-                <Text style={styles.headerText}>
+                {/* <Text style={styles.headerText}>
                   Welcome, {firstName} {lastName}!
-                </Text>
+                </Text> */}
                 <TouchableOpacity
                   style={styles.notificationButton}
                   onPress={toggleNotification}

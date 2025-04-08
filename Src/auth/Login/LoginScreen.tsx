@@ -11,13 +11,13 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons"; // Correct import for Ionicons
-import { useAuth } from "../context/AuthContext"; // Assuming you have the AuthContext to manage role
+import { useAuth } from "../../context/AuthContext"; // Assuming you have the AuthContext to manage role
 import JWT from "expo-jwt"; // Correct import for jwt-decode
 
-import { saveToken } from "../api/auth/token";
-import { ApiError, ApiResponse } from "../api/utils/apiResponse";
-import { loginUser } from "../api/auth/authApi";
-import { validateEmail } from "./SignupSecond";
+import { Plat, saveToken } from "../../api/auth/token";
+import { ApiError, ApiResponse } from "../../api/utils/apiResponse";
+import { loginUser } from "../../api/auth/authApi";
+import { validateEmail } from "../Signup/SignupSecond";
 
 const LoginScreen = ({ navigation }: { navigation: any }) => {
   const { setUserRole, setIsAuthenticated } = useAuth(); // Get AuthContext functions
@@ -45,10 +45,10 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
       }
 
       setLoading(true);
-      console.log("Login attempt with:", { Email, Password });
       const response = await loginUser(Email, Password);
-      console.log(response);
+
       if ("statusCode" in response && "data" in response) {
+        setLoading(false);
         const accessToken = response.data?.accessToken ?? "";
         const refreshToken = response.data?.refreshToken ?? "";
 
@@ -57,8 +57,15 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
           // An access token will give access to the application wheras, an refresh token will beuised to generate a new accesstoken.
           // accessToken will be valid for short amount of time while the refresh tokenw ill be valid for longer duration.
           // This makes it easir for user to not ogin time and again.
-          saveToken("accessToken", accessToken);
-          saveToken("refreshToken", refreshToken);
+          if (Platform.OS === "web") {
+            // Logic for web
+            saveToken("accessToken", accessToken, Plat.WEB);
+            saveToken("refreshToken", refreshToken, Plat.WEB);
+          } else {
+            // Logic for mobile (Android or iOS)
+            saveToken("accessToken", accessToken);
+            saveToken("refreshToken", refreshToken);
+          }
 
           // Decode the JWT token to extract role and other details
           const decodedToken = JWT.decode(accessToken, null); // Use default() if you're importing with * as
@@ -139,17 +146,19 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
           }
         }
       } else if (response instanceof ApiError) {
+        setLoading(false);
         setError(response.message);
         console.error("No token received from backend");
       } else {
-        console.log("Aadas");
+        setLoading(false);
+        setError("Something went wrong");
       }
     } catch (err) {
+      setLoading(false);
+
       console.error("Error during login:", err);
       setError("Invalid credentials");
     }
-
-    setLoading(false);
   };
   return (
     <KeyboardAvoidingView
@@ -247,8 +256,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingBottom: 20,
+
     fontSize: Platform.OS === "web" ? 16 : 10,
-    flexDirection: Platform.OS === "web" ? "row" : "column", // Row for web, column for mobile
+    // flexDirection: Platform.OS === "web" ? "row" : "column", // Row for web, column for mobile
+    flexDirection: "column", // Row for web, column for mobile
   },
   welcomeContainer: {
     width: Platform.OS === "web" ? "40%" : "100%", // Make "Welcome back" take up 40% width on web, full width on mobile
@@ -267,8 +278,9 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   formContainer: {
-    width: Platform.OS === "web" ? "60%" : "100%", // Form takes 60% width on web, full width on mobile
+    width: Platform.OS === "web" ? "100%" : "100%", // Form takes 60% width on web, full width on mobile
     alignItems: "center",
+
     marginTop: Platform.OS === "web" ? "5%" : "5%", // Add space on top for web
   },
   input: {

@@ -11,7 +11,7 @@ import {
 import { ApiResponse, ApiError } from "../utils/apiResponse";
 import { getToken } from "./token";
 
-export const API = axios.create({
+const API = axios.create({
   baseURL:
     // "https://8c1f-2406-2d40-4d55-6c10-bdc3-9abf-864e-c64f.ngrok-free.app",
     // "https://workplace-zdzja.ondigitalocean.app/api/v1/auth/",
@@ -22,10 +22,7 @@ export const API = axios.create({
   },
 });
 
-export const loginUser = async (
-  email: string,
-  password: string
-): Promise<any> => {
+const loginUser = async (email: string, password: string): Promise<any> => {
   try {
     const response = await API.post<ApiResponse<LoginResponse>>("login", {
       email,
@@ -42,7 +39,7 @@ export const loginUser = async (
   }
 };
 
-export const registerUser = async (userData: RegisterRequest) => {
+const registerUser = async (userData: RegisterRequest) => {
   try {
     console.log("Request payload:", userData); // Log the data being sent to the server
     const response = await API.post<ApiResponse<RegisterResponse>>(
@@ -62,7 +59,7 @@ export const registerUser = async (userData: RegisterRequest) => {
 };
 
 // Send OTP
-export const sendOTP = async (reqData: SendOTPRequest) => {
+const sendOTP = async (reqData: SendOTPRequest) => {
   try {
     console.log("Request payload:", reqData);
     const response = await API.post<ApiResponse<{}>>(
@@ -82,7 +79,7 @@ export const sendOTP = async (reqData: SendOTPRequest) => {
 };
 
 // Verify the OTP
-export const verifyOTP = async (reqData: VerifyOTPRequest) => {
+const verifyOTP = async (reqData: VerifyOTPRequest) => {
   try {
     console.log("Request payload:", reqData);
     const response = await API.post<ApiResponse<{}>>(
@@ -102,7 +99,7 @@ export const verifyOTP = async (reqData: VerifyOTPRequest) => {
 };
 
 // editUserDetail
-export const editUserDetail = async (reqData: EditUserDetailRequest) => {
+const editUserDetail = async (reqData: EditUserDetailRequest) => {
   try {
     console.log("Request payload:", reqData);
     const response = await API.post<ApiResponse<{}>>(
@@ -121,7 +118,7 @@ export const editUserDetail = async (reqData: EditUserDetailRequest) => {
 };
 
 // logs out an user
-export const logOutUser = async () => {
+const logOutUser = async () => {
   try {
     const accessToken = await getToken("accessToken");
     const response = await API.get<ApiResponse<{}>>("logOutUser", {
@@ -139,4 +136,13 @@ export const logOutUser = async () => {
       return new ApiError(400, {}, "Something went wrong");
     }
   }
+};
+
+export {
+  loginUser,
+  registerUser,
+  sendOTP,
+  verifyOTP,
+  editUserDetail,
+  logOutUser,
 };

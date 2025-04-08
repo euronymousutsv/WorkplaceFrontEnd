@@ -13,10 +13,10 @@ import {
   Alert,
 } from "react-native";
 import { useSignup } from "./SignUpContext";
-import { registerUser } from "../api/auth/authApi";
-import { RegisterRequest } from "../api/auth/auth";
+import { registerUser } from "../../api/auth/authApi";
+import { RegisterRequest } from "../../api/auth/auth";
 import { AxiosError } from "axios";
-import { ApiError } from "../api/utils/apiResponse";
+import { ApiError } from "../../api/utils/apiResponse";
 import Toast from "react-native-toast-message";
 
 const { width, height } = Dimensions.get("window");

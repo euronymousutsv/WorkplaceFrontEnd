@@ -53,6 +53,7 @@ const Menu = ({
   };
 
   useEffect(() => {
+    setChannels([]);
     const fetchData = async () => {
       await handleGetAllChannels();
     };

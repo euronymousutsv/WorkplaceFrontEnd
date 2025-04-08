@@ -28,7 +28,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#fff",
   },
-  
 });
 
 export default LoadingScreen;

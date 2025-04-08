@@ -8,16 +8,21 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import Toast from "react-native-toast-message";
-import WelcomeScreen from "./src/auth/WelcomeScreen";
-import LoginScreen from "./src/auth/LoginScreen";
-import InviteCodeScreen from "./src/auth/InviteCodeScreen";
-import { SearchedServerScreen } from "./src/auth/SearchedServerScreen";
-import { searchServer } from "./src/api/server/serverApi";
-import SignupFirstScreen from "./src/auth/SignupFirst";
-import SignupSecondScreen from "./src/auth/SignupSecond";
-import SignupPhoneScreen from "./src/auth/SignupPhone";
-import SignupPasswordScreen from "./src/auth/SignupPassword";
-import { SignupProvider } from "./src/auth/SignUpContext";
+import WelcomeScreen from "./src/auth/welcome/WelcomeScreen";
+import LoginScreen from "./src/auth/Login/LoginScreen";
+import InviteCodeScreen from "./src/auth/welcome/InviteCodeScreen";
+import { SearchedServerScreen } from "./src/auth/welcome/SearchedServerScreen";
+import SignupFirstScreen from "./src/auth/Signup/SignupFirst";
+import SignupSecondScreen from "./src/auth/Signup/SignupSecond";
+import SignupPhoneScreen from "./src/auth/Signup/SignupPhone";
+import SignupPasswordScreen from "./src/auth/Signup/SignupPassword";
+import { SignupProvider } from "./src/auth/Signup/SignUpContext";
+import EmployeeManagementScreen from "./src/web/adminDashboard/screens/EmployeeManagementScreen";
+import ClockInOutScreen from "./src/web/adminDashboard/screens/ClockInOutScreen";
+import SettingsScreen from "./src/web/adminDashboard/screens/SettingsScreen";
+import GrossPaymentScreen from "./src/web/adminDashboard/screens/GrossPaymentScreen";
+import LeaveRequestScreen from "./src/web/adminDashboard/screens/LeaveRequestScreen";
+import SchedulesScreen from "./src/web/adminDashboard/screens/SchedulesScreen";
 
 // Create a stack navigator
 const Stack = createStackNavigator();
@@ -61,6 +66,37 @@ const AppNavigator = () => {
       <Stack.Screen
         name="InviteCode"
         component={InviteCodeScreen}
+        options={{ headerShown: false }}
+      />
+
+      <Stack.Screen
+        name="SchedulesScreen"
+        component={SchedulesScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="ClockInOutScreen"
+        component={ClockInOutScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="EmployeeManagementScreen"
+        component={EmployeeManagementScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="SettingsScreen"
+        component={SettingsScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="GrossPaymentScreen"
+        component={GrossPaymentScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="LeaveRequestScreen"
+        component={LeaveRequestScreen}
         options={{ headerShown: false }}
       />
 

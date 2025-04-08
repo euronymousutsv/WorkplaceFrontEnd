@@ -1,7 +1,7 @@
 import axios, { AxiosError } from "axios";
 import { getToken } from "./token"; // Assuming you have this method to get the token
 
-export const API = axios.create({
+const API = axios.create({
   baseURL: "https://workplace-zdzja.ondigitalocean.app",
   //   "https://8c1f-2406-2d40-4d55-6c10-bdc3-9abf-864e-c64f.ngrok-free.app", // Change to your actual backend URL
   headers: {
@@ -10,10 +10,7 @@ export const API = axios.create({
 });
 
 // Fetch user details
-export const getCurrentUserDetails = async (
-  userId: any,
-  accessToken: string
-) => {
+const getCurrentUserDetails = async (userId: any, accessToken: string) => {
   try {
     // Retrieve the access token
     const accessToken = await getToken("accessToken");
@@ -42,7 +39,7 @@ export const getCurrentUserDetails = async (
 };
 
 // Edit user details (password, full name, phone, etc.) but password for now.
-export const editCurrentUserDetail = async (
+const editCurrentUserDetail = async (
   userId: string,
   token: string,
   password: string,
@@ -85,3 +82,5 @@ export const editCurrentUserDetail = async (
     }
   }
 };
+
+export { getCurrentUserDetails, editCurrentUserDetail };

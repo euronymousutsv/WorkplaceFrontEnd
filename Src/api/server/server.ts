@@ -33,6 +33,39 @@ export const enum Role {
   MANAGER = "manager",
 }
 
+export interface ChannelDetailsResponse {
+  id: string;
+  name: string;
+  highestRoleToAccessChannel: Role;
+  serverId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface EmployeeDetails {
+  id: string;
+  serverId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  Employee: Employee;
+}
+
+interface EmployeeStatus {
+  Active: "Active";
+  Inactive: "Inactive";
+}
+
+export interface Employee {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  employmentStatus: EmployeeStatus;
+  profileImage?: string | null;
+  role: Role;
+}
+
 export interface getAllChannelForCurrentServerResponse
   extends ChannelResponse {}
 export interface createChannelResponse extends ChannelResponse {}

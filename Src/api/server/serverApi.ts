@@ -1,46 +1,51 @@
 import axios, { AxiosError } from "axios";
 import { loginUser } from "../auth/authApi";
-import { getToken } from "../auth/token";
+import { getToken, Plat } from "../auth/token";
 import { ApiError, ApiResponse } from "../utils/apiResponse";
 import {
+  EmployeeDetails,
   joinAServerResponse,
   Role,
   SearchServerResponse,
   userJoinedServerResponse,
 } from "./server";
 
-export const API = axios.create({
+// creating an instance of axios api wth base url
+const API = axios.create({
   baseURL:
     // "https://workplace-zdzja.ondigitalocean.app/api/v1",
     // "https://8c1f-2406-2d40-4d55-6c10-bdc3-9abf-864e-c64f.ngrok-free.app/api/v1",
-    "http://localhost:3000/api/v1",
+    "http://localhost:3000/api/v1/server/",
 
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-API.interceptors.request.use(async (config) => {
-  if (config.headers["Skip-Auth"]) {
-    delete config.headers["Skip-Auth"]; // Clean it up before sending the request
-    return config;
-  } else {
-    const token = await getToken("accessToken");
-    console.log("the token is :::::", token);
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  }
-});
+// // adding accesstoken in the request
+// API.interceptors.request.use(async (config) => {
+//   try {
+//     const token = await getToken("accessToken");
+//     console.log("the token is :::::", token);
+//     if (token) {
+//       config.headers.Authorization = `Bearer ${token}`;
+//     }
+//   } catch (error) {
+//     console.log("Token is missing");
+//   }
+//   return config;
+// });
 
-export const getLoggedInUserServer = async () => {
+const getLoggedInUserServer = async () => {
   try {
     const accessToken = await getToken("accessToken");
     const response = await API.get<ApiResponse<userJoinedServerResponse>>(
-      "/server/getLoggedInUserServer",
+      "getLoggedInUserServer",
       {
         params: { accessToken },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       }
     );
 
@@ -55,14 +60,19 @@ export const getLoggedInUserServer = async () => {
   }
 };
 
-export const joinAServer = async (inviteCode: string) => {
+const joinAServer = async (inviteCode: string) => {
   try {
     const accessToken = await getToken("accessToken");
     const response = await API.post<ApiResponse<joinAServerResponse>>(
-      "/server/joinServer",
+      "joinServer",
       {
         accessToken,
         inviteCode,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       }
     );
     return response.data;
@@ -77,17 +87,13 @@ export const joinAServer = async (inviteCode: string) => {
 };
 
 //search  server with invite code
-export const searchServer = async (inviteCode: string) => {
+const searchServer = async (inviteCode: string) => {
   try {
     const response = await API.post<ApiResponse<SearchServerResponse>>(
-      "/server/search",
+      "search",
       {},
       {
         params: { inviteCode },
-
-        headers: {
-          "Skip-Auth": true,
-        },
       }
     );
     return response;
@@ -102,13 +108,21 @@ export const searchServer = async (inviteCode: string) => {
 };
 
 // register a new Server
-export const registerServer = async (serverName: string, ownerId: string) => {
+const registerServer = async (serverName: string, ownerId: string) => {
   try {
     const accessToken = await getToken("accessToken");
-    const response = await API.post<ApiResponse<{}>>("/server/register", {
-      accessToken,
-      ownerId,
-    });
+    const response = await API.post<ApiResponse<{}>>(
+      "register",
+      {
+        accessToken,
+        ownerId,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
 
     return response.data;
   } catch (error) {
@@ -123,12 +137,18 @@ export const registerServer = async (serverName: string, ownerId: string) => {
 
 // change server owner
 // todo:: Chaek this later
-export const changeServerOwnership = async (newOwnerId: string) => {
+const changeServerOwnership = async (newOwnerId: string) => {
   try {
+    const accessToken = await getToken("accessToken");
     const response = await API.put<ApiResponse<{}>>(
-      "/server/changeServerOwnership",
+      "changeServerOwnership",
       {
         newOwnerId,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       }
     );
 
@@ -144,10 +164,14 @@ export const changeServerOwnership = async (newOwnerId: string) => {
 };
 
 // delete a server
-export const deleteServer = async (password: string) => {
+const deleteServer = async (password: string) => {
   try {
-    const response = await API.delete<ApiResponse<{}>>("/server/deleteServer", {
-      headers: { "user-password": password },
+    const accessToken = await getToken("accessToken", Plat.WEB);
+    const response = await API.delete<ApiResponse<{}>>("deleteServer", {
+      headers: {
+        "user-password": password,
+        Authorization: `Bearer ${accessToken}`,
+      },
     });
 
     return response.data;
@@ -162,10 +186,14 @@ export const deleteServer = async (password: string) => {
 };
 
 //kick an employee
-export const kickEmployee = async (userId: string) => {
+const kickEmployee = async (userId: string) => {
   try {
-    const response = await API.delete<ApiResponse<{}>>("/server/kickEmployee", {
+    const accessToken = await getToken("accessToken", Plat.WEB);
+    const response = await API.delete<ApiResponse<{}>>("kickEmployee", {
       params: { userId },
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
     });
     return response.data;
   } catch (error) {
@@ -179,10 +207,15 @@ export const kickEmployee = async (userId: string) => {
 };
 
 //update a user role
-export const updateRole = async (userId: string, role: Role) => {
+const updateRole = async (userId: string, role: Role) => {
   try {
-    const response = await API.delete<ApiResponse<{}>>("/server/updateRole", {
+    const accessToken = await getToken("accessToken");
+
+    const response = await API.delete<ApiResponse<{}>>("updateRole", {
       params: { userId, role },
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
     });
     return response.data;
   } catch (error) {
@@ -193,4 +226,43 @@ export const updateRole = async (userId: string, role: Role) => {
       return new ApiError(400, {}, "Something went wrong");
     }
   }
+};
+
+// get all users with a server
+const fetchAllUsers = async () => {
+  const accessToken = await getToken("accessToken", Plat.WEB);
+  console.log("---------", accessToken, "----");
+  try {
+    const response = await API.get<ApiResponse<[EmployeeDetails]>>(
+      "fetchAllUsers",
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("API error:", error);
+
+    if (error instanceof AxiosError) {
+      const err = error.response?.data as ApiError<{}>;
+      return new ApiError(err.statusCode, {}, err.message);
+    } else {
+      return new ApiError(400, {}, "Something went wrong");
+    }
+  }
+};
+
+export {
+  updateRole,
+  kickEmployee,
+  deleteServer,
+  changeServerOwnership,
+  registerServer,
+  searchServer,
+  joinAServer,
+  getLoggedInUserServer,
+  fetchAllUsers,
 };

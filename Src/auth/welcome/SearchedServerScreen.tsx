@@ -1,5 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
-import { SearchServerResponse } from "../api/server/server";
+import { SearchServerResponse } from "../../api/server/server";
 import {
   View,
   Text,
@@ -20,7 +20,7 @@ export const SearchedServerScreen = ({ navigation }: { navigation: any }) => {
       <View style={styles.centeredView}>
         <View style={styles.imgContainer}>
           <Image
-            source={require("../../assets/wpslogo.png")}
+            source={require("../../../assets/wpslogo.png")}
             style={styles.image}
           />
         </View>

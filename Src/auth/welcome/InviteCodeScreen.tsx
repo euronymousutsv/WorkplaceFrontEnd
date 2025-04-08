@@ -9,14 +9,13 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { searchServer } from "../api/server/serverApi";
-import { ApiError, ApiResponse } from "../api/utils/apiResponse";
-import { SearchServerResponse } from "../api/server/server";
+import { searchServer } from "../../api/server/serverApi";
+import { ApiError, ApiResponse } from "../../api/utils/apiResponse";
+import { SearchServerResponse } from "../../api/server/server";
 import Toast from "react-native-toast-message";
 import { KeyboardAvoidingView } from "react-native";
-import SignupScreen from "./SignupScreen";
 import { SearchedServerScreen } from "./SearchedServerScreen";
-import { useSignup } from "./SignUpContext";
+import { useSignup } from "../Signup/SignUpContext";
 
 const InviteCodeScreen = ({ navigation }: { navigation: any }) => {
   const [inviteCode, setInviteCode] = useState<string>(""); // Store invite code input

@@ -22,7 +22,7 @@ const WelcomeScreen = ({ navigation }: { navigation: any }) => {
         <View style={styles.rowContainer}>
           <View style={styles.logoContainer}>
             <Image
-              source={require("../../assets/wpslogo.png")}
+              source={require("../../../assets/wpslogo.png")}
               style={styles.logo}
             />
           </View>
@@ -39,9 +39,9 @@ const WelcomeScreen = ({ navigation }: { navigation: any }) => {
 
             <TouchableOpacity
               onPress={() => navigation.navigate("SignUp")}
-              style={[styles.button, { backgroundColor: "#D5B942" }]} // Gold for Sign Up
+              style={[styles.secondaryButton]} // Gold for Sign Up
             >
-              <Text style={styles.buttonText}>Register</Text>
+              <Text style={styles.secondaryButtonText}>Register</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -49,7 +49,7 @@ const WelcomeScreen = ({ navigation }: { navigation: any }) => {
         // Mobile Layout (Logo on Top, Buttons Below)
         <View style={styles.mobileContainer}>
           <Image
-            source={require("../../assets/wpslogo.png")}
+            source={require("../../../assets/wpslogo.png")}
             style={styles.logo}
           />
           <Text style={styles.welcomeText}>WorkHive</Text>
@@ -82,29 +82,32 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: "center", // Center the content vertically
     alignItems: "center", // Center the items horizontally
-    padding: 20,
   },
   rowContainer: {
-    flexDirection: "row", // For Web: Logo on the left and buttons on the right
-    justifyContent: "space-between",
-    width: "100%", // Make sure this takes up the full width
+    flexDirection: "column", // For Web: Logo on the left and buttons on the right
+    justifyContent: "center",
+    height: "80%",
+    width: "100%",
   },
   logoContainer: {
+    flex: 1,
     backgroundColor: "#FDFDFF", // Off-White background to blend with Welcome Screen
-    padding: 40,
     borderRadius: 100,
     alignItems: "center",
     justifyContent: "center",
   },
   logo: {
-    width: 250, // Larger logo for web
-    height: 250,
+    width: Platform.OS === "web" ? 400 : 250,
+    height: Platform.OS === "web" ? 400 : 250,
   },
   buttonsContainer: {
+    flex: 1,
     justifyContent: "center",
-    alignItems: "flex-start",
-    marginLeft: 40, // Space between logo and buttons
-    width: "50%", // Limit the width for the buttons container on web
+    alignItems: "center",
+
+    paddingLeft: 200, // Space between logo and buttons
+    paddingRight: 200, // Space between logo and buttons
+    width: "100%", // Limit the width for the buttons container on web
   },
   secondaryButton: {
     // Larger padding for mobile
@@ -121,10 +124,10 @@ const styles = StyleSheet.create({
   mobileContainer: {
     alignItems: "center",
     justifyContent: "center",
-    width: "100%", // Make sure this takes up the full width
+    width: "90%", // Make sure this takes up the full width
   },
   welcomeText: {
-    fontSize: Platform.OS === "web" ? 28 : 40, // Larger text for web
+    fontSize: Platform.OS === "web" ? 40 : 40, // Larger text for web
     fontWeight: "bold",
     color: "#393D3F", // Charcoal Grey
     marginBottom: 50,

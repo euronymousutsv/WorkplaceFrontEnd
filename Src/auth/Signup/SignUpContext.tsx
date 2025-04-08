@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode } from "react";
-import { registerUser } from "../api/auth/authApi";
-import { RegisterRequest } from "../api/auth/auth";
-import { ApiError } from "../api/utils/apiResponse";
+import { registerUser } from "../../api/auth/authApi";
+import { RegisterRequest } from "../../api/auth/auth";
+import { ApiError } from "../../api/utils/apiResponse";
 import { AxiosError } from "axios";
 
 interface FormData {

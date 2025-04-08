@@ -15,8 +15,8 @@ import {
 } from "react-native";
 import { useSignup } from "./SignUpContext";
 import Toast from "react-native-toast-message";
-import { sendOTP, verifyOTP } from "../api/auth/authApi";
-import { ApiError } from "../api/utils/apiResponse";
+import { sendOTP, verifyOTP } from "../../api/auth/authApi";
+import { ApiError } from "../../api/utils/apiResponse";
 
 const { width, height } = Dimensions.get("window");
 const isLandscape = width > height;
