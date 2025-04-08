@@ -38,7 +38,7 @@ const WelcomeScreen = ({ navigation }: { navigation: any }) => {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => navigation.navigate("SignUp")}
+              onPress={() => navigation.navigate("PartialRegesterScreen")}
               style={[styles.secondaryButton]} // Gold for Sign Up
             >
               <Text style={styles.secondaryButtonText}>Register</Text>
@@ -62,7 +62,7 @@ const WelcomeScreen = ({ navigation }: { navigation: any }) => {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => navigation.navigate("InviteCode")}
+            onPress={() => navigation.navigate("PartialRegesterScreen")}
             style={styles.secondaryButton} // Gold for Sign Up
           >
             <Text style={styles.secondaryButtonText}>Register</Text>

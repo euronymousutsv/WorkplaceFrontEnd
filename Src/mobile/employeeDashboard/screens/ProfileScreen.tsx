@@ -1,36 +1,80 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Image, 
-  ScrollView, 
-  Alert, 
-  ActivityIndicator
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
-import JWT from 'expo-jwt';  // Import expo-jwt to decode the token
-import { getToken, deleteToken } from '../../../api/auth/token';  // Import getToken to access the token directly
-import { getCurrentUserDetails } from '../../../api/auth/profileApi';  // Import API call to fetch user details
-import { editCurrentUserDetail } from '../../../api/auth/profileApi';  // Import API for editing details
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../../../types/navigationTypes';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+  Button,
+  Modal,
+  SafeAreaView,
+} from "react-native";
+import { Checkbox } from "react-native-paper";
+import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import JWT from "expo-jwt"; // Import expo-jwt to decode the token
+import { getToken, deleteToken } from "../../../api/auth/token"; // Import getToken to access the token directly
+import { getCurrentUserDetails } from "../../../api/auth/profileApi"; // Import API call to fetch user details
+import { editCurrentUserDetail } from "../../../api/auth/profileApi"; // Import API for editing details
+import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { RootStackParamList } from "../../../types/navigationTypes";
+import { leaveServer } from "../../../api/server/serverApi";
+import { AxiosError } from "axios";
+import { ApiError, ApiResponse } from "../../../api/utils/apiResponse";
+import Toast from "react-native-toast-message";
 
-
-const ProfileScreen = ({  toggleMenu, toggleNotification }: {  toggleMenu: () => void, toggleNotification: () => void }) => {
-
+const ProfileScreen = ({
+  toggleMenu,
+  toggleNotification,
+}: {
+  toggleMenu: () => void;
+  toggleNotification: () => void;
+}) => {
   const [profilePic, setProfilePic] = useState<string | null>(null);
-  const [userDetails, setUserDetails] = useState<any>(null);  // Store user details
-  const [loading, setLoading] = useState<boolean>(true);  // Loading state for fetching user details
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmNewPassword, setConfirmNewPassword] = useState(''); 
+  const [userDetails, setUserDetails] = useState<any>(null); // Store user details
+  const [loading, setLoading] = useState<boolean>(true); // Loading state for fetching user details
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isChecked, setIsChecked] = useState(false);
+
+  const handleCloseModal = () => {
+    setIsChecked(false);
+    setIsModalOpen(false);
+  };
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
+  const handleLeaveServer = async () => {
+    try {
+      const res = await leaveServer();
+      if (res.statusCode === 200) {
+        setIsModalOpen(false);
+        Toast.show({
+          text1: res.message,
+          type: "error",
+          position: "bottom",
+        });
+      } else if (res instanceof ApiError) {
+        setIsModalOpen(false);
+        Toast.show({
+          text1: res.message,
+          type: "error",
+          position: "bottom",
+        });
+      }
+    } catch (error) {
+      navigation.goBack();
+      Toast.show({
+        text1: "Something went wrong",
+        type: "error",
+        position: "bottom",
+      });
+    }
+  };
 
   // Fetch user details and token from storage
   useEffect(() => {
@@ -49,7 +93,7 @@ const ProfileScreen = ({  toggleMenu, toggleNotification }: {  toggleMenu: () =>
         if (userId) {
           const response = await getCurrentUserDetails(userId, accessToken);
           // console.log("Fetched User Details:", response); // Log the entire response
-  
+
           if (response?.data) {
             setUserDetails(response.data); // Set only the 'data' part of the response
           } else {
@@ -64,7 +108,7 @@ const ProfileScreen = ({  toggleMenu, toggleNotification }: {  toggleMenu: () =>
       }
       setLoading(false);
     };
-  
+
     fetchUserDetails();
   }, []);
 
@@ -81,52 +125,14 @@ const ProfileScreen = ({  toggleMenu, toggleNotification }: {  toggleMenu: () =>
     }
   };
 
-  const handleChangePassword = async () => {
-    if (!currentPassword || !newPassword || !confirmNewPassword) {
-      alert('Please fill in all fields');
-      return;
-    }
-    if (newPassword !== confirmNewPassword) {
-      alert('New passwords do not match');
-      return;
-    }
-
-    try {
-      // Call the backend API to change password
-      const accessToken = await getToken("accessToken");
-      // Ensure we have a valid access token
-    if (!accessToken) {
-      alert('Token is missing. Please log in again.');
-      return;
-    }
-      const decodedToken = JWT.decode(accessToken, null);
-      const userId = decodedToken?.userId;
-
-      if (userId) {
-        const response = await editCurrentUserDetail(userId, accessToken, currentPassword, 'password', newPassword);
-        
-        if (response.statusCode === 200) {
-          alert('Password changed successfully!');
-          setCurrentPassword('');
-          setNewPassword('');
-          setConfirmNewPassword('');
-        } else {
-          alert(response.message || 'Failed to change password');
-        }
-      } else {
-        alert('User not found');
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        alert(error.message || 'Something went wrong');
-      } else {
-        alert('Something went wrong');
-      }
-    }
-  };
-
   if (loading) {
-    return <ActivityIndicator size="large" color="#4A90E2" style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }} />;
+    return (
+      <ActivityIndicator
+        size="large"
+        color="#4A90E2"
+        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+      />
+    );
   }
 
   if (!userDetails) {
@@ -138,53 +144,76 @@ const ProfileScreen = ({  toggleMenu, toggleNotification }: {  toggleMenu: () =>
       await deleteToken("accessToken");
       // Uncomment if you're using refresh token as well
       // await deleteToken("refreshToken");
-  
+
       // Debugging: Log to check if the token is deleted
       const accessToken = await getToken("accessToken");
-      console.log("Token after deletion:", accessToken);  // Should return null if token is deleted
-  
+      console.log("Token after deletion:", accessToken); // Should return null if token is deleted
+
       navigation.reset({
-        index: 0,  // Set the active screen to 0 (the Login screen)
-        routes: [{ name: 'Login' }],
+        index: 0, // Set the active screen to 0 (the Login screen)
+        routes: [{ name: "Login" }],
       });
     } catch (error) {
-      console.error('Logout error:', error);
-      alert('Failed to logout');
+      console.error("Logout error:", error);
+      alert("Failed to logout");
     }
   };
-  
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.menuButton} onPress={toggleMenu}>
           <Ionicons name="menu" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerText}>Profile</Text>
-        <TouchableOpacity style={styles.notificationButton} onPress={toggleNotification}>
+        <TouchableOpacity
+          style={styles.notificationButton}
+          onPress={toggleNotification}
+        >
           <Ionicons name="notifications" size={24} color="white" />
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
         {/* Profile Picture */}
-        <TouchableOpacity onPress={handleProfilePicture} style={styles.profilePicContainer}> 
-          <Image 
-            source={profilePic ? { uri: profilePic } : require('../../../../assets/wpslogo.png')} 
-            style={styles.profilePic} 
+        <TouchableOpacity
+          onPress={handleProfilePicture}
+          style={styles.profilePicContainer}
+        >
+          <Image
+            source={
+              profilePic
+                ? { uri: profilePic }
+                : require("../../../../assets/wpslogo.png")
+            }
+            style={styles.profilePic}
           />
-          <Ionicons name="camera" size={24} color="white" style={styles.cameraIcon} />
+          <Ionicons
+            name="camera"
+            size={24}
+            color="white"
+            style={styles.cameraIcon}
+          />
         </TouchableOpacity>
 
         {/* User Info */}
-        <Text style={styles.name}>{userDetails?.firstName} {userDetails?.lastName} </Text>
-        <Text style={styles.role}>{userDetails?.role } </Text>
+        <Text style={styles.name}>
+          {userDetails?.firstName} {userDetails?.lastName}{" "}
+        </Text>
+        <Text style={styles.role}>{userDetails?.role} </Text>
 
         {/* Info Cards */}
-        <View style={styles.infoCard}>
+        {/* <View style={styles.infoCard}>
           <Ionicons name="id-card-outline" size={22} color="#4A90E2" />
           <Text style={styles.infoText}>Employee ID: {userDetails?.id} </Text>
+        </View> */}
+
+        <View style={styles.infoCard}>
+          <Ionicons name="person" size={22} color="#4A90E2" />
+          <Text style={styles.infoText}>
+            Full Name: {userDetails?.firstName} {userDetails?.lastName}
+          </Text>
         </View>
 
         <View style={styles.infoCard}>
@@ -206,47 +235,31 @@ const ProfileScreen = ({  toggleMenu, toggleNotification }: {  toggleMenu: () =>
 
         <View style={styles.infoCard}>
           <Ionicons name="calendar-outline" size={22} color="#4A90E2" />
-          <Text style={styles.infoText}>Employment Status: {userDetails?.employmentStatus}</Text>
+          <Text style={styles.infoText}>
+            Employment Status: {userDetails?.employmentStatus}
+          </Text>
         </View>
-        
-        {/* Join date not implemented yet on backend */}
-        {/* <View style={styles.infoCard}>
-          <Ionicons name="time-outline" size={22} color="#4A90E2" />
-          <Text style={styles.infoText}>Joined On: {userDetails?.joinDate}</Text>
-        </View> */}
 
-        {/* Change Password Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Change Password</Text>
+        <TouchableOpacity
+          style={styles.infoCard}
+          onPress={() => {
+            navigation.navigate("EditUserDetailScreens");
+          }}
+        >
+          <Ionicons name="lock-closed" size={22} color="#4A90E2" />
+          <Text style={styles.infoText}>Update Password</Text>
+        </TouchableOpacity>
 
-          <TextInput
-            style={styles.input}
-            placeholder="Current Password"
-            secureTextEntry
-            value={currentPassword}
-            onChangeText={setCurrentPassword}
-          />
-
-          <TextInput
-            style={styles.input}
-            placeholder="New Password"
-            secureTextEntry
-            value={newPassword}
-            onChangeText={setNewPassword}
-          />
-
-          <TextInput
-            style={styles.input}
-            placeholder="Confirm New Password"
-            secureTextEntry
-            value={confirmNewPassword}
-            onChangeText={setConfirmNewPassword}
-          />
-
-          <TouchableOpacity style={styles.changePasswordButton} onPress={handleChangePassword}>
-            <Text style={styles.changePasswordButtonText}>Update Password</Text>
-          </TouchableOpacity>
-        </View>
+        {/* leave server */}
+        <TouchableOpacity
+          style={styles.infoCard}
+          onPress={() => {
+            setIsModalOpen(true);
+          }}
+        >
+          <Ionicons name="exit-sharp" size={22} color="#4A90E2" />
+          <Text style={styles.infoText}>Leave Server</Text>
+        </TouchableOpacity>
 
         {/* Logout Button */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -254,7 +267,57 @@ const ProfileScreen = ({  toggleMenu, toggleNotification }: {  toggleMenu: () =>
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </ScrollView>
-    </View>
+
+      <Modal
+        presentationStyle="pageSheet"
+        visible={isModalOpen}
+        animationType="slide"
+        onRequestClose={handleCloseModal}
+      >
+        <View style={styles.modalContainer}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={handleCloseModal}
+          >
+            <Text style={styles.backText}>← Back</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.paragraph}>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec
+            odio. Praesent libero. Sed cursus ante dapibus diam. Sed nisi. Nulla
+            quis sem at nibh elementum imperdiet.
+          </Text>
+
+          <View style={styles.checkBoxContainer}>
+            <TouchableOpacity
+              onPress={() => {
+                setIsChecked(!isChecked);
+              }}
+              style={styles.checkBoxContainer}
+            >
+              <View style={[styles.checkbox, isChecked && styles.checked]}>
+                {isChecked && <Text style={styles.checkmark}>✓</Text>}
+              </View>
+              <Text style={styles.label}>I agree to the terms</Text>
+            </TouchableOpacity>
+
+            {/* <CheckBox value={isChecked} onValueChange={setIsChecked} /> */}
+            {/* <Text style={styles.checkboxLabel}></Text> */}
+          </View>
+
+          <TouchableOpacity
+            onPress={handleLeaveServer}
+            disabled={!isChecked}
+            style={[
+              styles.filledButtton,
+              { backgroundColor: isChecked ? "#007AFF" : "#aaa" },
+            ]}
+          >
+            <Text style={styles.filledButtonText}>Submit</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
 };
 
@@ -262,67 +325,67 @@ const ProfileScreen = ({  toggleMenu, toggleNotification }: {  toggleMenu: () =>
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FDFDFF',
+    backgroundColor: "#FDFDFF",
   },
   header: {
-    backgroundColor: '#4A90E2',
+    backgroundColor: "#4A90E2",
     paddingVertical: 20,
     paddingHorizontal: 10,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     borderBottomLeftRadius: 40,
     borderBottomRightRadius: 40,
   },
   menuButton: {
-    position: 'absolute',
+    position: "absolute",
     left: 10,
   },
   notificationButton: {
-    position: 'absolute',
+    position: "absolute",
     right: 10,
   },
   headerText: {
-    color: 'white',
+    color: "white",
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   content: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: 20,
   },
   profilePicContainer: {
-    position: 'relative',
+    position: "relative",
     marginBottom: 10,
   },
   profilePic: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: "#E0E0E0",
   },
   cameraIcon: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 5,
     right: 5,
-    backgroundColor: '#4A90E2',
+    backgroundColor: "#4A90E2",
     borderRadius: 50,
     padding: 5,
   },
   section: {
     marginTop: 30,
-    width: '100%',
+    width: "100%",
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#393D3F',
+    fontWeight: "bold",
+    color: "#393D3F",
     marginBottom: 10,
   },
   input: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: "#E0E0E0",
     borderRadius: 10,
     padding: 10,
     fontSize: 16,
@@ -330,56 +393,106 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#393D3F',
+    fontWeight: "bold",
+    color: "#393D3F",
     marginTop: 10,
     marginBottom: 5,
   },
   role: {
     fontSize: 18,
-    color: '#4A90E2',
+    color: "#4A90E2",
     marginBottom: 10,
   },
   infoCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F7F7F7',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F7F7F7",
     padding: 15,
     borderRadius: 10,
     marginBottom: 10,
-    width: '100%',
+    width: "100%",
   },
   infoText: {
     fontSize: 16,
-    color: '#393D3F',
+    color: "#393D3F",
     marginLeft: 10,
   },
   changePasswordButton: {
-    backgroundColor: '#2ECC71',
+    backgroundColor: "#2ECC71",
     padding: 15,
     borderRadius: 10,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 10,
   },
   changePasswordButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   logoutButton: {
-    flexDirection: 'row',
-    backgroundColor: '#D9534F',
+    flexDirection: "row",
+    backgroundColor: "#D9534F",
     padding: 15,
     borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
     marginTop: 20,
   },
   logoutText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
     marginLeft: 10,
+  },
+
+  // Modal
+  modalContainer: {
+    flex: 1,
+    padding: 20,
+    justifyContent: "center",
+  },
+  backButton: {
+    position: "absolute",
+    top: 50,
+    left: 20,
+  },
+  backText: {
+    fontSize: 18,
+    color: "#007AFF",
+  },
+  paragraph: {
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  checkBoxContainer: { flexDirection: "row" },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 1.5,
+    borderColor: "#333",
+    marginRight: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  checked: {
+    backgroundColor: "#007AFF",
+  },
+  checkmark: {
+    color: "#fff",
+    fontSize: 14,
+  },
+  label: {
+    fontSize: 16,
+  },
+
+  filledButtton: {
+    marginTop: 20,
+    padding: 18,
+    borderRadius: 5,
+  },
+  filledButtonText: {
+    color: "white",
+    fontSize: "18",
   },
 });
 

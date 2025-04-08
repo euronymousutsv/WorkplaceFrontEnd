@@ -18,6 +18,7 @@ import { Plat, saveToken } from "../../api/auth/token";
 import { ApiError, ApiResponse } from "../../api/utils/apiResponse";
 import { loginUser } from "../../api/auth/authApi";
 import { validateEmail } from "../Signup/SignupSecond";
+import Toast from "react-native-toast-message";
 
 const LoginScreen = ({ navigation }: { navigation: any }) => {
   const { setUserRole, setIsAuthenticated } = useAuth(); // Get AuthContext functions
@@ -146,6 +147,14 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
           }
         }
       } else if (response instanceof ApiError) {
+        if (response.statusCode == 409) {
+          navigation.navigate("PartialRegesterScreen");
+          Toast.show({
+            text1: response.message,
+            position: "bottom",
+            type: "error",
+          });
+        }
         setLoading(false);
         setError(response.message);
         console.error("No token received from backend");

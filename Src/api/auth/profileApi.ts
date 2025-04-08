@@ -40,18 +40,15 @@ const getCurrentUserDetails = async (userId: any, accessToken: string) => {
 
 // Edit user details (password, full name, phone, etc.) but password for now.
 const editCurrentUserDetail = async (
-  userId: string,
-  token: string,
   password: string,
   editType: string, // FullName, Phone, etc.
   newDetail: string
 ) => {
   try {
-    const accessToken = token || (await getToken("accessToken"));
+    const accessToken = await getToken("accessToken");
     if (!accessToken) {
       throw new Error("Token is missing");
     }
-
     // Prepare request body based on edit type
     const body = {
       password,

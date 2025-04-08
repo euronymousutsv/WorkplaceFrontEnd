@@ -23,6 +23,10 @@ import SettingsScreen from "./src/web/adminDashboard/screens/SettingsScreen";
 import GrossPaymentScreen from "./src/web/adminDashboard/screens/GrossPaymentScreen";
 import LeaveRequestScreen from "./src/web/adminDashboard/screens/LeaveRequestScreen";
 import SchedulesScreen from "./src/web/adminDashboard/screens/SchedulesScreen";
+import EditUserDetailScreens from "./src/mobile/employeeDashboard/screens/EditUserDetailScreens";
+import EditDetailScreens from "./src/mobile/employeeDashboard/screens/EditDetailsScreen";
+import PartialRegesterScreen from "./src/mobile/employeeDashboard/screens/ParitalRegestrationScreen";
+import ParitalRegestrationPasswordScreen from "./src/mobile/employeeDashboard/screens/PartialRegisterPasswordScreen";
 
 // Create a stack navigator
 const Stack = createStackNavigator();
@@ -98,6 +102,42 @@ const AppNavigator = () => {
         name="LeaveRequestScreen"
         component={LeaveRequestScreen}
         options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="EditUserDetailScreens"
+        component={EditUserDetailScreens}
+        options={{
+          headerShown: true,
+          title: "Password",
+          headerShadowVisible: false,
+        }}
+      />
+      <Stack.Screen
+        name="EditDetailScreens"
+        component={EditDetailScreens}
+        options={{
+          headerShown: true,
+          title: "Password",
+          headerShadowVisible: false,
+        }}
+      />
+      <Stack.Screen
+        name="PartialRegesterScreen"
+        component={PartialRegesterScreen}
+        options={{
+          headerShown: true,
+          title: "Password",
+          headerShadowVisible: false,
+        }}
+      />
+      <Stack.Screen
+        name="ParitalRegestrationPasswordScreen"
+        component={ParitalRegestrationPasswordScreen}
+        options={{
+          headerShown: true,
+          title: "Password",
+          headerShadowVisible: false,
+        }}
       />
 
       {/* All Signup Screens */}

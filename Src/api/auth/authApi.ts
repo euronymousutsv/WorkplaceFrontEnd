@@ -10,12 +10,13 @@ import {
 
 import { ApiResponse, ApiError } from "../utils/apiResponse";
 import { getToken } from "./token";
+import { Role } from "../server/server";
 
 const API = axios.create({
   baseURL:
     // "https://8c1f-2406-2d40-4d55-6c10-bdc3-9abf-864e-c64f.ngrok-free.app",
     "https://workplace-zdzja.ondigitalocean.app/api/v1/auth/",
-    // "http://localhost:3000/api/v1/auth/",
+  // "http://localhost:3000/api/v1/auth/",
 
   headers: {
     "Content-Type": "application/json",
@@ -98,13 +99,43 @@ const verifyOTP = async (reqData: VerifyOTPRequest) => {
   }
 };
 
+const partialregisterComplete = async (
+  phoneNumber: string,
+  password: string
+) => {
+  console.log(password, phoneNumber);
+  try {
+    const response = await API.post<ApiResponse<{}>>(
+      "partialRegestrationPasswordSet",
+
+      {
+        phoneNumber,
+        password,
+      }
+    );
+    return response.data;
+  } catch (error) {
+    if (error instanceof AxiosError) {
+      const err = error.response?.data as ApiError<{}>;
+      return new ApiError(err.statusCode, {}, err.message);
+    } else {
+      return new ApiError(400, {}, "Something went wrong");
+    }
+  }
+};
+
 // editUserDetail
 const editUserDetail = async (reqData: EditUserDetailRequest) => {
   try {
-    console.log("Request payload:", reqData);
+    const accessToken = await getToken("accessToken");
     const response = await API.post<ApiResponse<{}>>(
       "editCurrentUserDetail",
-      reqData
+      reqData,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
     );
     return response.data;
   } catch (error) {
@@ -145,4 +176,5 @@ export {
   verifyOTP,
   editUserDetail,
   logOutUser,
+  partialregisterComplete,
 };

@@ -3,7 +3,7 @@ import { ApiError, ApiResponse } from "../utils/apiResponse";
 import { getToken } from "./token";
 
 export const API = axios.create({
-  baseURL: "https://workplace-zdzja.ondigitalocean.app",
+  baseURL: "https://workhive.space",
   // "https://8c1f-2406-2d40-4d55-6c10-bdc3-9abf-864e-c64f.ngrok-free.app",
   // "http://localhost:3000",
 
