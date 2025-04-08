@@ -50,7 +50,7 @@ export interface EmployeeDetails {
   Employee: Employee;
 }
 
-interface EmployeeStatus {
+export interface EmployeeStatus {
   Active: "Active";
   Inactive: "Inactive";
 }

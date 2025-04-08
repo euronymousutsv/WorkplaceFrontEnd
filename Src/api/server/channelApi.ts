@@ -163,4 +163,5 @@ export {
   deleteChannel,
   changeChannelName,
   getChannelDetails,
+  addAccessToChannel,
 };
