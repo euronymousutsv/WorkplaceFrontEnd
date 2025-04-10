@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
   },
   filledButtonText: {
     color: "white",
-    fontSize: "18",
+    fontSize: 18,
   },
 });
 

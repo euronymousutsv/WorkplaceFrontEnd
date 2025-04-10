@@ -13,5 +13,6 @@ export type RootStackParamList = {
     SettingsScreen:undefined;
     GrossPaymentScreen: undefined;
     LeaveRequestScreen: undefined;
+    EditUserDetailScreens: undefined;
   };
   
