@@ -3,7 +3,6 @@ import React from "react";
 import AdminDashboard from "./src/web/adminDashboard/screens/AdminDashboard";
 import EmployeeDashboard from "./src/mobile/employeeDashboard/screens/EmployeeDashboard";
 import ManagerDashboard from "./src/web/managerDashboard/screens/ManagerDashboard";
-
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";

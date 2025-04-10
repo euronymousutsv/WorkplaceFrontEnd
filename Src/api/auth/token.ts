@@ -47,7 +47,7 @@ export async function getToken(
       case Plat.WEB:
         return localStorage.getItem(key);
 
-      // when the platform is web , we get details in Expo secured storage
+      // when the platform is phone , we get details in Expo secured storage
       case Plat.PHONE:
       default:
         return await SecureStore.getItemAsync(key);

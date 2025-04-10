@@ -8,13 +8,14 @@ import {
   StyleSheet,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import Toast from 'react-native-toast-message'; // ✅ Add Toast
+import Toast from 'react-native-toast-message'; 
 
 interface Props {
   visible: boolean;
   onClose: () => void;
   onSave: (data: any) => void;
-  employees: string[];
+  employees:{id : string; name: string}[];
+  // locations: {id : string; name: string}[]; use this
   locations: string[];
   selectedEmployee?: string;
   selectedDate?: string;
@@ -112,8 +113,9 @@ const WebScheduleModal: React.FC<Props> = ({
                 <Picker selectedValue={employee} onValueChange={setEmployee}>
                   <Picker.Item label="Select Employee" value="" />
                   {employees.map((e) => (
-                    <Picker.Item key={e} label={e} value={e} />
-                  ))}
+  <Picker.Item key={e.id} label={e.name} value={e.id} />
+))}
+
                 </Picker>
               </View>
               {errors.employee && <Text style={styles.error}>{errors.employee}</Text>}
@@ -123,10 +125,15 @@ const WebScheduleModal: React.FC<Props> = ({
               <Text style={styles.label}>Location</Text>
               <View style={styles.pickerWrapper}>
                 <Picker selectedValue={location} onValueChange={setLocation}>
-                  <Picker.Item label="Select Location" value="" />
+                  {/* <Picker.Item label="Select Location" value="" />
                   {locations.map((l) => (
-                    <Picker.Item key={l} label={l} value={l} />
-                  ))}
+  <Picker.Item key={l.id} label={l.name} value={l.id} />
+))} */} 
+{locations.map((l) => (
+  <Picker.Item key={l} label={l} value={l} />
+))}
+
+
                 </Picker>
               </View>
               {errors.location && <Text style={styles.error}>{errors.location}</Text>}

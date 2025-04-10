@@ -22,7 +22,10 @@ import { MaterialIcons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
 import { EmployeeDetails } from "../../../api/server/server";
 import { kickEmployee } from "../../../api/server/serverApi";
-
+import { partialregisterEmployee, updateEmployeeDetails } from "../../../api/server/serverApi";
+import { getLoggedInUserServer } from "../../../api/server/serverApi";
+import { Role, EmployeeStatus } from "../../../api/server/server";
+import { getToken, Plat, saveToken } from "../../../api/auth/token";
 
 interface Employee {
     id: string;
@@ -54,9 +57,29 @@ const roles = ["Choose Role", "Admin", "Manager", "Employee"];
 const statuses = [
   "Choose Employment Status",
   "Active",
-  "On Leave",
-  "Terminated",
+  "Inactive",
+  
 ];
+
+// Role mapper (string → Role enum)
+const roleMapper: Record<"Admin" | "Manager" | "Employee", Role> = {
+    Admin: Role.ADMIN,
+    Manager: Role.MANAGER,
+    Employee: Role.EMPLOYEE,
+  };
+  
+  
+  // Status mapper (string → EmployeeStatus type)
+  const statusMapper: Record<"Active" | "Inactive", EmployeeStatus> = {
+    Active: {
+        Active: "Active",
+        Inactive: "Inactive"
+    },
+    Inactive: {
+        Inactive: "Inactive",
+        Active: "Active"
+    },
+  };
 
 const EmployeeManagementScreen = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -84,6 +107,8 @@ const EmployeeManagementScreen = () => {
 
   const isMobile = screenWidth <= 768;
   const [employeesArr, setEmployeesArr] = useState<EmployeeDetails[]>([]);
+  const [serverId, setServerId] = useState<string | null>(null);
+
 
 
   const handleFetchUsers = async () => {
@@ -130,7 +155,7 @@ const EmployeeManagementScreen = () => {
           });
           
           
-          console.log("✅ Mapped Employees:", employeeList);
+        //   console.log("✅ Mapped Employees:", employeeList);
         setEmployees(employeeList);
   
         Toast.show({
@@ -146,6 +171,31 @@ const EmployeeManagementScreen = () => {
     }
   };
   
+  const fetchServerId = async () => {
+    const token =await getToken("accessToken",Plat.WEB);
+    console.log("Acess token:", token);
+    try {
+      const res = await getLoggedInUserServer();
+      console.log("🧪 getLoggedInUserServer response:", res);
+  
+      if (res instanceof ApiError) {
+        Toast.show({
+          type: "error",
+          text1: "Server ID Error",
+          text2: res.message,
+        });
+      } else if ("statusCode" in res && "data" in res && res.data.serverId) {
+        console.log("✅ Server ID found:", res.data.serverId);
+        setServerId(res.data.serverId);
+        saveToken("serverId", res.data.serverId, Plat.WEB);
+      } else {
+        console.warn("⚠️ Server ID not found in response data");
+      }
+    } catch (err) {
+      console.error("❌ Unexpected error in fetchServerId:", err);
+    }
+  };
+  
 
   useEffect(() => {
     handleFetchUsers();
@@ -156,6 +206,13 @@ const EmployeeManagementScreen = () => {
     const subscription = Dimensions.addEventListener("change", updateWidth);
     return () => subscription?.remove();
   }, []);
+
+  useEffect(() => {
+    fetchServerId();
+  }, []);
+  
+  
+  
 
   const handleSort = (field: keyof Employee) => {
     if (sortBy === field) {
@@ -267,32 +324,108 @@ const EmployeeManagementScreen = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {  //todo : cors error
     if (!validateForm()) return;
+  
     const roleNormalized = formData.role.trim();
+  
     if (editingEmployee) {
-      setEmployees((prev) =>
-        prev.map((emp) =>
-          emp.id === formData.id ? { ...formData, role: roleNormalized } : emp
-        )
-      );
+        try {
+          const payload = {
+            id: formData.id,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            phone: formData.phone,
+            email: formData.email,
+            role: roleMapper[formData.role as "Admin" | "Manager" | "Employee"],
+            employmentStatus: statusMapper[formData.status as "Active" | "Inactive"],
+          };
+    
+          const res = await updateEmployeeDetails(payload);
+    
+          if (res instanceof ApiError || res instanceof AxiosError) {
+            Toast.show({
+              text1: "Error",
+              text2: res.message,
+              type: "error",
+              position: "bottom",
+            });
+            return;
+          }
+    
+          await handleFetchUsers(); // refresh list after update
+    
+          Toast.show({
+            text1: "Employee updated successfully!",
+            type: "success",
+            position: "bottom",
+          });
+        } catch (error) {
+          console.error("Unexpected error while updating employee:", error);
+        }
     } else {
-      setEmployees((prev) => [...prev, { ...formData, role: roleNormalized }]);
+      if (!serverId) {
+        Toast.show({
+          text1: "Error",
+          text2: "Server ID not found. Please refresh the page.",
+          type: "error",
+          position: "bottom",
+        });
+        return;
+      }
+  
+      try {
+        const payload = {
+          serverId,
+          email: formData.email,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phone,
+        //   role: Role[roleNormalized.toUpperCase() as keyof typeof Role],
+        role: roleNormalized as any, // adjust if Role enum
+
+        };
+  
+        const res = await partialregisterEmployee(payload);
+  
+        if (res instanceof ApiError || res instanceof AxiosError) {
+          Toast.show({
+            text1: "Error",
+            text2: res.message,
+            type: "error",
+            position: "bottom",
+          });
+          return;
+        }
+  
+        // Refresh list after successful registration
+        await handleFetchUsers();
+  
+        Toast.show({
+          text1: "Employee created successfully!",
+          type: "success",
+          position: "bottom",
+        });
+      } catch (error) {
+        console.error("Unexpected error while creating employee:", error);
+      }
     }
+  
+    // Reset modal
     setModalVisible(false);
     setEditingEmployee(null);
     setFormData({
       id: "",
       firstName: "",
-      lastName:"",
+      lastName: "",
       email: "",
       phone: "",
       role: "",
-      
       status: "",
     });
     setErrors({});
   };
+  
 
   const handleInputChange = <K extends keyof Employee>(
     key: K,
@@ -354,8 +487,8 @@ const EmployeeManagementScreen = () => {
           </Text>
           <View style={{ flexDirection: "row", gap: 20, marginBottom: 20 }}>
             <Text>✅ Active: {activeCount}</Text>
-            <Text>🟡 On Leave: {onLeaveCount}</Text>
-            <Text>❌ Terminated: {terminatedCount}</Text>
+            <Text>🟡 Inactive: {onLeaveCount}</Text>
+            {/* <Text>❌ Terminated: {terminatedCount}</Text> */}
           </View>
         </View>
 

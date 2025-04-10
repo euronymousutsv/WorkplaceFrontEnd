@@ -1,5 +1,5 @@
 export interface Shift {
-    id: string;
+    id: string | number;
     location: string;
     description: string;
     startTime: Date;

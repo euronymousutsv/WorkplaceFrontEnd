@@ -1,11 +1,14 @@
 import axios, { AxiosError } from "axios";
 import { ApiError, ApiResponse } from "../utils/apiResponse";
-import { getToken } from "./token";
+import { getToken, Plat } from "./token";
 
 export const API = axios.create({
-  baseURL: "https://workhive.space",
+  baseURL: 
+  // "https://workhive.space",
   // "https://8c1f-2406-2d40-4d55-6c10-bdc3-9abf-864e-c64f.ngrok-free.app",
-  // "http://localhost:3000",
+  "http://localhost:3000",
+  // "https://workplace-zdzja.ondigitalocean.app",
+// "https://06b5-110-175-196-31.ngrok-free.app",
 
   headers: {
     "Content-Type": "application/json",
@@ -116,13 +119,15 @@ export const createShift = async (
   employeeId: string,
   officeId: string,
   startTime: string,
-  endTime: string
+  endTime: string,
+  date: string,
+  description: string
 ) => {
   try {
-    const accessToken = (await getToken("accessToken")) ?? "";
+    const accessToken = (await getToken("accessToken", Plat.WEB)) ?? "";
     const response = await API.post(
       "api/roster/createShift",
-      { employeeId, officeId, startTime, endTime },
+      { employeeId, officeId, startTime, endTime, date, description },
       {
         params: { accessToken },
       }
@@ -150,8 +155,8 @@ export const updateShift = async (
   try {
     const accessToken = (await getToken("accessToken")) ?? "";
     const response = await API.put(
-      "api/roster/updateShift/${shiftId}",
-      { shiftId, employeeId, officeId, startTime, endTime },
+      `api/roster/updateShift/${shiftId}`,
+      {employeeId, officeId, startTime, endTime },
       {
         params: { accessToken },
       }
@@ -172,7 +177,7 @@ export const updateShift = async (
 export const deleteShift = async (shiftId: string) => {
   try {
     const accessToken = (await getToken("accessToken")) ?? "";
-    const response = await API.delete("api/roster/deleteShift", {
+    const response = await API.delete(`api/roster/deleteShift/${shiftId}`, {
       params: { accessToken },
     });
     const res = response.data as ApiResponse<Shifts>;

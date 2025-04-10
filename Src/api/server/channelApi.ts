@@ -9,7 +9,9 @@ import {
 
 const API = axios.create({
   // baseURL: "https://workplace-zdzja.ondigitalocean.app/api/v1/channel/",
-  baseURL: "https://workhive.space/api/v1/channel/",
+  baseURL: 
+  "https://workhive.space/api/v1/channel/",
+  
   headers: {
     "Content-Type": "application/json",
   },

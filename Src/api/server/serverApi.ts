@@ -8,15 +8,18 @@ import {
   Role,
   SearchServerResponse,
   userJoinedServerResponse,
+  EmployeeDetailsPayload,
 } from "./server";
 
 // creating an instance of axios api wth base url
 const API = axios.create({
   baseURL:
-    // "https://workplace-zdzja.ondigitalocean.app/api/v1",
+    "https://workplace-zdzja.ondigitalocean.app/api/v1/server/",
     // "https://8c1f-2406-2d40-4d55-6c10-bdc3-9abf-864e-c64f.ngrok-free.app/api/v1",
     // "http://localhost:3000/api/v1/server/",
-    "https://workhive.space/api/v1/server/",
+    // "https://workhive.space/api/v1/server/",
+      // "https://569a-110-175-196-31.ngrok-free.app/api/v1/server/",
+      
 
   headers: {
     "Content-Type": "application/json",
@@ -25,7 +28,7 @@ const API = axios.create({
 
 const getLoggedInUserServer = async () => {
   try {
-    const accessToken = await getToken("accessToken");
+    const accessToken = await getToken("accessToken", Plat.WEB);
     const response = await API.get<ApiResponse<userJoinedServerResponse>>(
       "getLoggedInUserServer",
       {
@@ -235,6 +238,9 @@ const updateRole = async (userId: string, role: Role) => {
   }
 };
 
+//update employee details
+
+
 export interface ParitalEmployeePayload {
   serverId: string;
   email: string;
@@ -247,9 +253,16 @@ export interface ParitalEmployeePayload {
 // admins can partially register an employee
 const partialregisterEmployee = async (reqData: ParitalEmployeePayload) => {
   try {
+    const accessToken = await getToken("accessToken", Plat.WEB);
     const response = await API.post<ApiResponse<{}>>(
-      "partialRegestrationPasswordSet",
-      reqData
+      "partialRegestrationEmployee",
+      reqData,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        params: {serverId:reqData.serverId}
+      }
     );
     return response.data;
   } catch (error) {
@@ -262,13 +275,40 @@ const partialregisterEmployee = async (reqData: ParitalEmployeePayload) => {
   }
 };
 
+const updateEmployeeDetails =async (payload: EmployeeDetailsPayload)=> {
+  try{
+    const accessToken =await getToken("accessToken", Plat.WEB);
+    const response= await API.put<ApiResponse<{}>>(
+      "updateEmployeeDetails",
+      payload,
+      {
+        headers:{
+          Authorization:`Bearer ${accessToken}`,
+
+        },
+      }
+    );
+    return response.data;
+
+  }catch (error){
+    console.error("unexpected error in updateEmployeeDetails:", error);
+    if (error instanceof AxiosError){
+      const err =error.response?.data as ApiError<{}>;
+      return new ApiError (err. statusCode,{}, err.message);
+
+    }else{
+      return new ApiError(400, {}, "Something went wrong");
+    }
+  }
+}
+
 // get all users with a server
 const fetchAllUsers = async () => {
   const accessToken = await getToken("accessToken", Plat.WEB);
   console.log("---------", accessToken, "----");
   try {
     const response = await API.get<ApiResponse<[EmployeeDetails]>>(
-      "server/fetchAllUsers",
+      "fetchAllUsers",
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -301,4 +341,5 @@ export {
   fetchAllUsers,
   leaveServer,
   partialregisterEmployee,
+  updateEmployeeDetails,
 };

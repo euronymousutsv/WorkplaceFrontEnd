@@ -27,7 +27,7 @@ export interface joinAServerResponse {
   inviteLink: string;
 }
 
-export const enum Role {
+export  enum Role {
   ADMIN = "admin",
   EMPLOYEE = "employee",
   MANAGER = "manager",
@@ -65,6 +65,16 @@ export interface Employee {
   profileImage?: string | null;
   role: Role;
 }
+export interface EmployeeDetailsPayload {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+  role: Role;
+  employmentStatus: EmployeeStatus;
+}
+
 
 export interface getAllChannelForCurrentServerResponse
   extends ChannelResponse {}

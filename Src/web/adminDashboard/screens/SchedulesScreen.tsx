@@ -1,5 +1,5 @@
 // SchedulesScreen.tsx (Pro Version)
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,11 @@ import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import GridCalendarView from '../components/schedule/GridCalendarView';
 import WebScheduleModal from '../components/schedule/WebScheduleModal'
+import { fetchAllUsers } from '../../../api/server/serverApi';
+import { EmployeeDetails } from '../../../api/server/server';
+import { ApiError } from '../../../api/utils/apiResponse';
+import Toast from 'react-native-toast-message'; 
+import { createShift } from '../../../api/auth/shiftApi';
 // import FilterControls from '../components/FilterControls';
 
 const initialSchedules = [
@@ -44,6 +49,8 @@ const SchedulesScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'calendar' | 'list' | 'auto'>('calendar');
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState('');
+  const [employeeNames, setEmployeeNames] = useState<{ id: string; name: string }[]>([]);
+
   const [selectedDate, setSelectedDate] = useState('');
   const [schedules, setSchedules] = useState(initialSchedules);
   const [employeeFilter, setEmployeeFilter] = useState('');
@@ -52,11 +59,84 @@ const SchedulesScreen: React.FC = () => {
 
   const isMobile = Dimensions.get('window').width <= 768;
 
-  const handleCreateSchedule = (newSchedule: any) => {
-    const id = schedules.length + 1;
-    setSchedules([...schedules, { ...newSchedule, id }]);
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      const res = await fetchAllUsers();
+      if (!(res instanceof ApiError)) {
+        const mapped = res.data.map((emp: EmployeeDetails) => ({
+          id: emp.Employee.id,
+          name: `${emp.Employee.firstName} ${emp.Employee.lastName}`,
+        }));
+        setEmployeeNames(mapped);
+      }
+    };
+  
+    fetchEmployees();
+  }, []);
+  
+ //todo (error: backend missing/incomplete)
+  const handleCreateSchedule = async (newSchedule: any) => { 
+    const payload = {
+      employeeId: newSchedule.employee,
+      officeId: newSchedule.location,
+      startTime: newSchedule.start,
+      endTime: newSchedule.end,
+      date: newSchedule.start.split("T")[0],
+      description: newSchedule.desc,
+    };
+  
+    try {
+        
+      const res = await createShift(
+        payload.employeeId,
+        payload.officeId,
+        payload.startTime,
+        payload.endTime,
+        payload.date,
+        payload.description
+      );
+  
+      if (res instanceof ApiError) {
+        Toast.show({
+          type: "error",
+          text1: "Failed to create shift",
+          text2: res.message,
+        });
+      } else {
+        Toast.show({
+          type: "success",
+          text1: "Shift created!",
+          text2: "The shift has been added successfully.",
+        });
+  
+        // Optional: update local state
+        const name = employeeNames.find(e => e.id === newSchedule.employee)?.name || newSchedule.employee;
+        setSchedules((prev) => [
+          ...prev,
+          {
+            id: prev.length+1, //res.data.id,
+            employee: name, // show name in UI
+            location: newSchedule.location,
+            desc: newSchedule.desc,
+            start: newSchedule.start,
+            end: newSchedule.end,
+          },
+        ]);
+      }
+    } catch (err) {
+      console.error("Unexpected error while creating shift:", err);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Something went wrong while creating the shift.",
+      });
+    }
+  
     setModalVisible(false);
   };
+  
+  
+  
   const handleDeleteSchedule = (id: number) => {
     setSchedules((prev) => prev.filter((shift) => shift.id !== id));
   };
@@ -189,7 +269,7 @@ const SchedulesScreen: React.FC = () => {
       setModalVisible(false);
     }
   }}
-  employees={employees}
+  employees={employeeNames}
   locations={locations}
   selectedEmployee={selectedEmployee}
   selectedDate={selectedDate}
