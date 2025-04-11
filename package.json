@@ -10,9 +10,10 @@
   },
   "dependencies": {
     "@expo/metro-runtime": "~4.0.1",
+    "@expo/vector-icons": "^14.0.2",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@react-native-community/checkbox": "^0.5.17",
-    "@react-native-community/datetimepicker": "^8.3.0",
+    "@react-native-community/datetimepicker": "github:react-native-community/datetimepicker",
     "@react-native-picker/picker": "2.9.0",
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/drawer": "^7.3.9",
@@ -24,8 +25,11 @@
     "dayjs": "^1.11.13",
     "dotenv": "^16.4.7",
     "expo": "~52.0.36",
+    "expo-constants": "~17.0.8",
+    "expo-device": "~7.0.3",
     "expo-image-picker": "~16.0.6",
     "expo-jwt": "^1.8.2",
+    "expo-notifications": "~0.29.14",
     "expo-secure-store": "~14.0.1",
     "expo-status-bar": "~2.0.1",
     "jwt-decode": "^4.0.0",
@@ -52,7 +56,7 @@
     "react-pro-sidebar": "^1.1.0",
     "react-router-dom": "^7.4.0",
     "socket.io-client": "^4.8.1",
-    "@expo/vector-icons": "^14.0.2"
+    "expo-dev-client": "~5.0.19"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

@@ -82,7 +82,7 @@ const AppNavigator = () => {
       <Stack.Screen
         name="EmployeeManagementScreen"
         component={EmployeeManagementScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: true }}
       />
       <Stack.Screen
         name="SettingsScreen"

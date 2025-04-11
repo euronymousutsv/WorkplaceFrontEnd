@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "WorkplaceFrontEnd",
-    "slug": "WorkplaceFrontEnd",
+    "slug": "workplace-management",
     "version": "1.0.0",
     "entryPoint": "./App.tsx",
     "orientation": "portrait",
@@ -20,13 +20,20 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#ffffff",
+        "googleServicesFile": "./workplace-management-app-338c4-firebase-adminsdk-fbsvc-6abcd80d10.json"
       },
       "package": "com.anonymous.WorkplaceFrontEnd"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-secure-store"]
+    "plugins": ["expo-secure-store"],
+    "extra": {
+      "eas": {
+        "projectId": "586550e8-8397-43d7-bdb1-eee568eedcd2"
+      }
+    },
+    "owner": "pranish_pathak"
   }
 }
