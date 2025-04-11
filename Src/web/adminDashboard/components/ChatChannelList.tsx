@@ -300,8 +300,9 @@ const getRoleColor = (role: 'admin' | 'manager' | 'employee' | undefined) => {
             
           navigation.navigate('ChatScreen', {
             channelName: channel.name,
-           channelId: channel.id
-
+           channelId: channel.id,
+            refreshChannels: fetchServerId,
+            allChannels: channels, 
           });
         }}>
             <View style={styles.chatLeft}>

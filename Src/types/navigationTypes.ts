@@ -1,4 +1,5 @@
-// src/types/navigationTypes.ts
+import { Channel } from "./Channel";
+
 export type RootStackParamList = {
     Welcome: undefined;
     Login: undefined;
@@ -16,6 +17,8 @@ export type RootStackParamList = {
     EditUserDetailScreens: undefined;
     ChatScreen: {channelName: string;
       channelId:string;
+      refreshChannels: () => Promise<void>;
+      allChannels: Channel[];
     };
   };
   

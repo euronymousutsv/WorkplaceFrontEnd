@@ -13,6 +13,7 @@ import {
   Platform,
   Alert,
   Modal,
+  Image,
 } from 'react-native';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
@@ -22,11 +23,17 @@ import { useAuth } from '../../../context/AuthContext';
 import { changeChannelName, deleteChannel } from '../../../api/server/channelApi';
 import Toast from 'react-native-toast-message';
 import { ApiError } from '../../../api/utils/apiResponse';
+import { Feather } from '@expo/vector-icons';
+import { Channel } from '../../../types/Channel';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
+
 
 const ChatScreen = ({ route, navigation }: any) => {
-  const { channelName: initialChannelName, channelId, refreshChannels } = route.params;
-  const [channelName, setChannelName] = useState(initialChannelName);
-  const [selectedTab, setSelectedTab] = useState(initialChannelName);
+  const { channelName, channelId, refreshChannels, allChannels } = route.params;
+
+  const [currentChannelName, setCurrentChannelName] = useState(channelName);
+  const [selectedTab, setSelectedTab] = useState(channelName);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const sidebarWidth = useRef(new Animated.Value(250)).current;
   const mainContentPadding = useRef(new Animated.Value(250)).current;
@@ -35,14 +42,17 @@ const ChatScreen = ({ route, navigation }: any) => {
   const { userRole } = useAuth();
   const canEdit = userRole === 'admin' || userRole === 'manager';
   const [renameModalVisible, setRenameModalVisible] = useState(false);
-  const [newChannelName, setNewChannelName] = useState(initialChannelName);
-  const [messages, setMessages] = useState<{ text: string; fromSelf: boolean }[]>([]);
+  const [newChannelName, setNewChannelName] = useState(channelName);
+  const [messages, setMessages] = useState<
+  { text: string; fromSelf: boolean; image?: string }[]
+>([]);
+
   const [message, setMessage] = useState('');
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     socket.on('receive_message', (msg: { text: string; senderId: string }) => {
-      const currentUserId = 'your-user-id'; // Replace with actual user ID
+      const currentUserId = 'your-user-id'; 
       setMessages((prev) => [...prev, { text: msg.text, fromSelf: msg.senderId === currentUserId }]);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
     });
@@ -52,29 +62,84 @@ const ChatScreen = ({ route, navigation }: any) => {
     };
   }, []);
 
-  const handleDeleteChannel = () => {
-    Alert.alert(
-      'Delete Channel',
-      `Are you sure you want to delete #${channelName}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const res = await deleteChannel({ channelId, channelName });
-              Toast.show({ type: 'success', text1: 'Channel deleted' });
-              navigation.goBack();
-            } catch (err) {
-              console.error(' Delete error:', err);
-              Toast.show({ type: 'error', text1: 'Delete Failed', text2: 'Something went wrong.' });
-            }
-          },
-        },
-      ]
-    );
+  // 🔁 React to channel changes
+  useEffect(() => {
+    setCurrentChannelName(channelName);
+    setMessages([]); // Clear old messages
+    setSelectedTab(channelName);
+    setNewChannelName(channelName);
+  }, [channelId, channelName]);
+
+  const handleDeleteChannel = async () => {
+    const confirm = window.confirm(`Are you sure you want to delete #${currentChannelName}?`);
+    if (!confirm) return;
+  
+    try {
+      const res = await deleteChannel({ channelId, channelName: currentChannelName });
+  
+      if (res instanceof ApiError || !('statusCode' in res) || res.statusCode >= 400) {
+        throw new Error(res.message || 'Failed to delete channel');
+      }
+  
+      await refreshChannels?.();
+      Toast.show({ type: 'success', text1: 'Channel deleted' });
+  
+      const remainingChannels = allChannels?.filter((c: Channel) => c.id !== channelId);
+
+  
+      if (remainingChannels && remainingChannels.length > 0) {
+        const firstChannel = remainingChannels[0];
+        navigation.replace('ChatScreen', {
+          channelName: firstChannel.name,
+          channelId: firstChannel.id,
+          refreshChannels,
+          allChannels: remainingChannels,
+        });
+      } else {
+        navigation.goBack();
+      }
+    } catch (err: any) {
+      console.error(' Delete error:', err);
+      Toast.show({
+        type: 'error',
+        text1: 'Delete Failed',
+        text2: err.message || 'Something went wrong.',
+      });
+    }
   };
+
+  const handlePickImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 0.7,
+        base64: true,
+      });
+  
+      if (!result.canceled && result.assets.length > 0) {
+        const selectedAsset = result.assets[0];
+  
+        const base64Image = `data:${selectedAsset.type};base64,${selectedAsset.base64}`;
+  
+        // Send via socket or upload it to your server
+        socket.emit('send_message', {
+          text: '',
+          image: base64Image, // send image here
+          senderId: 'your-user-id',
+          channelName: currentChannelName,
+        });
+  
+        setMessages(prev => [...prev, { text: '[Image]', fromSelf: true }]);
+      }
+    } catch (error) {
+      console.error('Image pick error:', error);
+      Toast.show({ type: 'error', text1: 'Image pick failed' });
+    }
+  };
+  
+  
+  
 
   const handleRenameChannel = async () => {
     try {
@@ -91,11 +156,10 @@ const ChatScreen = ({ route, navigation }: any) => {
 
       Toast.show({ type: 'success', text1: 'Channel renamed' });
       setRenameModalVisible(false);
-      setChannelName(newChannelName); // ✅ Update local channel name state
+      setCurrentChannelName(newChannelName);
       setSelectedTab(newChannelName);
-      navigation.setParams({ channelName: newChannelName });
+      navigation.setParams({ channelName: newChannelName, channelId }); // force update
       await refreshChannels?.();
-
     } catch (err) {
       console.error('Rename error:', err);
       Toast.show({
@@ -110,7 +174,7 @@ const ChatScreen = ({ route, navigation }: any) => {
     if (!message.trim()) return;
     const currentUserId = 'your-user-id'; 
 
-    socket.emit('send_message', { text: message, senderId: currentUserId, channelName });
+    socket.emit('send_message', { text: message, senderId: currentUserId, channelName: currentChannelName });
 
     setMessages((prev) => [...prev, { text: message, fromSelf: true }]);
     setMessage('');
@@ -149,15 +213,15 @@ const ChatScreen = ({ route, navigation }: any) => {
       <Animated.View style={[styles.mainContent, { paddingLeft: isMobile ? 0 : mainContentPadding }]}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
           <View style={styles.chatTitleRow}>
-            <Text style={styles.chatTitle}>#{channelName}</Text>
+            <Text style={styles.chatTitle}>#{currentChannelName}</Text>
             {canEdit && (
               <View style={styles.channelActions}>
                 <TouchableOpacity onPress={() => setRenameModalVisible(true)}>
-                  <Text style={styles.actionText}>✏️</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleDeleteChannel}>
-                  <Text style={styles.actionText}>🗑️</Text>
-                </TouchableOpacity>
+  <Feather name="edit" size={18} color="#4A90E2" />
+</TouchableOpacity>
+<TouchableOpacity onPress={handleDeleteChannel}>
+  <Feather name="trash" size={18} color="#D9534F" />
+</TouchableOpacity>
               </View>
             )}
           </View>
@@ -165,23 +229,38 @@ const ChatScreen = ({ route, navigation }: any) => {
           <ScrollView ref={scrollRef} contentContainerStyle={styles.scrollContainer}>
             {messages.map((msg, index) => (
               <View key={index} style={[styles.messageBubble, msg.fromSelf ? styles.messageRight : styles.messageLeft]}>
-                <Text style={styles.messageText}>{msg.text}</Text>
+                {msg.image ? (
+  <Image
+    source={{ uri: msg.image }}
+    style={{ width: 200, height: 200, borderRadius: 8, marginBottom: 5 }}
+    resizeMode="cover"
+  />
+) : (
+  <Text style={styles.messageText}>{msg.text}</Text>
+)}
+
               </View>
             ))}
           </ScrollView>
 
           <View style={styles.inputBar}>
-            <TextInput
-              style={styles.input}
-              value={message}
-              onChangeText={setMessage}
-              placeholder="Type a message..."
-              placeholderTextColor="#aaa"
-            />
-            <TouchableOpacity onPress={handleSendMessage} style={styles.sendButton}>
-              <Text style={styles.sendButtonText}>Send</Text>
-            </TouchableOpacity>
-          </View>
+  <TextInput
+    style={styles.input}
+    value={message}
+    onChangeText={setMessage}
+    placeholder="Type a message..."
+    placeholderTextColor="#aaa"
+  />
+
+  <TouchableOpacity onPress={handlePickImage} style={styles.iconButton}>
+    <Feather name="image" size={20} color="#4A90E2" />
+  </TouchableOpacity>
+
+  <TouchableOpacity onPress={handleSendMessage} style={styles.sendButton}>
+    <Text style={styles.sendButtonText}>Send</Text>
+  </TouchableOpacity>
+</View>
+
         </KeyboardAvoidingView>
       </Animated.View>
 
@@ -229,6 +308,12 @@ const styles = StyleSheet.create({
   cancelButton: { backgroundColor: '#eee' },
   createButton: { backgroundColor: '#4A90E2' },
   buttonText: { fontSize: 15, fontWeight: '600', color: '#333' },
+  iconButton: {
+    padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  
 });
 
 export default ChatScreen;
