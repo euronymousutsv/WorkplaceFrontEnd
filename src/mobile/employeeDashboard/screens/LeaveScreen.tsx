@@ -9,7 +9,7 @@ import {
   SafeAreaView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import DateTimePicker from "@react-native-community/datetimepicker";
+// import DateTimePicker from "@react-native-community/datetimepicker";
 
 // Mock data (Replace with backend integration later)
 const mockLeaveHistory = [
@@ -79,17 +79,17 @@ const LeaveScreen = () => {
             Start Date: {startDate.toDateString()}
           </Text>
         </TouchableOpacity>
-        {showStartDatePicker && (
-          <DateTimePicker
-            value={startDate}
-            mode="date"
-            display="default"
-            onChange={(event, selectedDate) => {
-              setShowStartDatePicker(false);
-              if (selectedDate) setStartDate(selectedDate);
-            }}
-          />
-        )}
+        {/* {showStartDatePicker && (
+          // <DateTimePicker
+          //   value={startDate}
+          //   mode="date"
+          //   display="default"
+          //   onChange={(event, selectedDate) => {
+          //     setShowStartDatePicker(false);
+          //     if (selectedDate) setStartDate(selectedDate);
+          //   }}
+          // />
+        )} */}
 
         <TouchableOpacity
           onPress={() => setShowEndDatePicker(true)}
@@ -100,7 +100,7 @@ const LeaveScreen = () => {
             End Date: {endDate.toDateString()}
           </Text>
         </TouchableOpacity>
-        {showEndDatePicker && (
+        {/* {showEndDatePicker && (
           <DateTimePicker
             value={endDate}
             mode="date"
@@ -110,7 +110,7 @@ const LeaveScreen = () => {
               if (selectedDate) setEndDate(selectedDate);
             }}
           />
-        )}
+        )} */}
 
         {/* Reason Input */}
         <TextInput

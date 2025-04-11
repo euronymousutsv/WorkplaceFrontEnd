@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
+  Platform,
 } from "react-native";
 import { useAuth } from "../../../context/AuthContext";
 import BottomNav from "../components/BottomNav";
@@ -41,6 +42,12 @@ type EmployeeDashboardProps = {
   navigation: DrawerNavigationProp<any, any>;
 };
 
+import { useRef } from "react";
+import * as Device from "expo-device";
+import * as Notifications from "expo-notifications";
+import Constants from "expo-constants";
+import { registerForPushNotificationsAsync } from "../components/notifications";
+
 const EmployeeDashboard: React.FC = () => {
   const { firstName, lastName } = useAuth();
   const [clockedIn, setClockedIn] = useState(false);
@@ -53,6 +60,39 @@ const EmployeeDashboard: React.FC = () => {
   const [activeChannelId, setActiveChannelId] = useState<string | null>(null); // Default channel
   const [activeChannelName, setActiveChannelName] = useState(""); // Default channel name
   const [isChatView, setIsChatView] = useState(false);
+
+  // notifications
+  const [expoPushToken, setExpoPushToken] = useState("");
+  const [notification, setNotification] = useState<
+    Notifications.Notification | undefined
+  >(undefined);
+  const notificationListener = useRef<Notifications.EventSubscription>();
+  const responseListener = useRef<Notifications.EventSubscription>();
+
+  useEffect(() => {
+    registerForPushNotificationsAsync()
+      .then((token) => setExpoPushToken(token ?? ""))
+      .catch((error: any) => setExpoPushToken(`${error}`));
+
+    notificationListener.current =
+      Notifications.addNotificationReceivedListener((notification) => {
+        setNotification(notification);
+      });
+
+    responseListener.current =
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        console.log(response);
+      });
+
+    return () => {
+      notificationListener.current &&
+        Notifications.removeNotificationSubscription(
+          notificationListener.current
+        );
+      responseListener.current &&
+        Notifications.removeNotificationSubscription(responseListener.current);
+    };
+  }, []);
 
   const handleClockInOut = () => {
     setClockedIn(!clockedIn);

@@ -1,8 +1,6 @@
 import React from "react";
 import AdminDashboard from "./src/web/adminDashboard/screens/AdminDashboard";
-import EmployeeDashboard from "./src/mobile/employeeDashboard/screens/EmployeeDashboard";
 import ManagerDashboard from "./src/web/managerDashboard/screens/ManagerDashboard";
-
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
@@ -26,11 +24,8 @@ import EditUserDetailScreens from "./src/mobile/employeeDashboard/screens/EditUs
 import EditDetailScreens from "./src/mobile/employeeDashboard/screens/EditDetailsScreen";
 import PartialRegesterScreen from "./src/mobile/employeeDashboard/screens/ParitalRegestrationScreen";
 import ParitalRegestrationPasswordScreen from "./src/mobile/employeeDashboard/screens/PartialRegisterPasswordScreen";
-import AppNavigatorDrawer, {
-  MyTabs,
-} from "./src/mobile/employeeDashboard/screens/DrawerNavigator";
+import { MyTabs } from "./src/mobile/employeeDashboard/screens/DrawerNavigator";
 import ChatScreen from "./src/mobile/employeeDashboard/screens/ChatScreen";
-
 // Create a stack navigator
 const Stack = createStackNavigator();
 
