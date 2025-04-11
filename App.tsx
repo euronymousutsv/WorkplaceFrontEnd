@@ -1,5 +1,4 @@
 import React from "react";
-
 import AdminDashboard from "./src/web/adminDashboard/screens/AdminDashboard";
 import EmployeeDashboard from "./src/mobile/employeeDashboard/screens/EmployeeDashboard";
 import ManagerDashboard from "./src/web/managerDashboard/screens/ManagerDashboard";
@@ -27,6 +26,10 @@ import EditUserDetailScreens from "./src/mobile/employeeDashboard/screens/EditUs
 import EditDetailScreens from "./src/mobile/employeeDashboard/screens/EditDetailsScreen";
 import PartialRegesterScreen from "./src/mobile/employeeDashboard/screens/ParitalRegestrationScreen";
 import ParitalRegestrationPasswordScreen from "./src/mobile/employeeDashboard/screens/PartialRegisterPasswordScreen";
+import AppNavigatorDrawer, {
+  MyTabs,
+} from "./src/mobile/employeeDashboard/screens/DrawerNavigator";
+import ChatScreen from "./src/mobile/employeeDashboard/screens/ChatScreen";
 
 // Create a stack navigator
 const Stack = createStackNavigator();
@@ -50,13 +53,6 @@ const AppNavigator = () => {
 
   return (
     <Stack.Navigator>
-      {/* Public Routes */}
-      {/* <Stack.Screen
-        name="AdminDashboard"
-        component={AdminDashboard}
-        options={{ headerShown: false }}
-      />  */}
-
       <Stack.Screen
         name="Welcome"
         component={WelcomeScreen}
@@ -140,6 +136,15 @@ const AppNavigator = () => {
         }}
       />
 
+      <Stack.Screen
+        name="ChatScreen"
+        component={ChatScreen}
+        options={({ route }) => ({
+          headerBackTitle: "back",
+          title: route.params?.channelName || "Chat",
+        })}
+      />
+
       {/* All Signup Screens */}
       <Stack.Screen
         name="Signup1"
@@ -177,36 +182,9 @@ const AppNavigator = () => {
         }}
       />
 
-      {/* Conditional Routes
-      // {isAuthenticated && (
-      //   <>
-      //     {userRole === "admin" && (
-      //       <Stack.Screen
-      //         name="AdminDashboard"
-      //         component={AdminDashboard}
-      //         options={{ headerShown: false }}
-      //       />
-      //     )}
-      //     {userRole === "manager" && (
-      //       <Stack.Screen
-      //         name="ManagerDashboard"
-      //         component={ManagerDashboard}
-      //         options={{ headerShown: false }}
-      //       />
-      //     )}
-      //     {userRole === "employee" && (
-      //       <Stack.Screen
-      //         name="EmployeeDashboard"
-      //         component={EmployeeDashboard}
-      //         options={{ headerShown: false }}
-      //       />
-      //     )}
-      //   </>
-      // )} */}
-
       <Stack.Screen
         name="EmployeeDashboard"
-        component={EmployeeDashboard}
+        component={MyTabs}
         options={{ headerShown: false }}
       />
       <Stack.Screen

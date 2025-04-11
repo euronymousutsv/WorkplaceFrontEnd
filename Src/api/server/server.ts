@@ -11,6 +11,7 @@ export interface createChannelResponse {
 
 export interface userJoinedServerResponse {
   serverId: string;
+  name: string;
 }
 
 export interface SearchServerResponse {

@@ -19,6 +19,7 @@ import JwtDecode from "jwt-decode";
 import JWT from "expo-jwt";
 import socket from "../../../config/Socket";
 import { FlatList } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // Props for ChatWindow component
 type ChatWindowProps = {
@@ -169,11 +170,6 @@ const ChatWindow = ({
       style={styles.chatContainer}
       keyboardVerticalOffset={80}
     >
-      {/* Channel header */}
-      <View style={styles.channelHeader}>
-        <Text style={styles.channelName}>{activeChannelName}</Text>
-      </View>
-
       <FlatList
         style={styles.messagesContainer}
         data={messages}
@@ -226,6 +222,7 @@ const ChatWindow = ({
         <TextInput
           style={styles.input}
           placeholder="Type a message"
+          textContentType="none"
           value={newMessage}
           onChangeText={setNewMessage}
           returnKeyType="send"
@@ -246,18 +243,11 @@ const styles = StyleSheet.create({
   chatContainer: {
     flex: 1,
     backgroundColor: "#FDFDFF",
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    marginBottom: 20,
   },
-  channelHeader: {
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#EFEFEF",
-    backgroundColor: "#F7F7F9",
-  },
-  channelName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#4A90E2",
-  },
+
   messagesContainer: {
     flex: 1,
     padding: 12,
@@ -310,14 +300,15 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 12,
+    paddingVertical: 20,
+    paddingHorizontal: 10,
     borderTopWidth: 1,
     borderTopColor: "#EFEFEF",
-    backgroundColor: "#F7F7F9",
   },
   input: {
     flex: 1,
     padding: 12,
+
     backgroundColor: "white",
     borderWidth: 1,
     borderColor: "#E0E0E0",

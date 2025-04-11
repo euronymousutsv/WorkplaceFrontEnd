@@ -42,6 +42,8 @@ const loginUser = async (email: string, password: string): Promise<any> => {
 
 const registerUser = async (userData: RegisterRequest) => {
   try {
+    console.log("regster");
+
     console.log("Request payload:", userData); // Log the data being sent to the server
     const response = await API.post<ApiResponse<RegisterResponse>>(
       "register",
@@ -104,6 +106,8 @@ const partialregisterComplete = async (
   password: string
 ) => {
   console.log(password, phoneNumber);
+  console.log("Partial");
+
   try {
     const response = await API.post<ApiResponse<{}>>(
       "partialRegestrationPasswordSet",

@@ -13,9 +13,7 @@ import {
 // creating an instance of axios api wth base url
 const API = axios.create({
   baseURL:
-    // "https://workplace-zdzja.ondigitalocean.app/api/v1",
-    // "https://8c1f-2406-2d40-4d55-6c10-bdc3-9abf-864e-c64f.ngrok-free.app/api/v1",
-    // "http://localhost:3000/api/v1/server/",
+    //  "http://localhost:3000/api/v1/server/",
     "https://workhive.space/api/v1/server/",
 
   headers: {
@@ -268,7 +266,7 @@ const fetchAllUsers = async () => {
   console.log("---------", accessToken, "----");
   try {
     const response = await API.get<ApiResponse<[EmployeeDetails]>>(
-      "server/fetchAllUsers",
+      "fetchAllUsers",
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
