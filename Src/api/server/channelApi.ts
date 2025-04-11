@@ -1,6 +1,6 @@
 import axios, { AxiosError } from "axios";
 import { ApiError, ApiResponse } from "../utils/apiResponse";
-import { getToken } from "../auth/token";
+import { getToken, Plat } from "../auth/token";
 import {
   ChannelDetailsResponse,
   createChannelResponse,
@@ -8,10 +8,11 @@ import {
 } from "./server";
 
 const API = axios.create({
-  // baseURL: "https://workplace-zdzja.ondigitalocean.app/api/v1/channel/",
   baseURL: 
-  "https://workhive.space/api/v1/channel/",
-  
+  "https://workplace-zdzja.ondigitalocean.app/api/v1/channel/",
+
+  // "https://workhive.space/api/v1/channel/",
+
   headers: {
     "Content-Type": "application/json",
   },
@@ -26,13 +27,25 @@ API.interceptors.request.use(async (config) => {
   return config;
 });
 
+type CreateChannelRequest = {
+  serverId: string;
+  channelName: string;
+};
+
 // create a new channel inside current server
 // only admins can create a new channels
-const createNewChannel = async (reqData: createChannelResponse) => {
+const createNewChannel = async (reqData: CreateChannelRequest) => {
   try {
-    const response = await API.post<ApiResponse<[createChannelResponse]>>(
-      "getAllChannelForCurrentServer",
-      reqData
+    const accessToken = await getToken("accessToken", Plat.WEB);
+    const response = await API.post<ApiResponse<createChannelResponse>>(
+      "create",
+      reqData,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+       
+      }
     );
     return response.data;
   } catch (error) {
@@ -97,11 +110,15 @@ const addAccessToChannel = async (reqData: {
 }) => {
   try {
     const { channelId, highestRoleToAccessServer } = reqData;
-
+    const accessToken = await getToken("accessToken", Plat.WEB);
     const response = await API.post<ApiResponse<{}>>("addAccessToChannel", {
       channelId,
       highestRoleToAccessServer,
-    });
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+       
+      });
     return response.data;
   } catch (error) {
     if (error instanceof AxiosError) {
@@ -121,10 +138,18 @@ const changeChannelName = async (reqData: {
 }) => {
   try {
     const { channelId, newChannelName } = reqData;
-    const response = await API.put<ApiResponse<{}>>("addAccessToChannel", {
-      channelId,
-      newChannelName,
-    });
+    console.log("channelID:", channelId);
+    const accessToken = await getToken("accessToken", Plat.WEB);
+    const response = await API.put<ApiResponse<{}>>(
+      "changeAChannelName",
+      { channelId, newChannelName },
+    
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
     return response.data;
   } catch (error) {
     if (error instanceof AxiosError) {

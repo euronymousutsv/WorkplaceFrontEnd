@@ -62,7 +62,7 @@ const initialRequests: LeaveRequest[] = [
 
 const LeaveRequestScreen = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [selectedTab, setSelectedTab] = useState('LeaveRequest');
+  const [selectedTab, setSelectedTab] = useState('LeaveRequestScreen');
   const [requests, setRequests] = useState<LeaveRequest[]>(initialRequests);
   const [search, setSearch] = useState('');
   const [commentModalVisible, setCommentModalVisible] = useState(false);

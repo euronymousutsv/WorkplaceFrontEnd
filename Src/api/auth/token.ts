@@ -39,13 +39,14 @@ export async function saveToken(
 // Get token
 export async function getToken(
   key: string,
-  plat: Plat = Plat.PHONE
+  plat: Plat = Plat.WEB // changed t default to web by sabin for testing 
 ): Promise<string | null> {
+ 
   try {
     switch (plat) {
       // when the platform is web , we get details in Local storage
       case Plat.WEB:
-        return localStorage.getItem(key);
+        return Promise.resolve(localStorage.getItem(key));
 
       // when the platform is phone , we get details in Expo secured storage
       case Plat.PHONE:

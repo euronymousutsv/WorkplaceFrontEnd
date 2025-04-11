@@ -14,5 +14,8 @@ export type RootStackParamList = {
     GrossPaymentScreen: undefined;
     LeaveRequestScreen: undefined;
     EditUserDetailScreens: undefined;
+    ChatScreen: {channelName: string;
+      channelId:string;
+    };
   };
   

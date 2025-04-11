@@ -15,13 +15,6 @@ import { ChannelResponse } from "../../../api/server/server";
 
 const { width } = Dimensions.get("window");
 
-// Define channel types
-// const channels = [
-//   { id: "welcome", name: "# Welcome" },
-//   { id: "main", name: "# Main Chat" },
-//   { id: "private1", name: "# Private Channel 1" },
-// ];
-
 type MenuProps = {
   isMenuOpen: boolean;
   toggleMenu: () => void;

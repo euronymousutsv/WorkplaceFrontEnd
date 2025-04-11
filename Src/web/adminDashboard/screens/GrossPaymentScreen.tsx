@@ -78,7 +78,7 @@ const initialPayments: GrossPayment[] = [
 
 const GrossPaymentScreen = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [selectedTab, setSelectedTab] = useState('GrossPayment');
+  const [selectedTab, setSelectedTab] = useState('GrossPaymentScreen');
   const [payments, setPayments] = useState<GrossPayment[]>(initialPayments);
   const [modalVisible, setModalVisible] = useState(false);
   const [formData, setFormData] = useState<GrossPayment | null>(null);

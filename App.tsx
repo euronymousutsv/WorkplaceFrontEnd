@@ -26,6 +26,7 @@ import EditUserDetailScreens from "./src/mobile/employeeDashboard/screens/EditUs
 import EditDetailScreens from "./src/mobile/employeeDashboard/screens/EditDetailsScreen";
 import PartialRegesterScreen from "./src/mobile/employeeDashboard/screens/ParitalRegestrationScreen";
 import ParitalRegestrationPasswordScreen from "./src/mobile/employeeDashboard/screens/PartialRegisterPasswordScreen";
+import ChatScreen from "./src/web/adminDashboard/screens/ChatScreen";
 
 // Create a stack navigator
 const Stack = createStackNavigator();
@@ -222,7 +223,12 @@ const AppNavigator = () => {
       />
       <Stack.Screen
         name="ManagerDashboard"
-        component={ManagerDashboard}
+        component={AdminDashboard}//change it
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="ChatScreen"
+        component={ChatScreen}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>

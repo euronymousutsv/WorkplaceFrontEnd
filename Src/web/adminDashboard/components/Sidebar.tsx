@@ -4,6 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../../../types/navigationTypes'
 import { StackNavigationProp } from '@react-navigation/stack';
+import ChatChannelList from './ChatChannelList';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -80,12 +81,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, selectedTab, h
     <View style={styles.sidebarContainer}>
       <Animated.View style={[styles.sidebar, { width: sidebarWidth, left: sidebarPosition }]}>
         <ScrollView style={styles.menuItems}>
+        
           <TouchableOpacity
             style={[styles.menuItem, selectedTab === 'Dashboard' && styles.activeMenuItem]}
             onPress={() => handleMenuItemClick('Dashboard')}
           >
             <Text style={styles.menuText}>Dashboard</Text>
           </TouchableOpacity>
+          <ChatChannelList/>
           <TouchableOpacity
             style={[styles.menuItem, selectedTab === 'Schedules' && styles.activeMenuItem]}
             onPress={() => {
@@ -100,42 +103,38 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, selectedTab, h
             <Text style={styles.menuText}>Clock In/Out</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.menuItem, selectedTab === 'GrossPayment' && styles.activeMenuItem]}
+            style={[styles.menuItem, selectedTab === 'GrossPaymentScreen' && styles.activeMenuItem]}
             onPress={() => handleMenuItemClick('GrossPaymentScreen')}
           >
             <Text style={styles.menuText}>Gross Payment</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.menuItem, selectedTab === 'LeaveRequest' && styles.activeMenuItem]}
+            style={[styles.menuItem, selectedTab === 'LeaveRequestScreen' && styles.activeMenuItem]}
             onPress={() => handleMenuItemClick('LeaveRequestScreen', )}
           >
             <Text style={styles.menuText}>Leave Request</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={[styles.menuItem, selectedTab === 'ToDo' && styles.activeMenuItem]}
             onPress={() => handleMenuItemClick('ToDo')}
           >
             <Text style={styles.menuText}>To Do</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           <TouchableOpacity
             style={[styles.menuItem, selectedTab === 'EmployeeManagement' && styles.activeMenuItem]}
             onPress={() => handleMenuItemClick('EmployeeManagement')}
           >
             <Text style={styles.menuText}>Employee Management</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.menuItem, selectedTab === 'PerformanceManagement' && styles.activeMenuItem]}
-            onPress={() => handleMenuItemClick('PerformanceManagement')}
-          >
-            <Text style={styles.menuText}>Performance Management</Text>
-          </TouchableOpacity>
+          
           <TouchableOpacity
             style={[styles.menuItem, selectedTab === 'Settings' && styles.activeMenuItem]}
             onPress={() => handleMenuItemClick('Settings')}
           >
             <Text style={styles.menuText}>Settings</Text>
           </TouchableOpacity>
+          
         </ScrollView>
       </Animated.View>
     </View>
