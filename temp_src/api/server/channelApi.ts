@@ -164,7 +164,7 @@ const getChannelDetails = async (reqData: {
 }) => {
   try {
     const { channelId } = reqData;
-    const accessToken = await getToken("accessToken", Plat);
+    const accessToken = await getToken("accessToken", reqData.plat);
     const response = await API.get<ApiResponse<ChannelDetailsResponse>>(
       "getChannelDetails",
       {
