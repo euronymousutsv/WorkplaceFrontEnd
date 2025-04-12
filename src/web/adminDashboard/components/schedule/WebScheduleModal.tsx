@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   Modal,
   View,
@@ -6,15 +6,15 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-} from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import Toast from 'react-native-toast-message'; 
+} from "react-native";
+import { Picker } from "@react-native-picker/picker";
+import Toast from "react-native-toast-message";
 
 interface Props {
   visible: boolean;
   onClose: () => void;
   onSave: (data: any) => void;
-  employees:{id : string; name: string}[];
+  employees: { id: string; name: string }[];
   // locations: {id : string; name: string}[]; use this
   locations: string[];
   selectedEmployee?: string;
@@ -34,11 +34,11 @@ const WebScheduleModal: React.FC<Props> = ({
   editingShift,
   onDelete,
 }) => {
-  const [employee, setEmployee] = useState('');
-  const [location, setLocation] = useState('');
-  const [desc, setDesc] = useState('');
-  const [start, setStart] = useState('');
-  const [end, setEnd] = useState('');
+  const [employee, setEmployee] = useState("");
+  const [location, setLocation] = useState("");
+  const [desc, setDesc] = useState("");
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
@@ -50,11 +50,11 @@ const WebScheduleModal: React.FC<Props> = ({
         setStart(editingShift.start);
         setEnd(editingShift.end);
       } else {
-        setEmployee(selectedEmployee || '');
-        setStart(selectedDate ? `${selectedDate}T09:00` : '');
-        setEnd(selectedDate ? `${selectedDate}T17:00` : '');
-        setLocation('');
-        setDesc('');
+        setEmployee(selectedEmployee || "");
+        setStart(selectedDate ? `${selectedDate}T09:00` : "");
+        setEnd(selectedDate ? `${selectedDate}T17:00` : "");
+        setLocation("");
+        setDesc("");
       }
       setErrors({});
     }
@@ -62,17 +62,18 @@ const WebScheduleModal: React.FC<Props> = ({
 
   const validate = () => {
     const err: any = {};
-    if (!employee) err.employee = 'Select employee';
-    if (!location) err.location = 'Select location';
-    if (!desc) err.desc = 'Add description';
-    if (!start || !end || new Date(start) >= new Date(end)) err.time = 'Start must be before end';
+    if (!employee) err.employee = "Select employee";
+    if (!location) err.location = "Select location";
+    if (!desc) err.desc = "Add description";
+    if (!start || !end || new Date(start) >= new Date(end))
+      err.time = "Start must be before end";
     setErrors(err);
 
     if (Object.keys(err).length > 0) {
       Toast.show({
-        type: 'error',
-        text1: 'Validation Error',
-        text2: 'Please fill out all fields correctly.',
+        type: "error",
+        text1: "Validation Error",
+        text2: "Please fill out all fields correctly.",
       });
     }
 
@@ -83,9 +84,11 @@ const WebScheduleModal: React.FC<Props> = ({
     if (!validate()) return;
     onSave({ employee, location, desc, start, end });
     Toast.show({
-      type: 'success',
-      text1: editingShift ? 'Shift Updated' : 'Schedule Created',
-      text2: `${employee}'s shift has been ${editingShift ? 'updated' : 'scheduled'} successfully.`,
+      type: "success",
+      text1: editingShift ? "Shift Updated" : "Schedule Created",
+      text2: `${employee}'s shift has been ${
+        editingShift ? "updated" : "scheduled"
+      } successfully.`,
     });
     onClose();
   };
@@ -93,8 +96,8 @@ const WebScheduleModal: React.FC<Props> = ({
   const handleDelete = () => {
     onDelete?.();
     Toast.show({
-      type: 'info',
-      text1: 'Shift Deleted',
+      type: "info",
+      text1: "Shift Deleted",
       text2: `${employee}'s shift was removed.`,
     });
     onClose();
@@ -104,7 +107,9 @@ const WebScheduleModal: React.FC<Props> = ({
     <Modal visible={visible} animationType="fade" transparent>
       <View style={styles.overlay}>
         <View style={styles.modal}>
-          <Text style={styles.title}>{editingShift ? 'Edit Shift' : 'Create Schedule'}</Text>
+          <Text style={styles.title}>
+            {editingShift ? "Edit Shift" : "Create Schedule"}
+          </Text>
 
           <View style={styles.row}>
             <View style={styles.field}>
@@ -113,12 +118,13 @@ const WebScheduleModal: React.FC<Props> = ({
                 <Picker selectedValue={employee} onValueChange={setEmployee}>
                   <Picker.Item label="Select Employee" value="" />
                   {employees.map((e) => (
-  <Picker.Item key={e.id} label={e.name} value={e.id} />
-))}
-
+                    <Picker.Item key={e.id} label={e.name} value={e.id} />
+                  ))}
                 </Picker>
               </View>
-              {errors.employee && <Text style={styles.error}>{errors.employee}</Text>}
+              {errors.employee && (
+                <Text style={styles.error}>{errors.employee}</Text>
+              )}
             </View>
 
             <View style={styles.field}>
@@ -128,15 +134,15 @@ const WebScheduleModal: React.FC<Props> = ({
                   {/* <Picker.Item label="Select Location" value="" />
                   {locations.map((l) => (
   <Picker.Item key={l.id} label={l.name} value={l.id} />
-))} */} 
-{locations.map((l) => (
-  <Picker.Item key={l} label={l} value={l} />
-))}
-
-
+))} */}
+                  {locations.map((l) => (
+                    <Picker.Item key={l} label={l} value={l} />
+                  ))}
                 </Picker>
               </View>
-              {errors.location && <Text style={styles.error}>{errors.location}</Text>}
+              {errors.location && (
+                <Text style={styles.error}>{errors.location}</Text>
+              )}
             </View>
           </View>
 
@@ -176,14 +182,23 @@ const WebScheduleModal: React.FC<Props> = ({
 
           <View style={styles.actions}>
             {editingShift && (
-              <TouchableOpacity onPress={handleDelete} style={[styles.btn, styles.delete]}>
+              <TouchableOpacity
+                onPress={handleDelete}
+                style={[styles.btn, styles.delete]}
+              >
                 <Text style={styles.btnText}>Delete</Text>
               </TouchableOpacity>
             )}
-            <TouchableOpacity onPress={onClose} style={[styles.btn, styles.cancel]}>
+            <TouchableOpacity
+              onPress={onClose}
+              style={[styles.btn, styles.cancel]}
+            >
               <Text style={styles.btnText}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleSave} style={[styles.btn, styles.save]}>
+            <TouchableOpacity
+              onPress={handleSave}
+              style={[styles.btn, styles.save]}
+            >
               <Text style={styles.btnText}>Save</Text>
             </TouchableOpacity>
           </View>
@@ -193,41 +208,45 @@ const WebScheduleModal: React.FC<Props> = ({
   );
 };
 
-
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: '#00000088',
-    justifyContent: 'center',
+    backgroundColor: "#00000088",
+    justifyContent: "center",
     paddingHorizontal: 50,
   },
   modal: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 30,
     gap: 14,
   },
-  title: { fontSize: 22, fontWeight: 'bold', textAlign: 'center', marginBottom: 10 },
-  row: { flexDirection: 'row', gap: 20 },
+  title: {
+    fontSize: 22,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  row: { flexDirection: "row", gap: 20 },
   field: { flex: 1 },
-  label: { fontWeight: '600', marginBottom: 4, fontSize: 14 },
+  label: { fontWeight: "600", marginBottom: 4, fontSize: 14 },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 6,
     padding: 10,
     fontSize: 14,
   },
   pickerWrapper: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 6,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
-  error: { color: '#d9534f', fontSize: 12, marginTop: 4 },
+  error: { color: "#d9534f", fontSize: 12, marginTop: 4 },
   actions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+    flexDirection: "row",
+    justifyContent: "flex-end",
     gap: 12,
     marginTop: 20,
   },
@@ -236,10 +255,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     borderRadius: 6,
   },
-  save: { backgroundColor: '#4A90E2' },
-  cancel: { backgroundColor: '#888' },
-  delete: { backgroundColor: '#d9534f' },
-  btnText: { color: '#fff', fontWeight: 'bold' },
+  save: { backgroundColor: "#4A90E2" },
+  cancel: { backgroundColor: "#888" },
+  delete: { backgroundColor: "#d9534f" },
+  btnText: { color: "#fff", fontWeight: "bold" },
 });
 
 export default WebScheduleModal;

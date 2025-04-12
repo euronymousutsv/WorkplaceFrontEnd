@@ -8,23 +8,12 @@ import {
 } from "./server";
 
 const API = axios.create({
-  baseURL: 
-  "https://workplace-zdzja.ondigitalocean.app/api/v1/channel/",
-
-  // "https://workhive.space/api/v1/channel/",
-
+  // baseURL: "https://workplace-zdzja.ondigitalocean.app/api/v1/channel/",
+  baseURL: "https://workhive.space/api/v1/channel/",
+  // baseURL: "http://localhost:3000/api/v1/channel/",
   headers: {
     "Content-Type": "application/json",
   },
-});
-
-// sending access token to the server
-API.interceptors.request.use(async (config) => {
-  const token = await getToken("accessToken");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
 });
 
 type CreateChannelRequest = {
@@ -44,7 +33,6 @@ const createNewChannel = async (reqData: CreateChannelRequest) => {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
-       
       }
     );
     return response.data;
@@ -59,12 +47,16 @@ const createNewChannel = async (reqData: CreateChannelRequest) => {
 };
 
 // sends a get request for all the channels that are in the server
-const getAllChannelForCurrentServer = async (serverId: string) => {
+const getAllChannelForCurrentServer = async (serverId: string, plat: Plat) => {
   try {
+    const accessToken = await getToken("accessToken", plat);
     const response = await API.get<
       ApiResponse<[getAllChannelForCurrentServerResponse]>
     >("getAllChannelForCurrentServer", {
       params: { serverId },
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
     });
 
     return response.data;
@@ -85,10 +77,14 @@ const deleteChannel = async (reqData: {
   channelName: string;
 }) => {
   try {
+    const accessToken = await getToken("accessToken", Plat.WEB);
     const channelId = reqData.channelId;
     const response = await API.delete<ApiResponse<{}>>("delete", {
       params: {
         channelId,
+      },
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
       },
     });
     return response.data;
@@ -114,11 +110,10 @@ const addAccessToChannel = async (reqData: {
     const response = await API.post<ApiResponse<{}>>("addAccessToChannel", {
       channelId,
       highestRoleToAccessServer,
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-       
-      });
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
     return response.data;
   } catch (error) {
     if (error instanceof AxiosError) {
@@ -143,7 +138,7 @@ const changeChannelName = async (reqData: {
     const response = await API.put<ApiResponse<{}>>(
       "changeAChannelName",
       { channelId, newChannelName },
-    
+
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -165,13 +160,18 @@ const changeChannelName = async (reqData: {
 const getChannelDetails = async (reqData: {
   channelId: string;
   newChannelName: string;
+  plat: Plat;
 }) => {
   try {
     const { channelId } = reqData;
+    const accessToken = await getToken("accessToken", Plat);
     const response = await API.get<ApiResponse<ChannelDetailsResponse>>(
       "getChannelDetails",
       {
         params: { channelId },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       }
     );
     return response.data;

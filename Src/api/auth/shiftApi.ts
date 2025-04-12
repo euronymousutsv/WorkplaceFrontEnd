@@ -3,12 +3,9 @@ import { ApiError, ApiResponse } from "../utils/apiResponse";
 import { getToken, Plat } from "./token";
 
 export const API = axios.create({
-  baseURL: 
-  // "https://workhive.space",
+  baseURL: "https://workhive.space",
   // "https://8c1f-2406-2d40-4d55-6c10-bdc3-9abf-864e-c64f.ngrok-free.app",
-  "http://localhost:3000",
-  // "https://workplace-zdzja.ondigitalocean.app",
-// "https://06b5-110-175-196-31.ngrok-free.app",
+  // "http://localhost:3000",
 
   headers: {
     "Content-Type": "application/json",
@@ -156,7 +153,7 @@ export const updateShift = async (
     const accessToken = (await getToken("accessToken")) ?? "";
     const response = await API.put(
       `api/roster/updateShift/${shiftId}`,
-      {employeeId, officeId, startTime, endTime },
+      { employeeId, officeId, startTime, endTime },
       {
         params: { accessToken },
       }

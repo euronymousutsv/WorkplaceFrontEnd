@@ -1,7 +1,5 @@
 import React from "react";
-
 import AdminDashboard from "./src/web/adminDashboard/screens/AdminDashboard";
-import EmployeeDashboard from "./src/mobile/employeeDashboard/screens/EmployeeDashboard";
 import ManagerDashboard from "./src/web/managerDashboard/screens/ManagerDashboard";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
@@ -27,7 +25,8 @@ import EditDetailScreens from "./src/mobile/employeeDashboard/screens/EditDetail
 import PartialRegesterScreen from "./src/mobile/employeeDashboard/screens/ParitalRegestrationScreen";
 import ParitalRegestrationPasswordScreen from "./src/mobile/employeeDashboard/screens/PartialRegisterPasswordScreen";
 import ChatScreen from "./src/web/adminDashboard/screens/ChatScreen";
-
+import { MyTabs } from "./src/mobile/employeeDashboard/screens/DrawerNavigator";
+import ChatScreenPhone from "./src/mobile/employeeDashboard/screens/ChatScreen";
 // Create a stack navigator
 const Stack = createStackNavigator();
 
@@ -50,13 +49,6 @@ const AppNavigator = () => {
 
   return (
     <Stack.Navigator>
-      {/* Public Routes */}
-      {/* <Stack.Screen
-        name="AdminDashboard"
-        component={AdminDashboard}
-        options={{ headerShown: false }}
-      />  */}
-
       <Stack.Screen
         name="Welcome"
         component={WelcomeScreen}
@@ -72,7 +64,6 @@ const AppNavigator = () => {
         component={InviteCodeScreen}
         options={{ headerShown: false }}
       />
-
       <Stack.Screen
         name="SchedulesScreen"
         component={SchedulesScreen}
@@ -86,7 +77,7 @@ const AppNavigator = () => {
       <Stack.Screen
         name="EmployeeManagementScreen"
         component={EmployeeManagementScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: true }}
       />
       <Stack.Screen
         name="SettingsScreen"
@@ -139,7 +130,14 @@ const AppNavigator = () => {
           headerShadowVisible: false,
         }}
       />
-
+      <Stack.Screen
+        name="ChatScreenPhone"
+        component={ChatScreenPhone}
+        options={({ route }) => ({
+          headerBackTitle: "back",
+          title: route.params?.channelName || "Chat",
+        })}
+      />
       {/* All Signup Screens */}
       <Stack.Screen
         name="Signup1"
@@ -176,37 +174,9 @@ const AppNavigator = () => {
           title: "",
         }}
       />
-
-      {/* Conditional Routes
-      // {isAuthenticated && (
-      //   <>
-      //     {userRole === "admin" && (
-      //       <Stack.Screen
-      //         name="AdminDashboard"
-      //         component={AdminDashboard}
-      //         options={{ headerShown: false }}
-      //       />
-      //     )}
-      //     {userRole === "manager" && (
-      //       <Stack.Screen
-      //         name="ManagerDashboard"
-      //         component={ManagerDashboard}
-      //         options={{ headerShown: false }}
-      //       />
-      //     )}
-      //     {userRole === "employee" && (
-      //       <Stack.Screen
-      //         name="EmployeeDashboard"
-      //         component={EmployeeDashboard}
-      //         options={{ headerShown: false }}
-      //       />
-      //     )}
-      //   </>
-      // )} */}
-
       <Stack.Screen
         name="EmployeeDashboard"
-        component={EmployeeDashboard}
+        component={MyTabs}
         options={{ headerShown: false }}
       />
       <Stack.Screen
@@ -214,6 +184,12 @@ const AppNavigator = () => {
         component={AdminDashboard}
         options={{ headerShown: false }}
       />
+      {/* // With drawer remove this comment */}
+      {/* <Stack.Screen
+        name="AdminDashboard"
+        component={WebNavigatorDrawer}
+        options={{ headerShown: false }}
+      /> */}
       <Stack.Screen
         name="SearchedServer"
         component={SearchedServerScreen}
@@ -223,7 +199,7 @@ const AppNavigator = () => {
       />
       <Stack.Screen
         name="ManagerDashboard"
-        component={AdminDashboard}//change it
+        component={AdminDashboard} //change it
         options={{ headerShown: false }}
       />
       <Stack.Screen

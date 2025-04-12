@@ -1,67 +1,64 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  ScrollView, 
-  StyleSheet 
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  SafeAreaView,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+// import DateTimePicker from "@react-native-community/datetimepicker";
 
 // Mock data (Replace with backend integration later)
 const mockLeaveHistory = [
-  { id: '1', type: 'Sick Leave', startDate: '2024-03-05', endDate: '2024-03-07', status: 'Approved' },
-  { id: '2', type: 'Vacation', startDate: '2024-04-15', endDate: '2024-04-20', status: 'Pending' },
+  {
+    id: "1",
+    type: "Sick Leave",
+    startDate: "2024-03-05",
+    endDate: "2024-03-07",
+    status: "Approved",
+  },
+  {
+    id: "2",
+    type: "Vacation",
+    startDate: "2024-04-15",
+    endDate: "2024-04-20",
+    status: "Pending",
+  },
 ];
 
-const LeaveScreen: React.FC<{ toggleMenu: () => void; toggleNotification: () => void }> = ({ toggleMenu, toggleNotification }) => {
-  const [leaveType, setLeaveType] = useState('');
+// const LeaveScreen: React.FC<{ toggleMenu: () => void; toggleNotification: () => void }> = ({ toggleMenu, toggleNotification }) => {
+const LeaveScreen = () => {
+  const [leaveType, setLeaveType] = useState("");
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
-  const [reason, setReason] = useState('');
+  const [reason, setReason] = useState("");
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const [leaveRequests, setLeaveRequests] = useState(mockLeaveHistory);
 
   const handleApplyLeave = () => {
     if (!leaveType || !reason) {
-      alert('Please fill in all fields');
+      alert("Please fill in all fields");
       return;
     }
     const newLeave = {
       id: Date.now().toString(),
       type: leaveType,
-      startDate: startDate.toISOString().split('T')[0],
-      endDate: endDate.toISOString().split('T')[0],
-      status: 'Pending',
+      startDate: startDate.toISOString().split("T")[0],
+      endDate: endDate.toISOString().split("T")[0],
+      status: "Pending",
     };
     setLeaveRequests([...leaveRequests, newLeave]);
-    setLeaveType('');
-    setReason('');
+    setLeaveType("");
+    setReason("");
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header Section */}
-      <View style={styles.header}>
-        {/* Menu Button (Left Side) */}
-        <TouchableOpacity style={styles.menuButton} onPress={toggleMenu}>
-          <Ionicons name="menu" size={24} color="white" />
-        </TouchableOpacity>
-
-        {/* Center Text */}
-        <Text style={styles.headerText}>Leave Requests</Text>
-
-        {/* Notification Button (Right Side) */}
-        <TouchableOpacity style={styles.notificationButton} onPress={toggleNotification}>
-          <Ionicons name="notifications" size={24} color="white" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Leave Form Section */}
-      <ScrollView style={styles.contentContainer}>
+    <ScrollView style={styles.contentContainer}>
+      <SafeAreaView>
         <Text style={styles.sectionTitle}>Apply for Leave</Text>
 
         {/* Leave Type Input */}
@@ -73,27 +70,37 @@ const LeaveScreen: React.FC<{ toggleMenu: () => void; toggleNotification: () => 
         />
 
         {/* Date Pickers */}
-        <TouchableOpacity onPress={() => setShowStartDatePicker(true)} style={styles.datePicker}>
+        <TouchableOpacity
+          onPress={() => setShowStartDatePicker(true)}
+          style={styles.datePicker}
+        >
           <Ionicons name="calendar-outline" size={20} color="#4A90E2" />
-          <Text style={styles.dateText}>Start Date: {startDate.toDateString()}</Text>
+          <Text style={styles.dateText}>
+            Start Date: {startDate.toDateString()}
+          </Text>
         </TouchableOpacity>
-        {showStartDatePicker && (
-          <DateTimePicker
-            value={startDate}
-            mode="date"
-            display="default"
-            onChange={(event, selectedDate) => {
-              setShowStartDatePicker(false);
-              if (selectedDate) setStartDate(selectedDate);
-            }}
-          />
-        )}
+        {/* {showStartDatePicker && (
+          // <DateTimePicker
+          //   value={startDate}
+          //   mode="date"
+          //   display="default"
+          //   onChange={(event, selectedDate) => {
+          //     setShowStartDatePicker(false);
+          //     if (selectedDate) setStartDate(selectedDate);
+          //   }}
+          // />
+        )} */}
 
-        <TouchableOpacity onPress={() => setShowEndDatePicker(true)} style={styles.datePicker}>
+        <TouchableOpacity
+          onPress={() => setShowEndDatePicker(true)}
+          style={styles.datePicker}
+        >
           <Ionicons name="calendar-outline" size={20} color="#4A90E2" />
-          <Text style={styles.dateText}>End Date: {endDate.toDateString()}</Text>
+          <Text style={styles.dateText}>
+            End Date: {endDate.toDateString()}
+          </Text>
         </TouchableOpacity>
-        {showEndDatePicker && (
+        {/* {showEndDatePicker && (
           <DateTimePicker
             value={endDate}
             mode="date"
@@ -103,7 +110,7 @@ const LeaveScreen: React.FC<{ toggleMenu: () => void; toggleNotification: () => 
               if (selectedDate) setEndDate(selectedDate);
             }}
           />
-        )}
+        )} */}
 
         {/* Reason Input */}
         <TextInput
@@ -128,7 +135,14 @@ const LeaveScreen: React.FC<{ toggleMenu: () => void; toggleNotification: () => 
               <Text style={styles.leaveDate}>
                 {leave.startDate} - {leave.endDate}
               </Text>
-              <Text style={[styles.status, leave.status === 'Approved' ? styles.approved : styles.pending]}>
+              <Text
+                style={[
+                  styles.status,
+                  leave.status === "Approved"
+                    ? styles.approved
+                    : styles.pending,
+                ]}
+              >
                 {leave.status}
               </Text>
             </View>
@@ -136,39 +150,39 @@ const LeaveScreen: React.FC<{ toggleMenu: () => void; toggleNotification: () => 
         ) : (
           <Text style={styles.noLeaveText}>No leave history available.</Text>
         )}
-      </ScrollView>
-    </View>
+      </SafeAreaView>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FDFDFF',
+    backgroundColor: "#FDFDFF",
   },
   header: {
-    backgroundColor: '#4A90E2',
+    backgroundColor: "#4A90E2",
     paddingVertical: 20,
     paddingHorizontal: 10,
     borderBottomLeftRadius: 40,
     borderBottomRightRadius: 40,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
   },
   menuButton: {
-    position: 'absolute',
+    position: "absolute",
     left: 10,
   },
   notificationButton: {
-    position: 'absolute',
+    position: "absolute",
     right: 10,
   },
   headerText: {
-    color: 'white',
+    color: "white",
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   contentContainer: {
     flex: 1,
@@ -177,14 +191,14 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#4A90E2',
+    fontWeight: "bold",
+    color: "#4A90E2",
     marginBottom: 10,
   },
   input: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: "#E0E0E0",
     borderRadius: 10,
     padding: 10,
     fontSize: 16,
@@ -194,62 +208,62 @@ const styles = StyleSheet.create({
     height: 80,
   },
   datePicker: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
     padding: 10,
     borderRadius: 10,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: "#E0E0E0",
   },
   dateText: {
     fontSize: 16,
     marginLeft: 10,
-    color: '#393D3F',
+    color: "#393D3F",
   },
   applyButton: {
-    backgroundColor: '#2ECC71',
+    backgroundColor: "#2ECC71",
     padding: 15,
     borderRadius: 10,
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 20,
   },
   applyButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   leaveCard: {
-    backgroundColor: '#F7F7F7',
+    backgroundColor: "#F7F7F7",
     padding: 15,
     borderRadius: 10,
     marginBottom: 10,
   },
   leaveType: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#4A90E2',
+    fontWeight: "bold",
+    color: "#4A90E2",
   },
   leaveDate: {
     fontSize: 14,
-    color: '#393D3F',
+    color: "#393D3F",
   },
   status: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginTop: 5,
   },
   approved: {
-    color: '#2ECC71',
+    color: "#2ECC71",
   },
   pending: {
-    color: '#F39C12',
+    color: "#F39C12",
   },
   noLeaveText: {
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 16,
-    color: '#8E9196',
+    color: "#8E9196",
     marginTop: 20,
   },
 });

@@ -11,6 +11,7 @@ export interface createChannelResponse {
 
 export interface userJoinedServerResponse {
   serverId: string;
+  name: string;
 }
 
 export interface SearchServerResponse {
@@ -27,7 +28,7 @@ export interface joinAServerResponse {
   inviteLink: string;
 }
 
-export  enum Role {
+export enum Role {
   ADMIN = "admin",
   EMPLOYEE = "employee",
   MANAGER = "manager",
@@ -74,7 +75,6 @@ export interface EmployeeDetailsPayload {
   role: Role;
   employmentStatus: EmployeeStatus;
 }
-
 
 export interface getAllChannelForCurrentServerResponse
   extends ChannelResponse {}

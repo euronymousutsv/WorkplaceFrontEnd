@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
+  Platform,
 } from "react-native";
 import { useAuth } from "../../../context/AuthContext";
 import BottomNav from "../components/BottomNav";
@@ -20,11 +21,10 @@ import LeaveScreen from "./LeaveScreen";
 import ProfileScreen from "./ProfileScreen";
 import { getLoggedInUserServer } from "../../../api/server/serverApi";
 import { ApiError, ApiResponse } from "../../../api/utils/apiResponse";
-import { getToken, saveToken } from "../../../api/auth/token";
+import { getToken, Plat, saveToken } from "../../../api/auth/token";
 import { getAllChannelForCurrentServer } from "../../../api/server/channelApi";
 import { getShiftsForLoggedInUser, Shifts } from "../../../api/auth/shiftApi";
 import { Shift } from "../../../types/Shift";
-// Only import react-native-gesture-handler on native platforms
 import "react-native-gesture-handler";
 import AdminDashboard from "../../../web/adminDashboard/screens/AdminDashboard";
 const PrimaryColor = "#4A90E2";
@@ -33,6 +33,20 @@ const BackgroundColor = "#FDFDFF";
 const TextColor = "#393D3F";
 const ButtonRed = "#D9534F";
 const ActiveTabColor = "#88B6EC";
+import {
+  createDrawerNavigator,
+  DrawerNavigationProp,
+} from "@react-navigation/drawer";
+
+type EmployeeDashboardProps = {
+  navigation: DrawerNavigationProp<any, any>;
+};
+
+import { useRef } from "react";
+import * as Device from "expo-device";
+import * as Notifications from "expo-notifications";
+import Constants from "expo-constants";
+import { registerForPushNotificationsAsync } from "../components/notifications";
 
 const EmployeeDashboard: React.FC = () => {
   const { firstName, lastName } = useAuth();
@@ -46,6 +60,39 @@ const EmployeeDashboard: React.FC = () => {
   const [activeChannelId, setActiveChannelId] = useState<string | null>(null); // Default channel
   const [activeChannelName, setActiveChannelName] = useState(""); // Default channel name
   const [isChatView, setIsChatView] = useState(false);
+
+  // notifications
+  const [expoPushToken, setExpoPushToken] = useState("");
+  const [notification, setNotification] = useState<
+    Notifications.Notification | undefined
+  >(undefined);
+  const notificationListener = useRef<Notifications.EventSubscription>();
+  const responseListener = useRef<Notifications.EventSubscription>();
+
+  useEffect(() => {
+    registerForPushNotificationsAsync()
+      .then((token) => setExpoPushToken(token ?? ""))
+      .catch((error: any) => setExpoPushToken(`${error}`));
+
+    notificationListener.current =
+      Notifications.addNotificationReceivedListener((notification) => {
+        setNotification(notification);
+      });
+
+    responseListener.current =
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        console.log(response);
+      });
+
+    return () => {
+      notificationListener.current &&
+        Notifications.removeNotificationSubscription(
+          notificationListener.current
+        );
+      responseListener.current &&
+        Notifications.removeNotificationSubscription(responseListener.current);
+    };
+  }, []);
 
   const handleClockInOut = () => {
     setClockedIn(!clockedIn);
@@ -83,7 +130,7 @@ const EmployeeDashboard: React.FC = () => {
   };
 
   const handleGetServerDetail = async () => {
-    const res = await getLoggedInUserServer();
+    const res = await getLoggedInUserServer(Plat.PHONE);
     if (res instanceof ApiError) {
       console.log(res.message);
     } else if ("statusCode" in res && "data" in res) {
@@ -115,169 +162,170 @@ const EmployeeDashboard: React.FC = () => {
   }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
-      {isChatView ? (
-        // Chat View
-        <View style={styles.chatViewContainer}>
-          <View style={styles.chatHeader}>
-            <TouchableOpacity style={styles.menuButton} onPress={toggleMenu}>
-              <Ionicons name="menu" size={24} color="white" />
-            </TouchableOpacity>
-            <Text style={styles.headerText}>{activeChannelName}</Text>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => {
-                setIsChatView(false);
-                setActiveChannelId(null);
-                setActiveChannelName("");
-              }}
-            >
-              <Ionicons name="arrow-back" size={24} color="white" />
-            </TouchableOpacity>
-          </View>
+    <View></View>
+    // <SafeAreaView style={styles.container}>
+    //   {isChatView ? (
+    //     // Chat View
+    //     <View style={styles.chatViewContainer}>
+    //       <View style={styles.chatHeader}>
+    //         <TouchableOpacity style={styles.menuButton} onPress={toggleMenu}>
+    //           <Ionicons name="menu" size={24} color="white" />
+    //         </TouchableOpacity>
+    //         <Text style={styles.headerText}>{activeChannelName}</Text>
+    //         <TouchableOpacity
+    //           style={styles.backButton}
+    //           onPress={() => {
+    //             setIsChatView(false);
+    //             setActiveChannelId(null);
+    //             setActiveChannelName("");
+    //           }}
+    //         >
+    //           <Ionicons name="arrow-back" size={24} color="white" />
+    //         </TouchableOpacity>
+    //       </View>
 
-          <ChatWindow
-            activeChannelId={activeChannelId || ""}
-            activeChannelName={activeChannelName}
-            hideBottomNav={() => setIsChatView(true)}
-          />
-        </View>
-      ) : (
-        // Regular Dashboard View
-        <ScrollView style={styles.scrollContainer}>
-          {activeTab === "home" && (
-            <>
-              {/* Header Section */}
-              <View style={styles.header}>
-                <TouchableOpacity
-                  style={styles.menuButton}
-                  onPress={toggleMenu}
-                >
-                  <Ionicons name="menu" size={24} color="white" />
-                </TouchableOpacity>
-                {/* <Text style={styles.headerText}>
-                  Welcome, {firstName} {lastName}!
-                </Text> */}
-                <TouchableOpacity
-                  style={styles.notificationButton}
-                  onPress={toggleNotification}
-                >
-                  <Ionicons name="notifications" size={24} color="white" />
-                </TouchableOpacity>
+    //       <ChatWindow
+    //         activeChannelId={activeChannelId || ""}
+    //         activeChannelName={activeChannelName}
+    //         hideBottomNav={() => setIsChatView(true)}
+    //       />
+    //     </View>
+    //   ) : (
+    //     // Regular Dashboard View
+    //     <ScrollView style={styles.scrollContainer}>
+    //       {activeTab === "home" && (
+    //         <>
+    //           {/* Header Section */}
+    //           <View style={styles.header}>
+    //             <TouchableOpacity
+    //               style={styles.menuButton}
+    //               onPress={toggleMenu}
+    //             >
+    //               <Ionicons name="menu" size={24} color="white" />
+    //             </TouchableOpacity>
+    //             {/* <Text style={styles.headerText}>
+    //               Welcome, {firstName} {lastName}!
+    //             </Text> */}
+    //             <TouchableOpacity
+    //               style={styles.notificationButton}
+    //               onPress={toggleNotification}
+    //             >
+    //               <Ionicons name="notifications" size={24} color="white" />
+    //             </TouchableOpacity>
 
-                {/* Tabs Section inside the header */}
-                <View style={styles.tabsContainer}>
-                  <TouchableOpacity
-                    style={[
-                      styles.tab,
-                      contentTab === "dashboard" && styles.activeTab,
-                    ]}
-                    onPress={() => handleContentTabChange("dashboard")}
-                  >
-                    <Text
-                      style={[
-                        styles.tabText,
-                        contentTab === "dashboard" && styles.activeTabText,
-                      ]}
-                    >
-                      Dashboard
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.tab,
-                      contentTab === "schedules" && styles.activeTab,
-                    ]}
-                    onPress={() => handleContentTabChange("schedules")}
-                  >
-                    <Text
-                      style={[
-                        styles.tabText,
-                        contentTab === "schedules" && styles.activeTabText,
-                      ]}
-                    >
-                      Schedules
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.tab,
-                      contentTab === "income" && styles.activeTab,
-                    ]}
-                    onPress={() => handleContentTabChange("income")}
-                  >
-                    <Text
-                      style={[
-                        styles.tabText,
-                        contentTab === "income" && styles.activeTabText,
-                      ]}
-                    >
-                      Income
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+    //             {/* Tabs Section inside the header */}
+    //             <View style={styles.tabsContainer}>
+    //               <TouchableOpacity
+    //                 style={[
+    //                   styles.tab,
+    //                   contentTab === "dashboard" && styles.activeTab,
+    //                 ]}
+    //                 onPress={() => handleContentTabChange("dashboard")}
+    //               >
+    //                 <Text
+    //                   style={[
+    //                     styles.tabText,
+    //                     contentTab === "dashboard" && styles.activeTabText,
+    //                   ]}
+    //                 >
+    //                   Dashboard
+    //                 </Text>
+    //               </TouchableOpacity>
+    //               <TouchableOpacity
+    //                 style={[
+    //                   styles.tab,
+    //                   contentTab === "schedules" && styles.activeTab,
+    //                 ]}
+    //                 onPress={() => handleContentTabChange("schedules")}
+    //               >
+    //                 <Text
+    //                   style={[
+    //                     styles.tabText,
+    //                     contentTab === "schedules" && styles.activeTabText,
+    //                   ]}
+    //                 >
+    //                   Schedules
+    //                 </Text>
+    //               </TouchableOpacity>
+    //               <TouchableOpacity
+    //                 style={[
+    //                   styles.tab,
+    //                   contentTab === "income" && styles.activeTab,
+    //                 ]}
+    //                 onPress={() => handleContentTabChange("income")}
+    //               >
+    //                 <Text
+    //                   style={[
+    //                     styles.tabText,
+    //                     contentTab === "income" && styles.activeTabText,
+    //                   ]}
+    //                 >
+    //                   Income
+    //                 </Text>
+    //               </TouchableOpacity>
+    //             </View>
+    //           </View>
 
-              {/* Content Rendering Based on Active Tab */}
-              <View style={styles.contentContainer}>
-                {contentTab === "dashboard" && (
-                  <>
-                    <Text style={styles.sectionTitle}>
-                      {" "}
-                      -------- Your Shifts: --------{" "}
-                    </Text>
-                    {Shifts.length > 0 ? (
-                      Shifts.map((shift) => (
-                        <ShiftCard key={shift.id} shift={shift} />
-                      ))
-                    ) : (
-                      <Text style={styles.noShiftsText}>
-                        No shifts available for you.
-                      </Text>
-                    )}
-                  </>
-                )}
-                {contentTab === "schedules" && <SchedulesScreen />}
-                {contentTab === "income" && <IncomeScreen />}
-              </View>
-            </>
-          )}
-          {activeTab === "leave" && (
-            <LeaveScreen
-              toggleMenu={toggleMenu}
-              toggleNotification={toggleNotification}
-            />
-          )}
+    //           {/* Content Rendering Based on Active Tab */}
+    //           <View style={styles.contentContainer}>
+    //             {contentTab === "dashboard" && (
+    //               <>
+    //                 <Text style={styles.sectionTitle}>
+    //                   {" "}
+    //                   -------- Your Shifts: --------{" "}
+    //                 </Text>
+    //                 {Shifts.length > 0 ? (
+    //                   Shifts.map((shift) => (
+    //                     <ShiftCard key={shift.id} shift={shift} />
+    //                   ))
+    //                 ) : (
+    //                   <Text style={styles.noShiftsText}>
+    //                     No shifts available for you.
+    //                   </Text>
+    //                 )}
+    //               </>
+    //             )}
+    //             {contentTab === "schedules" && <SchedulesScreen />}
+    //             {contentTab === "income" && <IncomeScreen />}
+    //           </View>
+    //         </>
+    //       )}
+    //       {activeTab === "leave" && (
+    //         <LeaveScreen
+    //           toggleMenu={toggleMenu}
+    //           toggleNotification={toggleNotification}
+    //         />
+    //       )}
 
-          {activeTab === "profile" && (
-            <ProfileScreen
-              // navigation={null}
-              toggleMenu={toggleMenu}
-              toggleNotification={toggleNotification}
-            />
-          )}
-        </ScrollView>
-      )}
+    //       {activeTab === "profile" && (
+    //         <ProfileScreen
+    //           // navigation={null}
+    //           toggleMenu={toggleMenu}
+    //           toggleNotification={toggleNotification}
+    //         />
+    //       )}
+    //     </ScrollView>
+    //   )}
 
-      {/* Bottom Navigation */}
-      {!isChatView && (
-        <BottomNav activeTab={activeTab} handleTabChange={handleTabChange} />
-      )}
+    //   {/* Bottom Navigation */}
+    //   {!isChatView && (
+    //     <BottomNav activeTab={activeTab} handleTabChange={handleTabChange} />
+    //   )}
 
-      {/* Menu - Side Menu with slide-in animation */}
-      <Menu
-        isMenuOpen={isMenuOpen}
-        toggleMenu={toggleMenu}
-        onChannelSelect={handleChannelSelect}
-        activeChannel={activeChannelId || ""}
-      />
+    //   {/* Menu - Side Menu with slide-in animation */}
+    //   <Menu
+    //     isMenuOpen={isMenuOpen}
+    //     toggleMenu={toggleMenu}
+    //     onChannelSelect={handleChannelSelect}
+    //     activeChannel={activeChannelId || ""}
+    //   />
 
-      {/* Show Notifications if it's open */}
-      <Notification
-        isNotificationOpen={isNotificationOpen}
-        toggleNotification={toggleNotification}
-      />
-    </SafeAreaView>
+    //   {/* Show Notifications if it's open */}
+    //   <Notification
+    //     isNotificationOpen={isNotificationOpen}
+    //     toggleNotification={toggleNotification}
+    //   />
+    // </SafeAreaView>
   );
 };
 

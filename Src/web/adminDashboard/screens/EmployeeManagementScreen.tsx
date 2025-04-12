@@ -22,64 +22,60 @@ import { MaterialIcons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
 import { EmployeeDetails } from "../../../api/server/server";
 import { kickEmployee } from "../../../api/server/serverApi";
-import { partialregisterEmployee, updateEmployeeDetails } from "../../../api/server/serverApi";
+import {
+  partialregisterEmployee,
+  updateEmployeeDetails,
+} from "../../../api/server/serverApi";
 import { getLoggedInUserServer } from "../../../api/server/serverApi";
 import { Role, EmployeeStatus } from "../../../api/server/server";
 import { getToken, Plat, saveToken } from "../../../api/auth/token";
 
 interface Employee {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    role: string;
-    
-    status: string;
-    profileImage?: string;
-    joinedDate?: string;
-    updatedDate?: string;
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  role: string;
+
+  status: string;
+  profileImage?: string;
+  joinedDate?: string;
+  updatedDate?: string;
 }
 
 const formFields: (keyof Employee)[] = [
-    "id",
-    "firstName",
+  "id",
+  "firstName",
   "lastName",
-    "email",
-    "phone",
-    "role",
-    
-    "status",
-    
-  ];
+  "email",
+  "phone",
+  "role",
+
+  "status",
+];
 
 const roles = ["Choose Role", "Admin", "Manager", "Employee"];
-const statuses = [
-  "Choose Employment Status",
-  "Active",
-  "Inactive",
-  
-];
+const statuses = ["Choose Employment Status", "Active", "Inactive"];
 
 // Role mapper (string → Role enum)
 const roleMapper: Record<"Admin" | "Manager" | "Employee", Role> = {
-    Admin: Role.ADMIN,
-    Manager: Role.MANAGER,
-    Employee: Role.EMPLOYEE,
-  };
-  
-  
-  // Status mapper (string → EmployeeStatus type)
-  const statusMapper: Record<"Active" | "Inactive", EmployeeStatus> = {
-    Active: {
-        Active: "Active",
-        Inactive: "Inactive"
-    },
-    Inactive: {
-        Inactive: "Inactive",
-        Active: "Active"
-    },
-  };
+  Admin: Role.ADMIN,
+  Manager: Role.MANAGER,
+  Employee: Role.EMPLOYEE,
+};
+
+// Status mapper (string → EmployeeStatus type)
+const statusMapper: Record<"Active" | "Inactive", EmployeeStatus> = {
+  Active: {
+    Active: "Active",
+    Inactive: "Inactive",
+  },
+  Inactive: {
+    Inactive: "Inactive",
+    Active: "Active",
+  },
+};
 
 const EmployeeManagementScreen = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -94,11 +90,11 @@ const EmployeeManagementScreen = () => {
   const [formData, setFormData] = useState<Employee>({
     id: "",
     firstName: "",
-    lastName:"",
+    lastName: "",
     email: "",
     phone: "",
     role: "",
-    
+
     status: "",
   });
   const [errors, setErrors] = useState<{ [K in keyof Employee]?: string }>({});
@@ -109,13 +105,10 @@ const EmployeeManagementScreen = () => {
   const [employeesArr, setEmployeesArr] = useState<EmployeeDetails[]>([]);
   const [serverId, setServerId] = useState<string | null>(null);
 
-
-
   const handleFetchUsers = async () => {
     try {
       const res = await fetchAllUsers();
-     
-  
+
       if (res instanceof ApiError || res instanceof AxiosError) {
         console.log(res.message);
         Toast.show({
@@ -125,21 +118,19 @@ const EmployeeManagementScreen = () => {
           position: "bottom",
         });
       } else {
-        
-        const employeeList: Employee[] = res.data.map((emp: EmployeeDetails) => {
-            
-    
+        const employeeList: Employee[] = res.data.map(
+          (emp: EmployeeDetails) => {
             return {
               id: emp.Employee.id,
-            //   firstNamename: `${emp.Employee.firstName} ${emp.Employee.lastName}`,
-            firstName:emp.Employee.firstName,
+              //   firstNamename: `${emp.Employee.firstName} ${emp.Employee.lastName}`,
+              firstName: emp.Employee.firstName,
               lastName: emp.Employee.lastName,
               email: emp.Employee.email,
               phone: emp.Employee.phoneNumber,
               role:
                 emp.Employee.role.charAt(0).toUpperCase() +
                 emp.Employee.role.slice(1),
-              
+
               status:
                 typeof emp.Employee.employmentStatus === "string"
                   ? emp.Employee.employmentStatus
@@ -152,12 +143,12 @@ const EmployeeManagementScreen = () => {
                 ? new Date(emp.updatedAt).toLocaleDateString()
                 : "Unknown",
             };
-          });
-          
-          
+          }
+        );
+
         //   console.log("✅ Mapped Employees:", employeeList);
         setEmployees(employeeList);
-  
+
         Toast.show({
           text1: "Successfully fetched all employees",
           type: "success",
@@ -170,14 +161,16 @@ const EmployeeManagementScreen = () => {
       console.log("Unexpected error during fetchAllUsers()");
     }
   };
-  
+
   const fetchServerId = async () => {
-    const token =await getToken("accessToken",Plat.WEB);
+    const token = await getToken("accessToken", Plat.WEB);
+
     console.log("Acess token:", token);
+    console.log("--------------------------------------------------:", token);
     try {
-      const res = await getLoggedInUserServer();
+      const res = await getLoggedInUserServer(Plat.WEB);
       console.log("🧪 getLoggedInUserServer response:", res);
-  
+
       if (res instanceof ApiError) {
         Toast.show({
           type: "error",
@@ -195,7 +188,6 @@ const EmployeeManagementScreen = () => {
       console.error("❌ Unexpected error in fetchServerId:", err);
     }
   };
-  
 
   useEffect(() => {
     handleFetchUsers();
@@ -210,9 +202,6 @@ const EmployeeManagementScreen = () => {
   useEffect(() => {
     fetchServerId();
   }, []);
-  
-  
-  
 
   const handleSort = (field: keyof Employee) => {
     if (sortBy === field) {
@@ -234,7 +223,7 @@ const EmployeeManagementScreen = () => {
 
   const filteredEmployees = sortedEmployees.filter(
     (emp: Employee) =>
-    //   emp.name.toLowerCase().includes(search.toLowerCase()) ||
+      //   emp.name.toLowerCase().includes(search.toLowerCase()) ||
       emp.id.toLowerCase().includes(search.toLowerCase()) ||
       emp.email.toLowerCase().includes(search.toLowerCase())
   );
@@ -264,7 +253,6 @@ const EmployeeManagementScreen = () => {
     setModalVisible(true);
     setErrors({});
   };
-  
 
   const handleKickEmployee = async (userId: string) => {
     try {
@@ -282,7 +270,7 @@ const EmployeeManagementScreen = () => {
           type: "success",
           position: "bottom",
         });
-  
+
         // remove employee from local state
         setEmployees((prev) => prev.filter((emp) => emp.id !== userId));
       }
@@ -290,13 +278,10 @@ const EmployeeManagementScreen = () => {
       console.error("Unexpected error while kicking employee:", error);
     }
   };
-  
 
   //validation
   const validateEmail = (email: string) => /^\S+@\S+\.\S+$/.test(email);
-  const validatePhone = (phone: string) => 
-    /^(\+614|614|04)\d{8}$/.test(phone);
-  
+  const validatePhone = (phone: string) => /^(\+614|614|04)\d{8}$/.test(phone);
 
   const validateForm = () => {
     const newErrors: { [K in keyof Employee]?: string } = {};
@@ -324,45 +309,47 @@ const EmployeeManagementScreen = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = async () => {  //todo : cors error
+  const handleSave = async () => {
+    //todo : cors error
     if (!validateForm()) return;
-  
+
     const roleNormalized = formData.role.trim();
-  
+
     if (editingEmployee) {
-        try {
-          const payload = {
-            id: formData.id,
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            phone: formData.phone,
-            email: formData.email,
-            role: roleMapper[formData.role as "Admin" | "Manager" | "Employee"],
-            employmentStatus: statusMapper[formData.status as "Active" | "Inactive"],
-          };
-    
-          const res = await updateEmployeeDetails(payload);
-    
-          if (res instanceof ApiError || res instanceof AxiosError) {
-            Toast.show({
-              text1: "Error",
-              text2: res.message,
-              type: "error",
-              position: "bottom",
-            });
-            return;
-          }
-    
-          await handleFetchUsers(); // refresh list after update
-    
+      try {
+        const payload = {
+          id: formData.id,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phone,
+          email: formData.email,
+          role: roleMapper[formData.role as "Admin" | "Manager" | "Employee"],
+          employmentStatus:
+            statusMapper[formData.status as "Active" | "Inactive"],
+        };
+
+        const res = await updateEmployeeDetails(payload);
+
+        if (res instanceof ApiError || res instanceof AxiosError) {
           Toast.show({
-            text1: "Employee updated successfully!",
-            type: "success",
+            text1: "Error",
+            text2: res.message,
+            type: "error",
             position: "bottom",
           });
-        } catch (error) {
-          console.error("Unexpected error while updating employee:", error);
+          return;
         }
+
+        await handleFetchUsers(); // refresh list after update
+
+        Toast.show({
+          text1: "Employee updated successfully!",
+          type: "success",
+          position: "bottom",
+        });
+      } catch (error) {
+        console.error("Unexpected error while updating employee:", error);
+      }
     } else {
       if (!serverId) {
         Toast.show({
@@ -373,7 +360,7 @@ const EmployeeManagementScreen = () => {
         });
         return;
       }
-  
+
       try {
         const payload = {
           serverId,
@@ -381,13 +368,12 @@ const EmployeeManagementScreen = () => {
           firstName: formData.firstName,
           lastName: formData.lastName,
           phone: formData.phone,
-        //   role: Role[roleNormalized.toUpperCase() as keyof typeof Role],
-        role: roleNormalized as any, // adjust if Role enum
-
+          //   role: Role[roleNormalized.toUpperCase() as keyof typeof Role],
+          role: roleNormalized as any, // adjust if Role enum
         };
-  
+
         const res = await partialregisterEmployee(payload);
-  
+
         if (res instanceof ApiError || res instanceof AxiosError) {
           Toast.show({
             text1: "Error",
@@ -397,10 +383,10 @@ const EmployeeManagementScreen = () => {
           });
           return;
         }
-  
+
         // Refresh list after successful registration
         await handleFetchUsers();
-  
+
         Toast.show({
           text1: "Employee created successfully!",
           type: "success",
@@ -410,7 +396,7 @@ const EmployeeManagementScreen = () => {
         console.error("Unexpected error while creating employee:", error);
       }
     }
-  
+
     // Reset modal
     setModalVisible(false);
     setEditingEmployee(null);
@@ -425,7 +411,6 @@ const EmployeeManagementScreen = () => {
     });
     setErrors({});
   };
-  
 
   const handleInputChange = <K extends keyof Employee>(
     key: K,
@@ -453,7 +438,6 @@ const EmployeeManagementScreen = () => {
       .map((n) => n[0])
       .join("")
       .toUpperCase();
-  
 
   return (
     <SafeAreaView style={styles.container}>
@@ -474,12 +458,15 @@ const EmployeeManagementScreen = () => {
           { marginLeft: isMobile ? 0 : isSidebarOpen ? 250 : 0 },
         ]}
       >
-        <Text style={styles.title}>Employee Management
-        <TouchableOpacity onPress={handleFetchUsers} style={styles.reloadIcon}>
+        <Text style={styles.title}>
+          Employee Management
+          <TouchableOpacity
+            onPress={handleFetchUsers}
+            style={styles.reloadIcon}
+          >
             <MaterialIcons name="refresh" size={24} color="#4A90E2" />
           </TouchableOpacity>
         </Text>
-       
 
         <View style={{ paddingHorizontal: 20, marginTop: 20 }}>
           <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}>
@@ -506,11 +493,11 @@ const EmployeeManagementScreen = () => {
               setFormData({
                 id: "",
                 firstName: "",
-                lastName:"",
+                lastName: "",
                 email: "",
                 phone: "",
                 role: "",
-                
+
                 status: "",
               });
               setModalVisible(true);
@@ -522,21 +509,18 @@ const EmployeeManagementScreen = () => {
         </View>
 
         <ScrollView horizontal={!isMobile}>
-        <View style={styles.table}>
+          <View style={styles.table}>
             <View style={styles.tableHeader}>
-            
-  <Text style={styles.headerCell}>ID</Text>
-  <Text style={styles.headerCell}>NAME</Text>
-  <Text style={styles.headerCell}>EMAIL</Text>
-  <Text style={styles.headerCell}>PHONE</Text>
-  <Text style={styles.headerCell}>ROLE</Text>
-  
-  <Text style={styles.headerCell}>STATUS</Text>
-  <Text style={styles.headerCell}>JOINED DATE</Text>
-  <Text style={styles.headerCell}>UPDATED DATE</Text>
-  <Text style={styles.headerCell}>ACTIONS</Text>
+              <Text style={styles.headerCell}>ID</Text>
+              <Text style={styles.headerCell}>NAME</Text>
+              <Text style={styles.headerCell}>EMAIL</Text>
+              <Text style={styles.headerCell}>PHONE</Text>
+              <Text style={styles.headerCell}>ROLE</Text>
 
-
+              <Text style={styles.headerCell}>STATUS</Text>
+              <Text style={styles.headerCell}>JOINED DATE</Text>
+              <Text style={styles.headerCell}>UPDATED DATE</Text>
+              <Text style={styles.headerCell}>ACTIONS</Text>
             </View>
 
             {filteredEmployees.map((emp, index) => (
@@ -546,40 +530,59 @@ const EmployeeManagementScreen = () => {
                     return (
                       <View key="name" style={[styles.cell, styles.nameCell]}>
                         {emp.profileImage ? (
-                          <Image source={{ uri: emp.profileImage }} style={styles.avatar} />
+                          <Image
+                            source={{ uri: emp.profileImage }}
+                            style={styles.avatar}
+                          />
                         ) : (
                           <View style={styles.initialsCircle}>
-                            <Text style={styles.initialsText}>{getInitials(emp.firstName + " " + emp.lastName)}</Text>
+                            <Text style={styles.initialsText}>
+                              {getInitials(emp.firstName + " " + emp.lastName)}
+                            </Text>
                           </View>
                         )}
-                        <Text style={styles.nameText}>{emp.firstName} {emp.lastName}</Text>
+                        <Text style={styles.nameText}>
+                          {emp.firstName} {emp.lastName}
+                        </Text>
                       </View>
                     );
                   } else if (field === "lastName") {
                     return null;
                   } else if (field === "role") {
                     return (
-                      <View key={field} style={[styles.cell, styles.roleBadgeWrapper]}>
-                        <Text style={[styles.roleBadge, getRoleBadgeStyle(emp.role)]}>
+                      <View
+                        key={field}
+                        style={[styles.cell, styles.roleBadgeWrapper]}
+                      >
+                        <Text
+                          style={[
+                            styles.roleBadge,
+                            getRoleBadgeStyle(emp.role),
+                          ]}
+                        >
                           {emp.role}
                         </Text>
                       </View>
                     );
                   }
                   return (
-                    <Text key={field} style={styles.cell}>{emp[field] || "-"}</Text>
+                    <Text key={field} style={styles.cell}>
+                      {emp[field] || "-"}
+                    </Text>
                   );
                 })}
                 {/* Show these two fields separately */}
-    <Text style={styles.cell}>{emp.joinedDate || "-"}</Text>
-    <Text style={styles.cell}>{emp.updatedDate || "-"}</Text>
+                <Text style={styles.cell}>{emp.joinedDate || "-"}</Text>
+                <Text style={styles.cell}>{emp.updatedDate || "-"}</Text>
 
                 <View style={styles.actionButtons}>
                   <TouchableOpacity onPress={() => handleEdit(emp)}>
                     <Text style={styles.actionText}>Edit</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => handleKickEmployee(emp.id)}>
-                    <Text style={[styles.actionText, { color: "red" }]}>Delete</Text>
+                    <Text style={[styles.actionText, { color: "red" }]}>
+                      Delete
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -725,7 +728,6 @@ const styles = StyleSheet.create({
     flex: 1,
     // paddingHorizontal: 20,
     textAlign: "center",
-    
   },
   actionButtons: {
     flex: 1,

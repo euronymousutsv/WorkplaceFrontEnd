@@ -44,7 +44,7 @@ export const ParitalRegestrationPasswordScreen = ({
         });
         return;
       }
-      const phoneNumber = ""; //todo: registraiton problem.
+      const phoneNumber = "+61412524317";
       const response = await partialregisterComplete(phoneNumber, password);
 
       if (response instanceof ApiResponse) {

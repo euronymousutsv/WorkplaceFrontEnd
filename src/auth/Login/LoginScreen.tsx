@@ -29,6 +29,7 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
   // activity indicator
   const [loading, setLoading] = useState(false);
 
+  // handle all logic for login
   const handleLogin = async () => {
     try {
       if (!Email || !Password) {

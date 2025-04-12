@@ -8,7 +8,7 @@ import {
   Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { getToken } from "../../../api/auth/token";
+import { getToken, Plat } from "../../../api/auth/token";
 import { getAllChannelForCurrentServer } from "../../../api/server/channelApi";
 import { ApiError } from "../../../api/utils/apiResponse";
 import { ChannelResponse } from "../../../api/server/server";
@@ -33,7 +33,7 @@ const Menu = ({
 
   const handleGetAllChannels = async () => {
     const serverId = await getToken("serverId");
-    const res = await getAllChannelForCurrentServer(serverId ?? "");
+    const res = await getAllChannelForCurrentServer(serverId ?? "", Plat.PHONE);
 
     if (res instanceof ApiError) {
       console.log(res.message, "12121");

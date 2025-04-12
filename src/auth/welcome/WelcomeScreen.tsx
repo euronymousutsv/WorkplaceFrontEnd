@@ -9,7 +9,6 @@ import {
   ScrollView,
   Platform,
 } from "react-native";
-
 const WelcomeScreen = ({ navigation }: { navigation: any }) => {
   return (
     <ScrollView
