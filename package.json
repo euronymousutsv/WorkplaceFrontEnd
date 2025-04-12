@@ -26,6 +26,7 @@
     "dotenv": "^16.4.7",
     "expo": "~52.0.36",
     "expo-constants": "~17.0.8",
+    "expo-dev-client": "~5.0.19",
     "expo-device": "~7.0.3",
     "expo-image-picker": "~16.0.6",
     "expo-jwt": "^1.8.2",
@@ -55,8 +56,7 @@
     "react-native-web": "~0.19.13",
     "react-pro-sidebar": "^1.1.0",
     "react-router-dom": "^7.4.0",
-    "socket.io-client": "^4.8.1",
-    "expo-dev-client": "~5.0.19"
+    "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
