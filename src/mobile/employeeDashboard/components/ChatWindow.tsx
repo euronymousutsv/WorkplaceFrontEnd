@@ -20,6 +20,11 @@ import socket from "../../../config/Socket";
 import { FlatList } from "react-native";
 import uuid from "react-native-uuid";
 import dayjs from "dayjs";
+import {
+  castChatsToMessageData,
+  Chats,
+  MessageData,
+} from "../../../api/chat/chat";
 
 // Props for ChatWindow component
 type ChatWindowProps = {
@@ -33,23 +38,15 @@ const ChatWindow = ({
   activeChannelName,
   hideBottomNav,
 }: ChatWindowProps) => {
-  interface MessageData {
-    messageId: string;
-    isImage: boolean;
-    message: string;
-    channel: string;
-    time: Date;
-    author: AuthorDetail;
-  }
-
-  interface AuthorDetail {
-    id: string;
-    name: string;
-    profileImage: string;
-  }
-
   const [newMessage, setNewMessage] = useState("");
   const [messages, setMessages] = useState<MessageData[]>([]);
+
+  const getUserId = async (): Promise<string | undefined> => {
+    const accessToken = (await getToken("accessToken")) ?? "";
+    const decodedToken = JWT.decode(accessToken, null);
+    const userId = decodedToken.userId;
+    return userId;
+  };
 
   useEffect(() => {
     // Join the channel
@@ -66,36 +63,37 @@ const ChatWindow = ({
     };
   }, [activeChannelId]);
 
-  // const handleGetMessage = async () => {
-  //   const res = await fetchChats(activeChannelId);
-  //   console.log(activeChannelId);
+  const handleGetMessage = async () => {
+    const res = await fetchChats(activeChannelId);
+    console.log(activeChannelId);
 
-  //   if (res instanceof ApiError) {
-  //     console.log(res.message, "...");
-  //   } else {
-  //     console.log("Chats fetched successfully:", res.data.chats, "-----------");
+    if (res instanceof ApiError) {
+      console.log(res.message, "...");
+    } else {
+      console.log("Chats fetched successfully:", res.data.chats, "-----------");
+      const convertedMessages: MessageData[] = res.data.chats
+        .map((chat: Chats) => castChatsToMessageData(chat, activeChannelName))
+        .reverse();
+      setMessages((prevMsg) => [...convertedMessages, ...prevMsg]);
 
-  //     setMessages((prevMsg) => [...prevMsg, ...res.data.chats]);
+      if (res.data.chats.length > 1) {
+        console.log("Additional chat log");
+      }
+    }
+  };
 
-  //     if (res.data.chats.length > 1) {
-  //       console.log("Additional chat log");
-  //     }
-  //   }
-  // };
-
-  const scrollViewRef = useRef<ScrollView>(null);
-
+  const flatListRef = useRef<FlatList>(null);
   // Update messages when the active channel changes
   useEffect(() => {
     setMessages([]);
-    // handleGetMessage();
+    handleGetMessage();
     hideBottomNav();
   }, [activeChannelId, hideBottomNav]);
 
   // Automatically scroll to bottom when new message is added
   useEffect(() => {
     setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
+      flatListRef.current?.scrollToEnd({ animated: true });
     }, 100);
   }, [messages.length]);
 
@@ -104,22 +102,6 @@ const ChatWindow = ({
     if (newMessage.trim() === "") return;
 
     const userId = await getUserId();
-
-    // const newText: Chats = {
-    //   id: timeString,
-    //   userId: userId ?? "",
-    //   message: newMessage,
-    //   channelId: activeChannelId,
-    //   createdAt: new Date(),
-    //   Employee: {
-    //     firstName: "You",
-    //     email: "",
-    //     phoneNumber: "",
-    //     employmentStatus: "Active",
-    //     role: "employee",
-    //     profileImage: "",
-    //   },
-    // };
 
     if (socket) {
       const newId = uuid.v4();
@@ -131,6 +113,7 @@ const ChatWindow = ({
             (await getToken("profileImage")) ||
             "https://cdn.pixabay.com/photo/2025/04/08/10/42/landscape-9521261_960_720.jpg",
         },
+        channelName: activeChannelName,
         messageId: newId,
         message: newMessage,
         channel: activeChannelId,
@@ -181,13 +164,6 @@ const ChatWindow = ({
   //   }
   // };
 
-  const getUserId = async (): Promise<string | undefined> => {
-    const accessToken = (await getToken("accessToken")) ?? "";
-    const decodedToken = JWT.decode(accessToken, null);
-    const userId = decodedToken.userId;
-    return userId;
-  };
-
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -195,6 +171,7 @@ const ChatWindow = ({
       keyboardVerticalOffset={80}
     >
       <FlatList
+        ref={flatListRef}
         style={styles.messagesContainer}
         data={messages}
         keyExtractor={(item, index) => item.messageId || index.toString()}
@@ -238,7 +215,7 @@ const ChatWindow = ({
         onContentSizeChange={() => {
           // Scroll to the bottom after rendering new content
           setTimeout(() => {
-            scrollViewRef.current?.scrollToEnd({ animated: true });
+            flatListRef.current?.scrollToEnd({ animated: true });
           }, 100);
         }}
         // Additional FlatList props to improve scrolling performance
@@ -272,7 +249,6 @@ const ChatWindow = ({
     </KeyboardAvoidingView>
   );
 };
-
 const styles = StyleSheet.create({
   messageBox: {
     flex: 1,
