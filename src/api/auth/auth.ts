@@ -2,6 +2,8 @@
 export interface LoginResponse {
   accessToken: string;
   refreshToken: string;
+  profileImage?: string;
+  name?: string;
 }
 
 export interface RegisterResponse {

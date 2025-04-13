@@ -53,6 +53,8 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
         setLoading(false);
         const accessToken = response.data?.accessToken ?? "";
         const refreshToken = response.data?.refreshToken ?? "";
+        const profileImage = response.data?.profileImage ?? "";
+        const name = response.data?.name ?? "";
 
         if (accessToken) {
           // these token will be able to access the application
@@ -63,15 +65,21 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
             // Logic for web
             saveToken("accessToken", accessToken, Plat.WEB);
             saveToken("refreshToken", refreshToken, Plat.WEB);
+            saveToken("profileImage", profileImage, Plat.WEB);
+            saveToken("name", name, Plat.WEB);
           } else {
             // Logic for mobile (Android or iOS)
             saveToken("accessToken", accessToken);
             saveToken("refreshToken", refreshToken);
+            saveToken("profileImage", profileImage);
+            saveToken("name", name);
+            saveToken("userId", name);
           }
 
           // Decode the JWT token to extract role and other details
           const decodedToken = JWT.decode(accessToken, null); // Use default() if you're importing with * as
           console.log("Decoded Token:", decodedToken); // Log the entire decoded token
+
           // var role = "employee";
           // if (decodedToken.role) role = decodedToken.role;
 

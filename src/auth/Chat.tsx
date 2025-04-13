@@ -5,6 +5,19 @@ import socket from "../config/Socket";
 import { useEffect, useState } from "react";
 
 const ChatScreen = () => {
+  enum MessageType {
+    TEXT,
+    IMAGE,
+  }
+
+  interface MessageData {
+    messageType: MessageType;
+    message: string;
+    channel: string;
+    userId: string;
+    time: Date;
+  }
+
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<string[]>([]);
 
