@@ -19,6 +19,7 @@ import {
   TextColor,
   ButtonRed,
 } from '../../../utils/color';
+import SendAnnouncementCard from '../components/SendAnnouncementCard';
 
 const AdminDashboard: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState('Dashboard');
@@ -79,19 +80,20 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      
       {/* Header */}
       <Header isSidebarOpen={isSidebarOpen} toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
-
+      <View style={styles.contentWrapper} >
       {/* Sidebar */}
-      <Sidebar
-        isOpen={isSidebarOpen}
-        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        selectedTab={selectedTab}
-        handleTabChange={handleTabChange}
-      />
+        <Sidebar
+          isOpen={isSidebarOpen}
+          toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+          selectedTab={selectedTab}
+          handleTabChange={handleTabChange}
+        />
 
       {/* Main Content */}
-      <Animated.View style={[styles.mainContent, { paddingLeft: isMobile ? 0 : mainContentPadding }]}>
+      <Animated.View style={[styles.mainContent, { paddingLeft: isMobile ? 0 : mainContentPadding, flex: 1 }]}>
         <ScrollView contentContainerStyle={styles.scrollContainer}>
 
           {/* Welcome Banner */}
@@ -134,8 +136,11 @@ const AdminDashboard: React.FC = () => {
               keyExtractor={(_, index) => index.toString()}
             />
           </View>
+          {/* Send Announcement Card */}
+          <SendAnnouncementCard />
         </ScrollView>
       </Animated.View>
+      </View>
     </SafeAreaView>
   );
 };
@@ -146,15 +151,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: BackgroundColor,
   },
+  contentWrapper: {
+    flex: 1,
+    flexDirection: 'row',
+  },
   mainContent: {
     flex: 1,
     marginTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 20,
-    marginLeft: 30,
+    marginLeft:30,
   },
   scrollContainer: {
     paddingBottom: 100,
+    flexGrow: 1,
   },
   welcomeBanner: {
     marginBottom: 20,

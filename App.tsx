@@ -27,6 +27,7 @@ import ParitalRegestrationPasswordScreen from "./src/mobile/employeeDashboard/sc
 import ChatScreen from "./src/web/adminDashboard/screens/ChatScreen";
 import { MyTabs } from "./src/mobile/employeeDashboard/screens/DrawerNavigator";
 import ChatScreenPhone from "./src/mobile/employeeDashboard/screens/ChatScreen";
+import ClockInOutScreenPhone from "./src/mobile/employeeDashboard/screens/ClockInOutScreenPhone";
 // Create a stack navigator
 const Stack = createStackNavigator();
 
@@ -137,6 +138,15 @@ const AppNavigator = () => {
           headerBackTitle: "back",
           title: route.params?.channelName || "Chat",
         })}
+      />
+      <Stack.Screen
+        name="ClockInOutScreenPhone"
+        component={ClockInOutScreenPhone}
+        options={{
+          headerShown: true,
+          title: "Clock In/Out",
+          headerShadowVisible: false,
+        }}
       />
       {/* All Signup Screens */}
       <Stack.Screen

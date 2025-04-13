@@ -24,9 +24,14 @@ import { ApiError, ApiResponse } from "../../../api/utils/apiResponse";
 import { getToken, Plat, saveToken } from "../../../api/auth/token";
 import { getAllChannelForCurrentServer } from "../../../api/server/channelApi";
 import { getShiftsForLoggedInUser, Shifts } from "../../../api/auth/shiftApi";
-import { Shift } from "../../../types/Shift";
+import { mockShifts } from "../../../mockData/mockShifts";  //mock data
 import "react-native-gesture-handler";
 import AdminDashboard from "../../../web/adminDashboard/screens/AdminDashboard";
+
+import { useNavigation } from "@react-navigation/native";
+import { RootStackParamList } from "../../../types/navigationTypes";
+import { StackNavigationProp } from "@react-navigation/stack";
+
 const PrimaryColor = "#4A90E2";
 const AccentColor = "#2ECC71";
 const BackgroundColor = "#FDFDFF";
@@ -47,6 +52,7 @@ import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { registerForPushNotificationsAsync } from "../components/notifications";
+import { RosterAttributes } from "../../../types/RosterAttributes"; // mock data
 
 const EmployeeDashboard: React.FC = () => {
   const { firstName, lastName } = useAuth();
@@ -55,6 +61,9 @@ const EmployeeDashboard: React.FC = () => {
   const [contentTab, setContentTab] = useState<string>("dashboard");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+
+  // const [Shifts, setShifts] = useState<RosterAttributes[]>([]);
 
   // Chat state
   const [activeChannelId, setActiveChannelId] = useState<string | null>(null); // Default channel
@@ -69,6 +78,7 @@ const EmployeeDashboard: React.FC = () => {
   const notificationListener = useRef<Notifications.EventSubscription>();
   const responseListener = useRef<Notifications.EventSubscription>();
 
+  
   useEffect(() => {
     registerForPushNotificationsAsync()
       .then((token) => setExpoPushToken(token ?? ""))
@@ -94,10 +104,7 @@ const EmployeeDashboard: React.FC = () => {
     };
   }, []);
 
-  const handleClockInOut = () => {
-    setClockedIn(!clockedIn);
-  };
-
+ 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     if (tab === "home") {
@@ -141,191 +148,113 @@ const EmployeeDashboard: React.FC = () => {
     }
   };
 
-  const [Shifts, setShifts] = useState<Shifts[]>([]);
-  const handleGetCurrentUserRosterDetails = async () => {
-    const res = await getShiftsForLoggedInUser();
-    if (res instanceof ApiError) {
-      console.log(res.message);
-    } else if ("statusCode" in res && "data" in res) {
-      const data = res.data as Shifts[];
-      // setShifts(data);
-      setShifts((prevShifts) => [...prevShifts, ...data]);
-    } else {
-      console.log("Something went wrong");
-    }
-  };
+  //const [Shifts, setShifts] = useState<Shifts[]>([]); //todo: uncomment this to use real data
+   const [Shifts, setShifts] = useState<RosterAttributes[]>([]); //todo: remove mock data
+  // const handleGetCurrentUserRosterDetails = async () => {
+  //   const res = await getShiftsForLoggedInUser();
+  //   if (res instanceof ApiError) {
+  //     console.log(res.message);
+  //   } else if ("statusCode" in res && "data" in res) {
+  //     const data = res.data as Shifts[];
+  //     // setShifts(data);
+  //     setShifts((prevShifts) => [...prevShifts, ...data]);
+  //   } else {
+  //     console.log("Something went wrong");
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   handleGetCurrentUserRosterDetails();
+
+  //   handleGetServerDetail();
+  // }, []);
 
   useEffect(() => {
-    handleGetCurrentUserRosterDetails();
-
-    handleGetServerDetail();
+    const today = new Date().toISOString().split("T")[0];
+    const filtered = mockShifts.filter(
+      (shift) => shift.date.toISOString().split("T")[0] === today
+    );
+    setShifts(filtered);
   }, []);
+  
 
   return (
-    <View></View>
-    // <SafeAreaView style={styles.container}>
-    //   {isChatView ? (
-    //     // Chat View
-    //     <View style={styles.chatViewContainer}>
-    //       <View style={styles.chatHeader}>
-    //         <TouchableOpacity style={styles.menuButton} onPress={toggleMenu}>
-    //           <Ionicons name="menu" size={24} color="white" />
-    //         </TouchableOpacity>
-    //         <Text style={styles.headerText}>{activeChannelName}</Text>
-    //         <TouchableOpacity
-    //           style={styles.backButton}
-    //           onPress={() => {
-    //             setIsChatView(false);
-    //             setActiveChannelId(null);
-    //             setActiveChannelName("");
-    //           }}
-    //         >
-    //           <Ionicons name="arrow-back" size={24} color="white" />
-    //         </TouchableOpacity>
-    //       </View>
+    <SafeAreaView style={styles.container}>
+  <ScrollView contentContainerStyle={styles.scrollContainer}>
+    {/* Welcome Header */}
+    <View style={styles.welcomeContainer}>
+      <Text style={styles.welcomeText}>Hi {firstName} </Text>
+      <Text style={styles.welcomeSubtext}>Here’s what’s happening today</Text>
+    </View>
 
-    //       <ChatWindow
-    //         activeChannelId={activeChannelId || ""}
-    //         activeChannelName={activeChannelName}
-    //         hideBottomNav={() => setIsChatView(true)}
-    //       />
-    //     </View>
-    //   ) : (
-    //     // Regular Dashboard View
-    //     <ScrollView style={styles.scrollContainer}>
-    //       {activeTab === "home" && (
-    //         <>
-    //           {/* Header Section */}
-    //           <View style={styles.header}>
-    //             <TouchableOpacity
-    //               style={styles.menuButton}
-    //               onPress={toggleMenu}
-    //             >
-    //               <Ionicons name="menu" size={24} color="white" />
-    //             </TouchableOpacity>
-    //             {/* <Text style={styles.headerText}>
-    //               Welcome, {firstName} {lastName}!
-    //             </Text> */}
-    //             <TouchableOpacity
-    //               style={styles.notificationButton}
-    //               onPress={toggleNotification}
-    //             >
-    //               <Ionicons name="notifications" size={24} color="white" />
-    //             </TouchableOpacity>
+    {/* Today’s Shift Card */}
+    <View style={styles.shiftCard}>
+  {/* <Ionicons name="calendar-outline" size={24} color={PrimaryColor} /> */}
+  <View style={{ marginLeft: 12, flex: 1 }}>
+    <Text style={styles.shiftLabel}>Today's Shifts</Text>
 
-    //             {/* Tabs Section inside the header */}
-    //             <View style={styles.tabsContainer}>
-    //               <TouchableOpacity
-    //                 style={[
-    //                   styles.tab,
-    //                   contentTab === "dashboard" && styles.activeTab,
-    //                 ]}
-    //                 onPress={() => handleContentTabChange("dashboard")}
-    //               >
-    //                 <Text
-    //                   style={[
-    //                     styles.tabText,
-    //                     contentTab === "dashboard" && styles.activeTabText,
-    //                   ]}
-    //                 >
-    //                   Dashboard
-    //                 </Text>
-    //               </TouchableOpacity>
-    //               <TouchableOpacity
-    //                 style={[
-    //                   styles.tab,
-    //                   contentTab === "schedules" && styles.activeTab,
-    //                 ]}
-    //                 onPress={() => handleContentTabChange("schedules")}
-    //               >
-    //                 <Text
-    //                   style={[
-    //                     styles.tabText,
-    //                     contentTab === "schedules" && styles.activeTabText,
-    //                   ]}
-    //                 >
-    //                   Schedules
-    //                 </Text>
-    //               </TouchableOpacity>
-    //               <TouchableOpacity
-    //                 style={[
-    //                   styles.tab,
-    //                   contentTab === "income" && styles.activeTab,
-    //                 ]}
-    //                 onPress={() => handleContentTabChange("income")}
-    //               >
-    //                 <Text
-    //                   style={[
-    //                     styles.tabText,
-    //                     contentTab === "income" && styles.activeTabText,
-    //                   ]}
-    //                 >
-    //                   Income
-    //                 </Text>
-    //               </TouchableOpacity>
-    //             </View>
-    //           </View>
+    {Shifts.length > 0 ? (
+  Shifts.map((shift) => (
+    <View key={shift.id} style={styles.individualShiftCardRow}>
+      {/* Icon on the left */}
+      <Ionicons name="calendar-outline" size={24} color={PrimaryColor} style={{ marginRight: 14, marginTop:19 }} />
 
-    //           {/* Content Rendering Based on Active Tab */}
-    //           <View style={styles.contentContainer}>
-    //             {contentTab === "dashboard" && (
-    //               <>
-    //                 <Text style={styles.sectionTitle}>
-    //                   {" "}
-    //                   -------- Your Shifts: --------{" "}
-    //                 </Text>
-    //                 {Shifts.length > 0 ? (
-    //                   Shifts.map((shift) => (
-    //                     <ShiftCard key={shift.id} shift={shift} />
-    //                   ))
-    //                 ) : (
-    //                   <Text style={styles.noShiftsText}>
-    //                     No shifts available for you.
-    //                   </Text>
-    //                 )}
-    //               </>
-    //             )}
-    //             {contentTab === "schedules" && <SchedulesScreen />}
-    //             {contentTab === "income" && <IncomeScreen />}
-    //           </View>
-    //         </>
-    //       )}
-    //       {activeTab === "leave" && (
-    //         <LeaveScreen
-    //           toggleMenu={toggleMenu}
-    //           toggleNotification={toggleNotification}
-    //         />
-    //       )}
+      {/* Text content on the right */}
+      <View style={{ flex: 1 }}>
+      {/* Time */}
+      <View style={styles.iconRow}>
+        <Ionicons name="time-outline" size={16} color={PrimaryColor} style={styles.icon} />
+        <Text style={styles.shiftLineText}>
+          {new Date(shift.startTime).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })} –{" "}
+          {new Date(shift.endTime).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </Text>
+      </View>
 
-    //       {activeTab === "profile" && (
-    //         <ProfileScreen
-    //           // navigation={null}
-    //           toggleMenu={toggleMenu}
-    //           toggleNotification={toggleNotification}
-    //         />
-    //       )}
-    //     </ScrollView>
-    //   )}
+      {/* Location */}
+      <View style={styles.iconRow}>
+        <Ionicons name="location-outline" size={16} color={PrimaryColor} style={styles.icon} />
+        <Text style={styles.shiftLineText}>Office ID: {shift.officeId}</Text>
+      </View>
 
-    //   {/* Bottom Navigation */}
-    //   {!isChatView && (
-    //     <BottomNav activeTab={activeTab} handleTabChange={handleTabChange} />
-    //   )}
+      {/* Description */}
+      <View style={styles.iconRow}>
+        <Ionicons name="document-text-outline" size={16} color={PrimaryColor} style={styles.icon} />
+        <Text style={styles.shiftLineText}>{shift.description}</Text>
+      </View>
+    </View>
+    </View>
+  ))
+) : (
+  <Text style={styles.noShiftText}>You have no shift today.</Text>
+)}
 
-    //   {/* Menu - Side Menu with slide-in animation */}
-    //   <Menu
-    //     isMenuOpen={isMenuOpen}
-    //     toggleMenu={toggleMenu}
-    //     onChannelSelect={handleChannelSelect}
-    //     activeChannel={activeChannelId || ""}
-    //   />
+  </View>
+</View>
 
-    //   {/* Show Notifications if it's open */}
-    //   <Notification
-    //     isNotificationOpen={isNotificationOpen}
-    //     toggleNotification={toggleNotification}
-    //   />
-    // </SafeAreaView>
+
+    {/* Clock In Shortcut */}
+    <TouchableOpacity
+      style={styles.clockButton}
+      onPress={() => navigation.navigate("ClockInOutScreenPhone")}
+    >
+      <Ionicons name="time" size={18} color="#fff" style={{ marginRight: 8 }} />
+      <Text style={styles.clockButtonText}>Go to Clock In / Out</Text>
+    </TouchableOpacity>
+
+    {/* Quick Action Buttons */}
+    
+
+  </ScrollView>
+</SafeAreaView>
+
+  
+   
   );
 };
 
@@ -433,26 +362,129 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginVertical: 20,
   },
-
-  // buttonContainer: {
-  //   marginTop: 20,
-  //   marginBottom: 20,
-  //   flexDirection: 'row',
-  //   justifyContent: 'space-evenly',
-  //   alignItems: 'center',
-  // },
-  // button: {
-  //   backgroundColor: AccentColor,
-  //   padding: 15,
-  //   borderRadius: 20,
-  //   marginBottom: 15,
-  //   width: '40%',
-  //   alignItems: 'center',
-  // },
-  // buttonText: {
-  //   color: 'white',
-  //   fontSize: 16,
-  // },
+  //main content
+  welcomeContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  welcomeText: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: TextColor,
+  },
+  welcomeSubtext: {
+    fontSize: 14,
+    color: "#6C757D",
+    marginTop: 4,
+  },
+  
+  shiftCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    marginTop: 20,
+    marginHorizontal: 20,
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  
+  shiftLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: TextColor,
+  },
+  shiftTime: {
+    fontSize: 14,
+    marginTop: 4,
+    color: "#4A90E2",
+  },
+  shiftLocation: {
+    fontSize: 13,
+    color: "#6C757D",
+    marginTop: 2,
+  },
+  noShiftText: {
+    color: "#D9534F",
+    marginTop: 4,
+  },
+  
+  clockButton: {
+    backgroundColor: "#2ECC71",
+    margin: 20,
+    padding: 14,
+    borderRadius: 12,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  clockButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 15,
+  },
+  
+  quickActionScroll: {
+    paddingHorizontal: 12,
+    marginTop: 10,
+  },
+  actionCard: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    width: 90,
+    height: 90,
+    marginRight: 10,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+  },
+  actionLabel: {
+    fontSize: 12,
+    color: TextColor,
+    marginTop: 6,
+  },
+  individualShiftCardRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  }
+,  
+  shiftDescription: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#6C757D",
+    marginTop: 2,
+  },
+  iconRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  shiftLineText: {
+    fontSize: 14,
+    color: TextColor,
+    flexShrink: 1,
+  },
+  icon: {
+    color: 'gray',
+    opacity: 0.6,
+    marginRight: 8,
+  },
+ 
 });
 
 export default EmployeeDashboard;
