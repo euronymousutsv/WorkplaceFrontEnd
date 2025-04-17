@@ -1,0 +1,22 @@
+{
+  "files": {
+    "main.js": "/static/js/main.eecc992d.js",
+    "static/js/673.dc9d4cc3.js": "/static/js/673.dc9d4cc3.js",
+    "static/media/Ionicons.ttf": "/static/media/Ionicons.9b6b1954a5eb6efeaf11.ttf",
+    "static/media/MaterialIcons.ttf": "/static/media/MaterialIcons.f20305dee9d396fea5c7.ttf",
+    "static/media/wpslogo.png": "/static/media/wpslogo.38580f727cabdf194c26.png",
+    "static/media/Feather.ttf": "/static/media/Feather.0f5d9cede2e831f3fc80.ttf",
+    "favicon.ico": "/favicon.ico",
+    "index.html": "/index.html",
+    "favicon-32.png": "/favicon-32.png",
+    "favicon-16.png": "/favicon-16.png",
+    "manifest.json": "/manifest.json",
+    "serve.json": "/serve.json",
+    "main.eecc992d.js.map": "/static/js/main.eecc992d.js.map",
+    "673.dc9d4cc3.js.map": "/static/js/673.dc9d4cc3.js.map"
+  },
+  "entrypoints": [
+    "static/js/673.dc9d4cc3.js",
+    "static/js/main.eecc992d.js"
+  ]
+}
