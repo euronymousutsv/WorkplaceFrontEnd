@@ -8,6 +8,7 @@
     "icon": "./assets/wpslogo.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "platforms": ["ios", "android", "web"],
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -26,7 +27,10 @@
       "package": "com.anonymous.WorkplaceFrontEnd"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+    
+      "bundler": "webpack"
+    
     },
     "plugins": ["expo-secure-store"],
     "extra": {

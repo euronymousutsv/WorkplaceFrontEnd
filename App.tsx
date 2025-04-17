@@ -134,7 +134,7 @@ const AppNavigator = () => {
       <Stack.Screen
         name="ChatScreenPhone"
         component={ChatScreenPhone}
-        options={({ route }) => ({
+        options={({ route }: { route: { params?: { channelName?: string } } }) => ({
           headerBackTitle: "back",
           title: route.params?.channelName || "Chat",
         })}
