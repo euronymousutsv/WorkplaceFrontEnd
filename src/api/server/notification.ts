@@ -2,8 +2,10 @@ import axios, { AxiosError } from "axios";
 import { getToken, Plat } from "../auth/token";
 import { ApiError, ApiResponse } from "../utils/apiResponse";
 
+const baseUrl = process.env.BASE_URL || "https://workhive.space";
 const API = axios.create({
-  baseURL: "https://workhive.space/api/v1/" + "notify/",
+  baseURL: baseUrl + "/api/v1/notify/",
+  timeout: 10000,
   headers: {
     "Content-Type": "application/json",
   },

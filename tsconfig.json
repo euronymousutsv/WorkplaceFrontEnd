@@ -5,6 +5,7 @@
     "module": "esnext",
     "esModuleInterop": true,
     "strict": true
+    // "types": ["./env.d.ts"]
   },
   "include": ["src/**/*", "App.tsx"]
 }

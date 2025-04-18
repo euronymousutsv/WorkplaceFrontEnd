@@ -58,7 +58,7 @@ const NotificationScreen = () => {
         <Text>No notifications available.</Text>
       ) : (
         notifications.map((notification, index) => (
-          <View style={styles.card}>
+          <View key={index} style={styles.card}>
             <View style={styles.header}>
               <Text style={styles.title}>{notification.title}</Text>
               <Text style={styles.time}>

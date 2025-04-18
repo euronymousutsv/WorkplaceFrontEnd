@@ -2,12 +2,11 @@ import axios, { AxiosError } from "axios";
 import { getToken } from "../auth/token";
 import { ApiError, ApiResponse } from "../utils/apiResponse";
 
+const baseUrl =
+  process.env.BASE_URL || "https://workplace-zdzja.ondigitalocean.app";
 const API = axios.create({
-  baseURL:
-    // "https://8c1f-2406-2d40-4d55-6c10-bdc3-9abf-864e-c64f.ngrok-free.app/api/v1/",
-    // "http://localhost:3000/api/v1/chat/",
-    "https://workhive.space/api/v1/chat/",
-
+  baseURL: baseUrl + "/api/v1/chat/",
+  timeout: 10000,
   headers: {
     "Content-Type": "application/json",
   },

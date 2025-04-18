@@ -7,10 +7,14 @@ import {
   getAllChannelForCurrentServerResponse,
 } from "./server";
 
+const baseUrl =
+  process.env.BASE_URL || "https://workplace-zdzja.ondigitalocean.app";
+
+console.log("baseUrl:", baseUrl + "/api/v1/server/channel/");
+
 const API = axios.create({
-  // baseURL: "https://workplace-zdzja.ondigitalocean.app/api/v1/channel/",
-  baseURL: "https://workhive.space/api/v1/channel/",
-  // baseURL: "http://localhost:3000/api/v1/channel/",
+  baseURL: baseUrl + "/api/v1/channel/",
+
   headers: {
     "Content-Type": "application/json",
   },
@@ -131,7 +135,6 @@ const addAccessToChannel = async (reqData: {
     }
   }
 };
-
 
 // change channel name
 // Manager and admin can change channel name

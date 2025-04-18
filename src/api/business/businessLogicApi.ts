@@ -2,10 +2,10 @@ import axios, { AxiosError } from "axios";
 import { ApiError, ApiResponse } from "../utils/apiResponse";
 import { getToken } from "../auth/token";
 
+const baseUrl =
+  process.env.BASE_URL || "https://workplace-zdzja.ondigitalocean.app";
 const API = axios.create({
-  baseURL:
-    // "https://workplace-zdzja.ondigitalocean.app/api/businessLogic/",
-    "http://localhost:3000/api/businessLogic/",
+  baseURL: baseUrl + "/api/businessLogic/",
   headers: {
     "Content-Type": "application/json",
   },

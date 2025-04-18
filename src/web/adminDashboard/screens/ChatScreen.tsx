@@ -243,17 +243,6 @@ const ChatScreen = ({ route, navigation }: any) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* <Header
-        isSidebarOpen={isSidebarOpen}
-        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-      />
-      <Sidebar
-        isOpen={isSidebarOpen}
-        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        selectedTab={selectedTab}
-        handleTabChange={setSelectedTab}
-      /> */}
-
       <Animated.View
         style={[
           styles.mainContent,

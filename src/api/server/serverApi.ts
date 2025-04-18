@@ -11,12 +11,12 @@ import {
   userJoinedServerResponse,
 } from "./server";
 
+const baseUrl = process.env.BASE_URL || "https://workhive.space";
+
 // creating an instance of axios api wth base url
 const API = axios.create({
-  baseURL:
-    //  "http://localhost:3000/api/v1/server/",
-    "https://workhive.space/api/v1/server/",
-
+  baseURL: baseUrl + "/api/v1/server/",
+  timeout: 10000,
   headers: {
     "Content-Type": "application/json",
   },

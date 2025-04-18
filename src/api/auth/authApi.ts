@@ -12,12 +12,11 @@ import { ApiResponse, ApiError } from "../utils/apiResponse";
 import { getToken } from "./token";
 import { Role } from "../server/server";
 
+const baseUrl =
+  process.env.BASE_URL || "https://workplace-zdzja.ondigitalocean.app";
 const API = axios.create({
-  baseURL:
-    // "https://8c1f-2406-2d40-4d55-6c10-bdc3-9abf-864e-c64f.ngrok-free.app",
-    "https://workplace-zdzja.ondigitalocean.app/api/v1/auth/",
-  // "http://localhost:3000/api/v1/auth/",
-
+  baseURL: baseUrl + "/api/v1/auth/",
+  timeout: 10000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -33,7 +32,8 @@ const loginUser = async (email: string, password: string): Promise<any> => {
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const statusCode = error.response?.status ?? 500;
-      const message = error.response?.data?.message || "An unexpected error occurred";
+      const message =
+        error.response?.data?.message || "An unexpected error occurred";
       return new ApiError(statusCode, {}, message);
     } else {
       return new ApiError(400, {}, "Something went wrong");

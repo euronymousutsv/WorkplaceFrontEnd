@@ -23,7 +23,6 @@
     "axios": "^1.7.9",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
-    "dotenv": "^16.4.7",
     "expo": "~52.0.36",
     "expo-constants": "~17.0.8",
     "expo-dev-client": "~5.0.19",
@@ -43,7 +42,6 @@
     "react-native-calendars": "^1.1310.0",
     "react-native-chart-kit": "^6.12.0",
     "react-native-crypto": "^2.2.0",
-    "react-native-dotenv": "^3.4.11",
     "react-native-gesture-handler": "~2.20.2",
     "react-native-modal": "^14.0.0-rc.1",
     "react-native-modal-datetime-picker": "^18.0.0",
@@ -71,6 +69,7 @@
     "@types/react-native-web": "^0.19.0",
     "@types/react-router-dom": "^5.3.3",
     "metro-react-native-babel-preset": "^0.77.0",
+    "react-native-dotenv": "^3.4.11",
     "typescript": "^5.8.3"
   },
   "private": true
