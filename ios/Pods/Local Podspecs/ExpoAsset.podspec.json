@@ -1,6 +1,6 @@
 {
   "name": "ExpoAsset",
-  "version": "11.0.4",
+  "version": "11.0.5",
   "summary": "An Expo universal module to download assets and pass them into other APIs",
   "description": "An Expo universal module to download assets and pass them into other APIs",
   "license": "MIT",

@@ -34,3 +34,5 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+workplace-management-app-338c4-firebase-adminsdk-fbsvc-6abcd80d10.json
+*-firebase-adminsdk-*.json
