@@ -39,11 +39,13 @@ const CustomDrawerContent = (props: any) => {
     if (res instanceof ApiError) {
       console.log("Server fetch error:", res.message);
     } else if ("statusCode" in res && "data" in res) {
-      const serverId = res.data.serverId;
-      setServerName(res.data.name);
-      console.log(res.data.name);
+      const serverId = res.data.joinedServer.serverId;
+      const officeId = res.data.searchedOffice.officeId;
+      setServerName(res.data.joinedServer.name);
+      console.log(res.data.joinedServer.name);
 
       await saveToken("serverId", serverId, platformType);
+      await saveToken("officeId", officeId, platformType);
     } else {
       console.log("Something went wrong while fetching server.");
     }

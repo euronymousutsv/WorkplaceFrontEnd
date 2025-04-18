@@ -160,32 +160,32 @@ const EmployeeManagementScreen = () => {
     }
   };
 
-  const fetchServerId = async () => {
-    const token = await getToken("accessToken", Plat.WEB);
+  // const fetchServerId = async () => {
+  //   const token = await getToken("accessToken", Plat.WEB);
 
-    console.log("Acess token:", token);
-    console.log("--------------------------------------------------:", token);
-    try {
-      const res = await getLoggedInUserServer(Plat.WEB);
-      console.log("🧪 getLoggedInUserServer response:", res);
+  //   console.log("Acess token:", token);
+  //   console.log("--------------------------------------------------:", token);
+  //   try {
+  //     const res = await getLoggedInUserServer(Plat.WEB);
+  //     console.log("🧪 getLoggedInUserServer response:", res);
 
-      if (res instanceof ApiError) {
-        Toast.show({
-          type: "error",
-          text1: "Server ID Error",
-          text2: res.message,
-        });
-      } else if ("statusCode" in res && "data" in res && res.data.serverId) {
-        console.log("✅ Server ID found:", res.data.serverId);
-        setServerId(res.data.serverId);
-        saveToken("serverId", res.data.serverId, Plat.WEB);
-      } else {
-        console.warn("⚠️ Server ID not found in response data");
-      }
-    } catch (err) {
-      console.error("❌ Unexpected error in fetchServerId:", err);
-    }
-  };
+  //     if (res instanceof ApiError) {
+  //       Toast.show({
+  //         type: "error",
+  //         text1: "Server ID Error",
+  //         text2: res.message,
+  //       });
+  //     } else if ("statusCode" in res && "data" in res && res.data.serverId) {
+  //       console.log("✅ Server ID found:", res.data.serverId);
+  //       setServerId(res.data.serverId);
+  //       saveToken("serverId", res.data.serverId, Plat.WEB);
+  //     } else {
+  //       console.warn("⚠️ Server ID not found in response data");
+  //     }
+  //   } catch (err) {
+  //     console.error("❌ Unexpected error in fetchServerId:", err);
+  //   }
+  // };
 
   useEffect(() => {
     handleFetchUsers();
@@ -198,7 +198,7 @@ const EmployeeManagementScreen = () => {
   }, []);
 
   useEffect(() => {
-    fetchServerId();
+    // fetchServerId();
   }, []);
 
   const handleSort = (field: keyof Employee) => {

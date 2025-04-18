@@ -9,9 +9,14 @@ export interface createChannelResponse {
   channelName: string;
 }
 
-export interface userJoinedServerResponse {
-  serverId: string;
-  name: string;
+export interface UserJoinedServerResponse {
+  joinedServer: {
+    serverId: string;
+    name: string;
+  };
+  searchedOffice: {
+    officeId: string;
+  };
 }
 
 export interface SearchServerResponse {
