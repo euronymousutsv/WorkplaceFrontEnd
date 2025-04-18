@@ -9,6 +9,7 @@ import {
   UpdateOfficeRequest,
 } from "./officeRequest";
 import { ApiError, ApiResponse } from "../utils/apiResponse";
+import { getToken, Plat } from "../auth/token";
 
 const baseUrl =
   process.env.BASE_URL || "https://workplace-zdzja.ondigitalocean.app";
@@ -24,11 +25,21 @@ const API = axios.create({
 // this function takes in a serverId and returns all the offices within that server
 export const getAllOffices = async (reqData: { serverId: string }) => {
   try {
-    const response = await API.get<AllOfficesResponse[]>("getAllOffices", {
-      params: {
-        serverId: reqData.serverId,
-      },
-    });
+    const accessToken = await getToken("accessToken", Plat.WEB);
+    console.log(accessToken);
+
+    const response = await API.get<ApiResponse<AllOfficesResponse[]>>(
+      "getAllOffices",
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        params: {
+          serverId: reqData.serverId,
+        },
+      }
+    );
+    console.log(response.data.data);
     return response.data;
   } catch (error: any) {
     if (axios.isAxiosError(error)) {

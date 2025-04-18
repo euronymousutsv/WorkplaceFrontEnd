@@ -15,17 +15,30 @@ import { getLoggedInUserServer } from "../../../api/server/serverApi";
 import { ApiError } from "../../../api/utils/apiResponse";
 import { getToken, Plat, saveToken } from "../../../api/auth/token";
 import { ChannelResponse } from "../../../api/server/server";
-import { getAllChannelForCurrentServer } from "../../../api/server/channelApi";
+import {
+  getAllChannelForCurrentOffice,
+  getAllChannelForCurrentServer,
+} from "../../../api/server/channelApi";
+import Toast from "react-native-toast-message";
+import { AllOfficesResponse } from "../../../api/office/officeResponse";
+import { getAllOffices } from "../../../api/office/officeApi";
 
 const CustomDrawerContent = (props: any) => {
+  const [serverName, setServerName] = useState("");
   const [loading, setLoading] = useState(true);
+
+  // channels state
   const [channels, setChannels] = useState<ChannelResponse[]>([]);
   const [activeChannelId, setActiveChannelId] = useState<string | null>(null);
-  const [serverName, setServerName] = useState("");
+
+  // offices state
+  const [offices, setOffices] = useState<AllOfficesResponse[] | null>([]);
+  const [activeOffice, setActiveOffice] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       await handleGetServerDetail(); // Save serverId token
+      await handleGetAllOffices(); // Fetch all offices
       await handleGetAllChannels(); // Fetch channels with saved serverId
       setLoading(false);
     })();
@@ -40,9 +53,9 @@ const CustomDrawerContent = (props: any) => {
       console.log("Server fetch error:", res.message);
     } else if ("statusCode" in res && "data" in res) {
       const serverId = res.data.joinedServer.serverId;
-      const officeId = res.data.searchedOffice.officeId;
+      const officeId = res.data?.searchedOffice?.officeId || "";
       setServerName(res.data.joinedServer.name);
-      console.log(res.data.joinedServer.name);
+      console.log(res.data);
 
       await saveToken("serverId", serverId, platformType);
       await saveToken("officeId", officeId, platformType);
@@ -54,15 +67,47 @@ const CustomDrawerContent = (props: any) => {
   const handleGetAllChannels = async () => {
     const platformType = Platform.OS === "web" ? Plat.WEB : Plat.PHONE;
 
-    const serverId = await getToken("serverId", platformType);
+    let officeId;
+    if (platformType === Plat.PHONE) {
+      officeId = await getToken("officeId", platformType);
+      if (!officeId) {
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "No office ID found. Please try again.",
+        });
+        return;
+      }
+    }
 
-    if (!serverId) return;
-
-    const res = await getAllChannelForCurrentServer(serverId, platformType);
+    const res = await getAllChannelForCurrentOffice(officeId!, platformType);
     if (res instanceof ApiError) {
       console.log("Channel fetch error:", res.message);
     } else {
       setChannels(res.data);
+    }
+  };
+
+  const handleGetAllOffices = async () => {
+    const platformType = Platform.OS === "web" ? Plat.WEB : Plat.PHONE;
+
+    if (platformType === Plat.PHONE) {
+      return;
+    }
+    const serverId = await getToken("serverId", platformType);
+
+    // fetchs all offices within a server
+    const res = await getAllOffices({ serverId: serverId! });
+
+    if (res instanceof ApiError) {
+      console.log("Offices fetch error:", res.message);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to fetch offices.",
+      });
+    } else {
+      setOffices(res.data);
     }
   };
 
@@ -88,6 +133,30 @@ const CustomDrawerContent = (props: any) => {
       <View style={styles.divider} />
 
       <Text style={styles.sectionTitle}>Channels</Text>
+
+      {offices?.map((item) => (
+        <TouchableOpacity
+          key={item.id}
+          onPress={() => {
+            console.log("Pressed office:", item.name);
+            setActiveOffice(item.id);
+            handleGetAllChannels(); // optionally refetch channels for this office
+          }}
+          style={[
+            styles.channelItem,
+            activeOffice === item.id && styles.activeChannelItem,
+          ]}
+        >
+          <Text
+            style={[
+              styles.channelText,
+              activeOffice === item.id && styles.activeChannelText,
+            ]}
+          >
+            🏢 {item.name}
+          </Text>
+        </TouchableOpacity>
+      ))}
 
       {loading ? (
         <ActivityIndicator size="small" style={{ marginTop: 10 }} />

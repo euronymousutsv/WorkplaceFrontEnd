@@ -14,8 +14,8 @@ export interface UserJoinedServerResponse {
     serverId: string;
     name: string;
   };
-  searchedOffice: {
-    officeId: string;
+  searchedOffice?: {
+    officeId?: string;
   };
 }
 
