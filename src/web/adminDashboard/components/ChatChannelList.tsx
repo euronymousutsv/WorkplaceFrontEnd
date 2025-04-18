@@ -8,6 +8,7 @@ import {
   TextInput,
   Modal,
   Switch,
+  Platform,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -33,6 +34,7 @@ interface Channel {
 }
 
 const ChatChannelList: React.FC = () => {
+  if (Platform.OS !== "web") return null;
   const [channels, setChannels] = useState<Channel[]>([]);
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -277,13 +279,18 @@ const ChatChannelList: React.FC = () => {
           onPress={() => setModalVisible(true)}
           style={styles.addChannelButton}
         >
-          <Feather name="plus" size={16} color="white" />
+          <Feather name="plus" size={16} color="black" />
         </TouchableOpacity>
       </View>
 
       {/* Channel List */}
-      <ScrollView>
-        {channels.map((channel, index) => (
+     
+        {channels.length === 0 ? (
+          <Text style={{ color: "#666", padding: 10, fontSize: 14 }}>
+            No channels. Click '+' to create one.
+          </Text>
+        ) : (
+        channels.map((channel, index) => (
           <TouchableOpacity
             key={index}
             style={[
@@ -342,8 +349,8 @@ const ChatChannelList: React.FC = () => {
               </Text>
             )}
           </TouchableOpacity>
-        ))}
-      </ScrollView>
+        )))}
+      
 
       {/* Create Channel Modal */}
       <Modal
@@ -437,11 +444,12 @@ const styles = StyleSheet.create({
   chatTitle: {
     fontSize: 12,
     fontWeight: "600",
-    color: "white",
+    color: "black",
     textTransform: "uppercase",
     letterSpacing: 1,
   },
   addChannelButton: {
+    
     padding: 4,
   },
   chatItem: {

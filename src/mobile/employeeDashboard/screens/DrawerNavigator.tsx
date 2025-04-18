@@ -13,17 +13,18 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import LeaveScreen from "./LeaveScreen";
 import ProfileScreen from "./ProfileScreen";
 import CustomDrawerContent from "./ChannelsDrawerView";
-import { Dimensions } from "react-native";
+import { Dimensions, View } from "react-native";
 import NotificationScreen from "./NotificationScreen";
 import EmployeeManagementScreen from "../../../web/adminDashboard/screens/EmployeeManagementScreen";
 import ClockInOutScreen from "../../../web/adminDashboard/screens/ClockInOutScreen";
 import LeaveRequestScreen from "../../../web/adminDashboard/screens/LeaveRequestScreen";
 import GrossPaymentScreen from "../../../web/adminDashboard/screens/GrossPaymentScreen";
 import SettingsScreen from "../../../web/adminDashboard/screens/SettingsScreen";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { DrawerNavigationProp } from "@react-navigation/drawer";
 import { useNavigation } from "@react-navigation/native";
 import AdminDashboard from "../../../web/adminDashboard/screens/AdminDashboard";
+import Header from "../../../web/adminDashboard/components/Header";
 const Drawer = createDrawerNavigator();
 
 const Tab = createBottomTabNavigator();
@@ -145,24 +146,29 @@ const AppNavigatorDrawer = () => {
 };
 
 export const WebNavigatorDrawer = () => {
-  const screenWidth = Dimensions.get("window").width;
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const screenWidth = Dimensions.get('window').width;
+const toggleSidebar = () => setIsSidebarOpen(prev => !prev);
 
   return (
+    <View style={{ flex: 1 }}>
+      <Header isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+
     <Drawer.Navigator
       initialRouteName="Dashboard"
-      drawerContent={(props) => <CustomDrawerContent {...props} />}
+      drawerContent={(props) => <CustomDrawerContent {...props} isSidebarOpen={isSidebarOpen} />}
       screenOptions={{
         drawerType: "permanent",
 
         drawerStyle: {
-          width: screenWidth * 0.2, // 20% of screen width
+          width: isSidebarOpen ? 260 : 0, // 20% of screen width
         },
-        headerShown: true,
+        headerShown: false,
         drawerActiveBackgroundColor: "#e6f0ff", // background when selected
         drawerActiveTintColor: "#1e90ff", // text/icon color when selected
         drawerInactiveTintColor: "#333",
         drawerItemStyle: {
-          borderRadius: 12, // 🎯 Rounded corners
+          borderRadius: 12, 
           marginHorizontal: 10,
           marginVertical: 4,
         },
@@ -238,6 +244,7 @@ export const WebNavigatorDrawer = () => {
         }}
       />
     </Drawer.Navigator>
+    </View>
   );
 };
 

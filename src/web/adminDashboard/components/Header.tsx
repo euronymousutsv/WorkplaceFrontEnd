@@ -16,7 +16,7 @@ const Header: React.FC<HeaderProps> = ({ isSidebarOpen, toggleSidebar }) => {
       </TouchableOpacity>
 
       {/* App Name on the Left */}
-      <Text style={styles.appName}>RosterMate</Text>
+      <Text style={styles.appName}>Work Hive</Text>
     </View>
   );
 };

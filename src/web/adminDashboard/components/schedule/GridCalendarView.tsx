@@ -1,9 +1,8 @@
 // GridCalendarView.tsx
+import { Feather } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import MonthView from './MonthView';
-import WeekView from './WeekView';
-import DayView from './DayView';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { Calendar } from 'react-native-big-calendar';
 
 interface Schedule {
   id: number;
@@ -25,10 +24,27 @@ const GridCalendarView: React.FC<GridCalendarViewProps> = ({
   onCellPress,
   onShiftPress,
 }) => {
-  const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month');
+  const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('week');
   const [dateCursor, setDateCursor] = useState(new Date());
-  const [editingShift, setEditingShift] = useState<any | null>(null);
 
+  const mappedEvents = schedules.map((shift) => ({
+    title: `${shift.employee} @ ${shift.location}`,
+    start: new Date(shift.start),
+    end: new Date(shift.end),
+    color: '#4A90E2',
+    id: shift.id.toString(),
+  }));
+
+  const handleEventPress = (event: any) => {
+    const selectedShift = schedules.find((s) => s.id.toString() === event.id);
+    if (selectedShift) onShiftPress(selectedShift);
+    else Alert.alert('Shift not found');
+  };
+
+  const handleCellPress = (date: Date) => {
+    // Always allow cell press to open modal in any view
+    onCellPress('', date.toISOString());
+  };
 
   const handlePrev = () => {
     const newDate = new Date(dateCursor);
@@ -80,19 +96,16 @@ const GridCalendarView: React.FC<GridCalendarViewProps> = ({
       {/* Navigation Bar */}
       <View style={styles.navBar}>
         <View style={styles.leftNav}>
-          <TouchableOpacity onPress={handlePrev}><Text style={styles.navButton}>{'<'}</Text></TouchableOpacity>
+          <TouchableOpacity onPress={handlePrev}><Feather name="chevron-left" size={18} color="#4A90E2" /></TouchableOpacity>
           <TouchableOpacity onPress={handleToday}><Text style={styles.navButton}>Today</Text></TouchableOpacity>
-          <TouchableOpacity onPress={handleNext}><Text style={styles.navButton}>{'>'}</Text></TouchableOpacity>
+          <TouchableOpacity onPress={handleNext}><Feather name="chevron-right" size={18} color="#4A90E2" /></TouchableOpacity>
         </View>
 
-        <View style={styles.rightNav}>
+        <View style={styles.viewGroup}>
           {['month', 'week', 'day'].map((mode) => (
             <TouchableOpacity key={mode} onPress={() => setViewMode(mode as any)}>
               <Text
-                style={[
-                  styles.viewToggle,
-                  viewMode === mode && styles.activeToggle,
-                ]}
+                style={[styles.viewToggle, viewMode === mode && styles.activeToggle]}
               >
                 {mode}
               </Text>
@@ -106,36 +119,18 @@ const GridCalendarView: React.FC<GridCalendarViewProps> = ({
         <Text style={styles.headerText}>{getDateHeaderText()}</Text>
       </View>
 
-      {/* Calendar View */}
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1 }}
-        showsVerticalScrollIndicator={true}
-      >
-        {viewMode === 'month' && (
-          <MonthView
-            currentDate={dateCursor}
-            schedules={schedules}
-            onCellPress={onCellPress}
-            onShiftPress={onShiftPress}
-          />
-        )}
-        {viewMode === 'week' && (
-          <WeekView
-            currentDate={dateCursor}
-            schedules={schedules}
-            onCellPress={onCellPress}
-            onShiftPress={onShiftPress}
-          />
-        )}
-        {viewMode === 'day' && (
-          <DayView
-            currentDate={dateCursor}
-            schedules={schedules}
-            onCellPress={onCellPress}
-            onShiftPress={onShiftPress}
-          />
-        )}
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
+        <Calendar
+          events={mappedEvents}
+          height={800}
+          mode={viewMode}
+          onPressEvent={handleEventPress}
+          onPressCell={handleCellPress}
+          swipeEnabled={false}
+          weekStartsOn={1}
+          showTime={true}
+          date={dateCursor}
+        />
       </ScrollView>
     </View>
   );
@@ -158,7 +153,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
   },
-  rightNav: {
+  viewGroup: {
     flexDirection: 'row',
     backgroundColor: '#f1f1f1',
     borderRadius: 6,
