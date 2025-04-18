@@ -11,8 +11,8 @@ import {
   Modal,
   Alert,
 } from "react-native";
-import Header from "../components/Header";
-import Sidebar from "../components/Sidebar";
+// import Header from "../components/Header";
+// import Sidebar from "../components/Sidebar";
 import { Picker } from "@react-native-picker/picker";
 import { BarChart } from "react-native-chart-kit";
 import { Dimensions } from "react-native";
@@ -173,7 +173,7 @@ const GrossPaymentScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header
+      {/* <Header
         isSidebarOpen={isSidebarOpen}
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
       />
@@ -182,9 +182,12 @@ const GrossPaymentScreen = () => {
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         selectedTab={selectedTab}
         handleTabChange={setSelectedTab}
-      />
+      /> */}
       <View
-        style={[styles.mainContent, { marginLeft: isSidebarOpen ? 250 : 0 }]}
+        style={[
+          styles.mainContent,
+          // { marginLeft: isSidebarOpen ? 250 : 0 }
+        ]}
       >
         <Text style={styles.title}>Gross Payments</Text>
 
@@ -394,7 +397,11 @@ const GrossPaymentScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, flexDirection: "row" },
-  mainContent: { flex: 1, padding: 20, marginTop: 60 },
+  mainContent: {
+    flex: 1,
+    padding: 20,
+    // marginTop: 60
+  },
   title: { fontSize: 24, fontWeight: "bold", marginBottom: 10 },
   chartTitle: { fontSize: 18, fontWeight: "600", marginTop: 20 },
   addButton: {

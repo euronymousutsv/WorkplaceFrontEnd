@@ -25,7 +25,10 @@ import EditDetailScreens from "./src/mobile/employeeDashboard/screens/EditDetail
 import PartialRegesterScreen from "./src/mobile/employeeDashboard/screens/ParitalRegestrationScreen";
 import ParitalRegestrationPasswordScreen from "./src/mobile/employeeDashboard/screens/PartialRegisterPasswordScreen";
 import ChatScreen from "./src/web/adminDashboard/screens/ChatScreen";
-import { MyTabs } from "./src/mobile/employeeDashboard/screens/DrawerNavigator";
+import {
+  MyTabs,
+  WebNavigatorDrawer,
+} from "./src/mobile/employeeDashboard/screens/DrawerNavigator";
 import ChatScreenPhone from "./src/mobile/employeeDashboard/screens/ChatScreen";
 // Create a stack navigator
 const Stack = createStackNavigator();
@@ -179,17 +182,17 @@ const AppNavigator = () => {
         component={MyTabs}
         options={{ headerShown: false }}
       />
-      <Stack.Screen
+      {/* <Stack.Screen
         name="AdminDashboard"
         component={AdminDashboard}
         options={{ headerShown: false }}
-      />
+      /> */}
       {/* // With drawer remove this comment */}
-      {/* <Stack.Screen
+      <Stack.Screen
         name="AdminDashboard"
         component={WebNavigatorDrawer}
         options={{ headerShown: false }}
-      /> */}
+      />
       <Stack.Screen
         name="SearchedServer"
         component={SearchedServerScreen}
@@ -205,7 +208,7 @@ const AppNavigator = () => {
       <Stack.Screen
         name="ChatScreen"
         component={ChatScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: true }}
       />
     </Stack.Navigator>
   );

@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import {
   DrawerContentScrollView,
@@ -31,27 +32,31 @@ const CustomDrawerContent = (props: any) => {
   }, []);
 
   const handleGetServerDetail = async () => {
-    const res = await getLoggedInUserServer(Plat.PHONE);
+    const platformType = Platform.OS === "web" ? Plat.WEB : Plat.PHONE;
+
+    const res = await getLoggedInUserServer(platformType);
+
     if (res instanceof ApiError) {
       console.log("Server fetch error:", res.message);
     } else if ("statusCode" in res && "data" in res) {
       const serverId = res.data.serverId;
-
       setServerName(res.data.name);
       console.log(res.data.name);
 
-      await saveToken("serverId", serverId);
+      await saveToken("serverId", serverId, platformType);
     } else {
       console.log("Something went wrong while fetching server.");
     }
   };
 
   const handleGetAllChannels = async () => {
-    const serverId = await getToken("serverId");
+    const platformType = Platform.OS === "web" ? Plat.WEB : Plat.PHONE;
+
+    const serverId = await getToken("serverId", platformType);
 
     if (!serverId) return;
 
-    const res = await getAllChannelForCurrentServer(serverId, Plat.PHONE);
+    const res = await getAllChannelForCurrentServer(serverId, platformType);
     if (res instanceof ApiError) {
       console.log("Channel fetch error:", res.message);
     } else {
@@ -60,10 +65,13 @@ const CustomDrawerContent = (props: any) => {
   };
 
   const handleChannelPress = (channel: ChannelResponse) => {
-    props.navigation.navigate("ChatScreenPhone", {
-      channelId: channel.id,
-      channelName: channel.name,
-    });
+    props.navigation.navigate(
+      Platform.OS === "web" ? "ChatScreen" : "ChatScreenPhone",
+      {
+        channelId: channel.id,
+        channelName: channel.name,
+      }
+    );
     props.navigation.closeDrawer();
   };
 

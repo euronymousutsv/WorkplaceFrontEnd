@@ -11,8 +11,8 @@ import {
   Alert,
   Modal,
 } from "react-native";
-import Header from "../components/Header";
-import Sidebar from "../components/Sidebar";
+// import Header from "../components/Header";
+// import Sidebar from "../components/Sidebar";
 
 interface LeaveRequest {
   id: string;
@@ -125,7 +125,7 @@ const LeaveRequestScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header
+      {/* <Header
         isSidebarOpen={isSidebarOpen}
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
       />
@@ -134,9 +134,12 @@ const LeaveRequestScreen = () => {
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         selectedTab={selectedTab}
         handleTabChange={setSelectedTab}
-      />
+      /> */}
       <View
-        style={[styles.mainContent, { marginLeft: isSidebarOpen ? 250 : 0 }]}
+        style={[
+          styles.mainContent,
+          // { marginLeft: isSidebarOpen ? 250 : 0 }
+        ]}
       >
         <Text style={styles.title}>Leave Requests</Text>
         <TextInput
@@ -323,7 +326,12 @@ const LeaveRequestScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, flexDirection: "row" },
-  mainContent: { flex: 1, padding: 20, marginTop: 60 },
+  mainContent: {
+    flex: 1,
+    padding: 20,
+
+    // marginTop: 60
+  },
   title: { fontSize: 24, fontWeight: "bold", marginBottom: 10 },
   input: {
     borderWidth: 1,

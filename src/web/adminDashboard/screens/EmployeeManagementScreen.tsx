@@ -13,8 +13,6 @@ import {
   Image,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import Header from "../components/Header";
-import Sidebar from "../components/Sidebar";
 import { fetchAllUsers } from "../../../api/server/serverApi";
 import { ApiError, ApiResponse } from "../../../api/utils/apiResponse";
 import { AxiosError } from "axios";
@@ -441,7 +439,7 @@ const EmployeeManagementScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header
+      {/* <Header
         isSidebarOpen={isSidebarOpen}
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
       />
@@ -450,12 +448,12 @@ const EmployeeManagementScreen = () => {
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         selectedTab={selectedTab}
         handleTabChange={setSelectedTab}
-      />
+      /> */}
 
       <View
         style={[
           styles.mainContent,
-          { marginLeft: isMobile ? 0 : isSidebarOpen ? 250 : 0 },
+          // { marginLeft: isMobile ? 0 : isSidebarOpen ? 250 : 0 },
         ]}
       >
         <Text style={styles.title}>
@@ -687,7 +685,11 @@ const styles = StyleSheet.create({
   employeeBadge: { backgroundColor: "#2980b9" },
   container: { flex: 1, flexDirection: "row" },
   mainContent: { flex: 1, padding: 20, marginTop: 60 },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 10 },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    //  marginBottom: 10
+  },
   searchInput: {
     flex: 1,
     borderWidth: 1,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,25 +9,25 @@ import {
   ScrollView,
   Dimensions,
   Platform,
-} from 'react-native';
-import Sidebar from '../components/Sidebar';
-import Header from '../components/Header';
+} from "react-native";
+// import Sidebar from '../components/Sidebar';
+// import Header from '../components/Header';
 import {
   PrimaryColor,
   AccentColor,
   BackgroundColor,
   TextColor,
   ButtonRed,
-} from '../../../utils/color';
+} from "../../../utils/color";
 
 const AdminDashboard: React.FC = () => {
-  const [selectedTab, setSelectedTab] = useState('Dashboard');
+  const [selectedTab, setSelectedTab] = useState("Dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const sidebarWidth = new Animated.Value(250);
   const mainContentPadding = new Animated.Value(250);
   const [isMobile, setIsMobile] = useState(false);
 
-  const screenWidth = Dimensions.get('window').width;
+  const screenWidth = Dimensions.get("window").width;
 
   useEffect(() => {
     if (screenWidth <= 768) {
@@ -59,41 +59,48 @@ const AdminDashboard: React.FC = () => {
 
   const alerts = [
     {
-      text: 'Pranish was supposed to start working at 10. He has not clocked in yet.',
-      time: '60 mins ago',
-      type: 'alert',
+      text: "Pranish was supposed to start working at 10. He has not clocked in yet.",
+      time: "60 mins ago",
+      type: "alert",
     },
     {
-      text: 'Pranish has requested for a leave this Saturday',
-      time: '10 min ago',
-      type: 'notification',
+      text: "Pranish has requested for a leave this Saturday",
+      time: "10 min ago",
+      type: "notification",
     },
     {
-      text: 'Sabin mentioned you in #Channel1',
-      time: '10 min ago',
-      type: 'notification',
+      text: "Sabin mentioned you in #Channel1",
+      time: "10 min ago",
+      type: "notification",
     },
   ];
 
-  const toDos = [{ task: 'Place an order for tomorrow', due: 'Due today' }];
+  const toDos = [{ task: "Place an order for tomorrow", due: "Due today" }];
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
-      <Header isSidebarOpen={isSidebarOpen} toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
+      {/* <Header
+        isSidebarOpen={isSidebarOpen}
+        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+      /> */}
 
       {/* Sidebar */}
-      <Sidebar
+      {/* <Sidebar
         isOpen={isSidebarOpen}
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         selectedTab={selectedTab}
         handleTabChange={handleTabChange}
-      />
+      /> */}
 
       {/* Main Content */}
-      <Animated.View style={[styles.mainContent, { paddingLeft: isMobile ? 0 : mainContentPadding }]}>
+      <Animated.View
+        style={[
+          styles.mainContent,
+          // { paddingLeft: isMobile ? 0 : mainContentPadding },
+        ]}
+      >
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-
           {/* Welcome Banner */}
           <View style={styles.welcomeBanner}>
             <Text style={styles.welcomeTitle}>Welcome, Admin 👋</Text>
@@ -143,7 +150,7 @@ const AdminDashboard: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: BackgroundColor,
   },
   mainContent: {
@@ -161,19 +168,19 @@ const styles = StyleSheet.create({
   },
   welcomeTitle: {
     fontSize: 26,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: TextColor,
   },
   welcomeSubtitle: {
     fontSize: 16,
-    color: '#6C6C6C',
+    color: "#6C6C6C",
   },
   card: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderRadius: 12,
     padding: 18,
     marginBottom: 20,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 3,
@@ -182,11 +189,11 @@ const styles = StyleSheet.create({
   alertCard: {
     borderLeftWidth: 5,
     borderLeftColor: ButtonRed,
-    backgroundColor: '#FFEBEB',
+    backgroundColor: "#FFEBEB",
   },
   cardTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: TextColor,
     marginBottom: 10,
   },
@@ -210,7 +217,7 @@ const styles = StyleSheet.create({
   },
   timestamp: {
     fontSize: 12,
-    color: '#6C6C6C',
+    color: "#6C6C6C",
   },
 });
 

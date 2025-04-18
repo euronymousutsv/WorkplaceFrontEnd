@@ -11,8 +11,8 @@ import {
   FlatList,
   Modal,
 } from "react-native";
-import Header from "../components/Header";
-import Sidebar from "../components/Sidebar";
+// import Header from "../components/Header";
+// import Sidebar from "../components/Sidebar";
 import GridCalendarView from "../components/schedule/GridCalendarView";
 import WebScheduleModal from "../components/schedule/WebScheduleModal";
 import { fetchAllUsers } from "../../../api/server/serverApi";
@@ -165,21 +165,21 @@ const SchedulesScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header
+      {/* <Header
         isSidebarOpen={isSidebarOpen}
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-      />
-      <Sidebar
+      /> */}
+      {/* <Sidebar
         isOpen={isSidebarOpen}
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         selectedTab="Schedules"
         handleTabChange={() => setActiveTab("calendar")}
-      />
+      /> */}
 
       <View
         style={[
           styles.mainContent,
-          { marginLeft: isMobile ? 0 : isSidebarOpen ? 250 : 0 },
+          // { marginLeft: isMobile ? 0 : isSidebarOpen ? 250 : 0 },
         ]}
       >
         {/* Tabs */}
@@ -297,7 +297,12 @@ const SchedulesScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  mainContent: { flex: 1, padding: 20, marginTop: 60 },
+  mainContent: {
+    flex: 1,
+    padding: 20,
+
+    // marginTop: 60
+  },
   tabBar: { flexDirection: "row", gap: 10, marginBottom: 20 },
   tabButton: {
     backgroundColor: "#f2f2f2",

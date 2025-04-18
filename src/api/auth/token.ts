@@ -1,15 +1,11 @@
 import * as SecureStore from "expo-secure-store";
-import { Switch } from "react-native-gesture-handler";
 
-// Save token
-
-// using "Plat name for Platform so that is doesnt collide with "Platform" class from React Native
-//  Platform
 export enum Plat {
   WEB = "web",
   PHONE = "phone",
 }
 
+// Save token
 export async function saveToken(
   key: string,
   value: string,
@@ -17,12 +13,12 @@ export async function saveToken(
 ): Promise<void> {
   try {
     switch (plat) {
-      // when the platform is web , we store details in Local storage
+      // when the platform is web, store details in LocalStorage
       case Plat.WEB:
         localStorage.setItem(key, value);
         break;
 
-      // when the platform is web , we store details in Expo secured storage
+      // when the platform is phone, store details in Expo SecureStore
       case Plat.PHONE:
       default:
         await SecureStore.setItemAsync(key, value, {
@@ -45,11 +41,11 @@ export async function getToken(
     console.log(plat);
 
     switch (plat) {
-      // when the platform is web , we get details in Local storage
+      // when the platform is web, get details from LocalStorage
       case Plat.WEB:
         return localStorage.getItem(key);
 
-      // when the platform is web , we get details in Expo secured storage
+      // when the platform is phone, get details from Expo SecureStore
       case Plat.PHONE:
       default:
         return await SecureStore.getItemAsync(key);
@@ -67,12 +63,12 @@ export async function deleteToken(
 ): Promise<void> {
   try {
     switch (plat) {
-      // when the platform is web , we store details in Local storage
+      // when the platform is web, remove details from LocalStorage
       case Plat.WEB:
         localStorage.removeItem(key);
         break;
 
-      // when the platform is web , we store details in Expo secured storage
+      // when the platform is phone, delete details from Expo SecureStore
       case Plat.PHONE:
       default:
         await SecureStore.deleteItemAsync(key);
