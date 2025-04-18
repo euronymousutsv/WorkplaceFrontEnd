@@ -16,12 +16,14 @@ import { ApiError } from "../../../api/utils/apiResponse";
 import { getToken, Plat, saveToken } from "../../../api/auth/token";
 import { ChannelResponse } from "../../../api/server/server";
 import { getAllChannelForCurrentServer } from "../../../api/server/channelApi";
+import ChatChannelList from "../../../web/adminDashboard/components/ChatChannelList";
 
 const CustomDrawerContent = (props: any) => {
   const [loading, setLoading] = useState(true);
   const [channels, setChannels] = useState<ChannelResponse[]>([]);
   const [activeChannelId, setActiveChannelId] = useState<string | null>(null);
   const [serverName, setServerName] = useState("");
+  
 
   useEffect(() => {
     (async () => {
@@ -78,41 +80,47 @@ const CustomDrawerContent = (props: any) => {
   };
 
   return (
-    <DrawerContentScrollView {...props}>
+    <DrawerContentScrollView {...props}
+    contentContainerStyle={{ flexGrow: 1 }}>
       <View style={styles.drawerHeader}>
         <Text style={styles.drawerTitle}>{serverName}</Text>
       </View>
 
       <DrawerItemList {...props} />
 
-      <View style={styles.divider} />
-
-      <Text style={styles.sectionTitle}>Channels</Text>
-
-      {loading ? (
-        <ActivityIndicator size="small" style={{ marginTop: 10 }} />
-      ) : channels.length > 0 ? (
-        channels.map((channel) => (
-          <TouchableOpacity
-            key={channel.id}
-            onPress={() => handleChannelPress(channel)}
-            style={[
-              styles.channelItem,
-              activeChannelId === channel.id && styles.activeChannelItem,
-            ]}
-          >
-            <Text
-              style={[
-                styles.channelText,
-                activeChannelId === channel.id && styles.activeChannelText,
-              ]}
-            >
-              # {channel.name}
-            </Text>
-          </TouchableOpacity>
-        ))
+      {Platform.OS === "web" ? (
+        <ChatChannelList />
       ) : (
-        <Text style={styles.noChannelText}>No channels available.</Text>
+        <>
+          <View style={styles.divider} />
+          <Text style={styles.sectionTitle}>Channels</Text>
+
+          {loading ? (
+            <ActivityIndicator size="small" style={{ marginTop: 10 }} />
+          ) : channels.length > 0 ? (
+            channels.map((channel) => (
+              <TouchableOpacity
+                key={channel.id}
+                onPress={() => handleChannelPress(channel)}
+                style={[
+                  styles.channelItem,
+                  activeChannelId === channel.id && styles.activeChannelItem,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.channelText,
+                    activeChannelId === channel.id && styles.activeChannelText,
+                  ]}
+                >
+                  # {channel.name}
+                </Text>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <Text style={styles.noChannelText}>No channels available.</Text>
+          )}
+        </>
       )}
     </DrawerContentScrollView>
   );
@@ -126,6 +134,7 @@ const styles = StyleSheet.create({
   drawerTitle: {
     fontSize: 20,
     fontWeight: "bold",
+    marginTop:40,
   },
   divider: {
     height: 1,

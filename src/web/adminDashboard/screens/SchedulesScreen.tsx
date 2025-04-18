@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
 
-    // marginTop: 60
+    marginTop: 60
   },
   tabBar: { flexDirection: "row", gap: 10, marginBottom: 20 },
   tabButton: {
