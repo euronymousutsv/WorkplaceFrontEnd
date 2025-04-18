@@ -144,6 +144,9 @@ const ProfileScreen = () =>
         // Delete the access token
         await deleteToken("accessToken");
         await deleteToken("serverId");
+        await deleteToken("officeId");
+        await deleteToken("name");
+        await deleteToken("userId");
         // Uncomment if you're using refresh token as well
         // await deleteToken("refreshToken");
 

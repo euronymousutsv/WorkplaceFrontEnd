@@ -176,6 +176,8 @@ const EmployeeDashboard: React.FC = () => {
   }, []);
 
   return (
+
+    
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* Welcome Header */}

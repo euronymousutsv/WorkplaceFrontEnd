@@ -55,10 +55,20 @@ const CustomDrawerContent = (props: any) => {
       } else if ("statusCode" in res && "data" in res) {
         const serverId = res.data.joinedServer.serverId;
         const officeId = res.data?.searchedOffice?.officeId || "";
-        setServerName(res.data.joinedServer.name);
+        const serverName = res.data.joinedServer.name;
+        setServerName(serverName);
+
+        console.log("Server ID:", serverId);
 
         await saveToken("serverId", serverId, platformType);
         await saveToken("officeId", officeId, platformType);
+        await saveToken("serverName", serverName, platformType);
+
+        // if (!officeId) {
+        //   console.log("Redirecting to NoOffice");
+        //   navigation.replace("NoOffice");
+        //   setLoading(false);
+        // }
       } else {
         console.log("Unexpected response while fetching server.");
       }

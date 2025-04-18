@@ -14,11 +14,12 @@ import { Ionicons } from "@expo/vector-icons"; // Correct import for Ionicons
 import { useAuth } from "../../context/AuthContext"; // Assuming you have the AuthContext to manage role
 import JWT from "expo-jwt"; // Correct import for jwt-decode
 
-import { Plat, saveToken } from "../../api/auth/token";
+import { getToken, Plat, saveToken } from "../../api/auth/token";
 import { ApiError, ApiResponse } from "../../api/utils/apiResponse";
 import { loginUser } from "../../api/auth/authApi";
 import { validateEmail } from "../Signup/SignupSecond";
 import Toast from "react-native-toast-message";
+import { getLoggedInUserServer } from "../../api/server/serverApi";
 
 const LoginScreen = ({ navigation }: { navigation: any }) => {
   const { setUserRole, setIsAuthenticated } = useAuth(); // Get AuthContext functions
@@ -136,23 +137,26 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
         return;
       }
 
-      // Save to storage
-      if (Platform.OS === "web") {
-        localStorage.setItem("token", accessToken);
-        localStorage.setItem("role", role);
-      } else {
-        await AsyncStorage.setItem("token", accessToken);
-        await AsyncStorage.setItem("role", role);
-      }
+      // // Save to storage
+      // if (Platform.OS === "web") {
+      //   localStorage.setItem("token", accessToken);
+      //   localStorage.setItem("role", role);
+      // } else {
+      //   await AsyncStorage.setItem("token", accessToken);
+      //   await AsyncStorage.setItem("role", role);
+      // }
 
       setUserRole(role);
       setIsAuthenticated(true);
 
+      console.log("....");
       if (role === "admin") {
         navigation.navigate("AdminDashboard");
       } else if (role === "manager") {
         navigation.replace("ManagerDashboard");
       } else if (role === "employee") {
+        console.log("Redirecting to mobile");
+
         navigation.reset({
           index: 0,
           routes: [{ name: "EmployeeDashboard" }],
