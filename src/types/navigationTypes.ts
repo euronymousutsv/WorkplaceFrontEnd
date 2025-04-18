@@ -1,4 +1,7 @@
 import { Channel } from "./Channel";
+import { CompositeNavigationProp } from "@react-navigation/native";
+import { DrawerNavigationProp } from "@react-navigation/drawer";
+import { StackNavigationProp } from "@react-navigation/stack";
 
 export type RootStackParamList = {
   Welcome: undefined;
@@ -15,10 +18,12 @@ export type RootStackParamList = {
   GrossPaymentScreen: undefined;
   LeaveRequestScreen: undefined;
   EditUserDetailScreens: undefined;
+  ClockInOutScreenPhone: undefined;
   ChatScreen: {
     channelName: string;
     channelId: string;
     refreshChannels: () => Promise<void>;
     allChannels: Channel[];
   };
+
 };

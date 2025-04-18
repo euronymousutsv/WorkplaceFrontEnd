@@ -155,7 +155,7 @@ export const WebNavigatorDrawer = () => {
         drawerType: "permanent",
 
         drawerStyle: {
-          width: screenWidth * 0.2, // 30% of screen width
+          width: screenWidth * 0.2, // 20% of screen width
         },
         headerShown: true,
         drawerActiveBackgroundColor: "#e6f0ff", // background when selected

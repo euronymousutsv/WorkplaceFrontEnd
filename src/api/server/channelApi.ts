@@ -107,13 +107,20 @@ const addAccessToChannel = async (reqData: {
   try {
     const { channelId, highestRoleToAccessServer } = reqData;
     const accessToken = await getToken("accessToken", Plat.WEB);
-    const response = await API.post<ApiResponse<{}>>("addAccessToChannel", {
-      channelId,
-      highestRoleToAccessServer,
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
+
+    const response = await API.post<ApiResponse<{}>>(
+      "addAccessToChannel",
+      {
+        channelId,
+        highestRoleToAccessServer,
       },
-    });
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
     return response.data;
   } catch (error) {
     if (error instanceof AxiosError) {
@@ -124,6 +131,7 @@ const addAccessToChannel = async (reqData: {
     }
   }
 };
+
 
 // change channel name
 // Manager and admin can change channel name

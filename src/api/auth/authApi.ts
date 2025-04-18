@@ -31,9 +31,10 @@ const loginUser = async (email: string, password: string): Promise<any> => {
     });
     return response.data;
   } catch (error) {
-    if (error instanceof AxiosError) {
-      const err = error.response?.data as ApiError<{}>;
-      return new ApiError(err.statusCode, {}, err.message);
+    if (axios.isAxiosError(error)) {
+      const statusCode = error.response?.status ?? 500;
+      const message = error.response?.data?.message || "An unexpected error occurred";
+      return new ApiError(statusCode, {}, message);
     } else {
       return new ApiError(400, {}, "Something went wrong");
     }

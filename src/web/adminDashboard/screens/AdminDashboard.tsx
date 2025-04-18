@@ -20,6 +20,8 @@ import {
   ButtonRed,
 } from "../../../utils/color";
 
+import SendAnnouncementCard from "../components/SendAnnouncementCard";
+
 const AdminDashboard: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState("Dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -39,19 +41,19 @@ const AdminDashboard: React.FC = () => {
     }
   }, [screenWidth]);
 
-  useEffect(() => {
-    Animated.timing(sidebarWidth, {
-      toValue: isSidebarOpen ? 250 : 0,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
+  // useEffect(() => {
+  //   Animated.timing(sidebarWidth, {
+  //     toValue: isSidebarOpen ? 250 : 0,
+  //     duration: 300,
+  //     useNativeDriver: false,
+  //   }).start();
 
-    Animated.timing(mainContentPadding, {
-      toValue: isSidebarOpen ? 250 : 0,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  }, [isSidebarOpen]);
+  //   Animated.timing(mainContentPadding, {
+  //     toValue: isSidebarOpen ? 250 : 0,
+  //     duration: 300,
+  //     useNativeDriver: false,
+  //   }).start();
+  // }, [isSidebarOpen]);
 
   const handleTabChange = (tab: string) => {
     setSelectedTab(tab);
@@ -79,70 +81,55 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      {/* <Header
-        isSidebarOpen={isSidebarOpen}
-        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-      /> */}
+      <View style={styles.contentWrapper}>
+        {/* Main Content */}
+        <Animated.View style={[styles.mainContent]}>
+          <ScrollView contentContainerStyle={styles.scrollContainer}>
+            {/* Welcome Banner */}
+            <View style={styles.welcomeBanner}>
+              <Text style={styles.welcomeTitle}>Welcome, Admin 👋</Text>
+              <Text style={styles.welcomeSubtitle}>
+                Here's an overview of what’s happening today.
+              </Text>
+            </View>
 
-      {/* Sidebar */}
-      {/* <Sidebar
-        isOpen={isSidebarOpen}
-        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        selectedTab={selectedTab}
-        handleTabChange={handleTabChange}
-      /> */}
+            {/* Alert */}
+            <View style={[styles.card, styles.alertCard]}>
+              <Text style={styles.cardTitle}>Alert</Text>
+              <Text style={styles.alertText}>{alerts[0].text}</Text>
+              <Text style={styles.timestamp}>{alerts[0].time}</Text>
+            </View>
 
-      {/* Main Content */}
-      <Animated.View
-        style={[
-          styles.mainContent,
-          // { paddingLeft: isMobile ? 0 : mainContentPadding },
-        ]}
-      >
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-          {/* Welcome Banner */}
-          <View style={styles.welcomeBanner}>
-            <Text style={styles.welcomeTitle}>Welcome, Admin 👋</Text>
-            <Text style={styles.welcomeSubtitle}>
-              Here's an overview of what’s happening today.
-            </Text>
-          </View>
-
-          {/* Alert */}
-          <View style={[styles.card, styles.alertCard]}>
-            <Text style={styles.cardTitle}>Alert</Text>
-            <Text style={styles.alertText}>{alerts[0].text}</Text>
-            <Text style={styles.timestamp}>{alerts[0].time}</Text>
-          </View>
-
-          {/* Notifications */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Notifications</Text>
-            {alerts.slice(1).map((alert, index) => (
-              <View key={index} style={styles.notificationItem}>
-                <Text style={styles.notificationText}>{alert.text}</Text>
-                <Text style={styles.timestamp}>{alert.time}</Text>
-              </View>
-            ))}
-          </View>
-
-          {/* To-do’s */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>To-do’s</Text>
-            <FlatList
-              data={toDos}
-              renderItem={({ item }) => (
-                <View style={styles.todoItem}>
-                  <Text style={styles.todoText}>{item.task}</Text>
-                  <Text style={styles.timestamp}>{item.due}</Text>
+            {/* Notifications */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Notifications</Text>
+              {alerts.slice(1).map((alert, index) => (
+                <View key={index} style={styles.notificationItem}>
+                  <Text style={styles.notificationText}>{alert.text}</Text>
+                  <Text style={styles.timestamp}>{alert.time}</Text>
                 </View>
-              )}
-              keyExtractor={(_, index) => index.toString()}
-            />
-          </View>
-        </ScrollView>
-      </Animated.View>
+              ))}
+            </View>
+
+            {/* To-do’s */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>To-do’s</Text>
+              <FlatList
+                data={toDos}
+                renderItem={({ item }) => (
+                  <View style={styles.todoItem}>
+                    <Text style={styles.todoText}>{item.task}</Text>
+                    <Text style={styles.timestamp}>{item.due}</Text>
+                  </View>
+                )}
+                keyExtractor={(_, index) => index.toString()}
+              />
+            </View>
+            {/* Send Announcement Card */}
+            <SendAnnouncementCard />
+          </ScrollView>
+        </Animated.View>
+      </View>
     </SafeAreaView>
   );
 };
@@ -153,15 +140,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: BackgroundColor,
   },
+  contentWrapper: {
+    flex: 1,
+    flexDirection: "row",
+  },
   mainContent: {
     flex: 1,
-    marginTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 20,
-    marginLeft: 30,
   },
   scrollContainer: {
     paddingBottom: 100,
+    flexGrow: 1,
   },
   welcomeBanner: {
     marginBottom: 20,
