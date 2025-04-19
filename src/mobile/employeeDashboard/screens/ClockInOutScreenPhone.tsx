@@ -10,7 +10,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { mockShifts } from "../../../mockData/mockShifts"; // mock part
 import { RosterAttributes } from "../../../types/RosterAttributes"; // mock part
-
+import { getCurrentLocation } from "../../../utils/locationHelper";
+import axios from "axios";
 const PrimaryColor = "#4A90E2";
 const AccentColor = "#2ECC71";
 const BackgroundColor = "#FDFDFF";
@@ -23,6 +24,21 @@ const ClockInOutScreenPhone: React.FC = () => {
   const [insideGeoFence, setInsideGeoFence] = useState(true);
   const [todaysShifts, setTodaysShifts] = useState<RosterAttributes[]>([]); // mock part
   const [activeShift, setActiveShift] = useState<RosterAttributes | null>(null); // mock part
+  const [coordinates, setCoordinates] = useState<{latitude: number; longitude: number} | null>(null);
+
+  const updateLocation = async () => {
+    const location = await getCurrentLocation();
+    if (location) {
+      setCoordinates(location);
+      console.log("Location updated:", location.latitude, location.longitude);
+    } else {
+      console.log("Location not found");
+    }
+  };
+
+  useEffect(() => {
+    updateLocation();
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -47,7 +63,16 @@ const ClockInOutScreenPhone: React.FC = () => {
     if (current) setShiftEndTime(new Date(current.endTime));
   }, [currentTime]);
 
-  const handleClockInOut = () => {
+  const handleClockInOut = async () => {
+    // Get fresh location when button is clicked
+    const currentLocation = await getCurrentLocation();
+    if (!currentLocation) {
+      console.log("Could not get current location");
+      return;
+    }
+    setCoordinates(currentLocation);
+    console.log("Clock In/Out clicked with location:", currentLocation.latitude, currentLocation.longitude);
+    
     if (!activeShift) return;
     if (!isClockedIn) {
       setShiftEndTime(new Date(activeShift.endTime));
@@ -87,9 +112,7 @@ const ClockInOutScreenPhone: React.FC = () => {
         style={[
           styles.button,
           isClockedIn ? styles.clockOut : styles.clockIn,
-          !activeShift && !isClockedIn ? { opacity: 0.5 } : {},
         ]}
-        disabled={!activeShift && !isClockedIn}
         onPress={handleClockInOut}
       >
         <Ionicons
@@ -151,6 +174,14 @@ const ClockInOutScreenPhone: React.FC = () => {
           </Text>
         </View>
         <View style={styles.rowBetween}>
+          <Text style={styles.infoText}>Current Location:</Text>
+          <Text style={styles.infoText}>
+            {coordinates 
+              ? `${coordinates.latitude.toFixed(6)}, ${coordinates.longitude.toFixed(6)}`
+              : "Not available"}
+          </Text>
+        </View>
+        <View style={styles.rowBetween}>
           <Text style={styles.infoText}>⏳ Shift ends in:</Text>
           <Text style={styles.infoText}>{getCountdown()}</Text>
         </View>
@@ -161,6 +192,12 @@ const ClockInOutScreenPhone: React.FC = () => {
             onValueChange={() => setInsideGeoFence((prev) => !prev)}
           />
         </View>
+        <TouchableOpacity 
+          style={[styles.button, { backgroundColor: PrimaryColor, marginTop: 10 }]}
+          onPress={updateLocation}
+        >
+          <Text style={styles.buttonText}>Refresh Location</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );

@@ -29,6 +29,7 @@
     "expo-device": "~7.0.3",
     "expo-image-picker": "~16.0.6",
     "expo-jwt": "^1.8.2",
+    "expo-location": "^18.0.10",
     "expo-notifications": "~0.29.14",
     "expo-secure-store": "~14.0.1",
     "expo-status-bar": "~2.0.1",

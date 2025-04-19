@@ -15,20 +15,29 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.WorkplaceFrontEnd"
+      "bundleIdentifier": "com.anonymous.WorkplaceFrontEnd",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "This app needs access to your location for clock-in and clock-out functionality.",
+        "NSLocationAlwaysUsageDescription": "This app uses your location to ensure you are at your assigned worksite during clock-in/out."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff",
         "googleServicesFile": "./workplace-management-app-338c4-firebase-adminsdk-fbsvc-6abcd80d10.json"
-      },
+      },"permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
       "package": "com.anonymous.WorkplaceFrontEnd"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-secure-store"],
+    "plugins": ["expo-secure-store",["expo-location ",{
+      "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
+    }]],
     "extra": {
       "eas": {
         "projectId": "586550e8-8397-43d7-bdb1-eee568eedcd2"
