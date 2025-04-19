@@ -21,7 +21,7 @@ const API = axios.create({
 });
 
 type CreateChannelRequest = {
-  officeId:string;
+  serverId: string;
   channelName: string;
 };
 
