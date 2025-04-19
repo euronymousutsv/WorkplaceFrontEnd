@@ -17,25 +17,23 @@ import { getToken, Plat, saveToken } from "../../../api/auth/token";
 import { ChannelResponse } from "../../../api/server/server";
 import { getAllChannelForCurrentOffice } from "../../../api/server/channelApi";
 import Toast from "react-native-toast-message";
-import { AllOfficesResponse } from "../../../api/office/officeResponse";
-import { getAllOffices } from "../../../api/office/officeApi";
 import ChatChannelList from "../../../web/adminDashboard/components/ChatChannelList";
 
 const CustomDrawerContent = (props: any) => {
   const [serverName, setServerName] = useState("");
   const [loading, setLoading] = useState(true);
-
   const [channels, setChannels] = useState<ChannelResponse[]>([]);
   const [activeChannelId, setActiveChannelId] = useState<string | null>(null);
 
-  const [offices, setOffices] = useState<AllOfficesResponse[] | null>([]);
-  const [activeOffice, setActiveOffice] = useState<string | null>(null);
-
   useEffect(() => {
+    if (Platform.OS === "web") {
+      setLoading(false); // Web uses ChatChannelList separately
+      return;
+    }
+
     (async () => {
       try {
         await handleGetServerDetail();
-        await handleGetAllOffices();
         await handleGetAllChannels();
       } catch (error) {
         console.error("Error initializing drawer content:", error);
@@ -47,7 +45,7 @@ const CustomDrawerContent = (props: any) => {
 
   const handleGetServerDetail = async () => {
     try {
-      const platformType = Platform.OS === "web" ? Plat.WEB : Plat.PHONE;
+      const platformType = Plat.PHONE;
       const res = await getLoggedInUserServer(platformType);
 
       if (res instanceof ApiError) {
@@ -58,17 +56,9 @@ const CustomDrawerContent = (props: any) => {
         const serverName = res.data.joinedServer.name;
         setServerName(serverName);
 
-        console.log("Server ID:", serverId);
-
         await saveToken("serverId", serverId, platformType);
         await saveToken("officeId", officeId, platformType);
         await saveToken("serverName", serverName, platformType);
-
-        // if (!officeId) {
-        //   console.log("Redirecting to NoOffice");
-        //   navigation.replace("NoOffice");
-        //   setLoading(false);
-        // }
       } else {
         console.log("Unexpected response while fetching server.");
       }
@@ -79,24 +69,19 @@ const CustomDrawerContent = (props: any) => {
 
   const handleGetAllChannels = async () => {
     try {
-      const platformType = Platform.OS === "web" ? Plat.WEB : Plat.PHONE;
-      let officeId;
+      const platformType = Plat.PHONE;
+      const officeId = await getToken("officeId", platformType);
 
-      if (platformType === Plat.PHONE) {
-        officeId = await getToken("officeId", platformType);
-        if (!officeId) {
-          Toast.show({
-            type: "error",
-            text1: "Error",
-            text2: "No office ID found. Please try again.",
-          });
-          return;
-        }
-      } else {
-        officeId = activeOffice;
+      if (!officeId) {
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "No office ID found. Please try again.",
+        });
+        return;
       }
 
-      const res = await getAllChannelForCurrentOffice(officeId!, platformType);
+      const res = await getAllChannelForCurrentOffice(officeId, platformType);
 
       if (res instanceof ApiError) {
         console.log("Channel fetch error:", res.message);
@@ -108,45 +93,13 @@ const CustomDrawerContent = (props: any) => {
     }
   };
 
-  const handleGetAllOffices = async () => {
-    try {
-      const platformType = Platform.OS === "web" ? Plat.WEB : Plat.PHONE;
-      if (platformType === Plat.PHONE) return;
-
-      const serverId = await getToken("serverId", platformType);
-      const res = await getAllOffices({ serverId: serverId! });
-
-      if (res instanceof ApiError) {
-        console.log("Offices fetch error:", res.message);
-        Toast.show({
-          type: "error",
-          text1: "Error",
-          text2: "Failed to fetch offices.",
-        });
-      } else {
-        setOffices(res.data);
-      }
-    } catch (error) {
-      console.error("Error in handleGetAllOffices:", error);
-    }
-  };
-
-  const handleOfficePress = async (officeId: string) => {
-    console.log("Pressed office:", officeId);
-    setActiveOffice(officeId);
-    await handleGetAllChannels();
-  };
-
   const handleChannelPress = useCallback(
     (channel: ChannelResponse) => {
       setActiveChannelId(channel.id);
-      props.navigation.navigate(
-        Platform.OS === "web" ? "ChatScreen" : "ChatScreenPhone",
-        {
-          channelId: channel.id,
-          channelName: channel.name,
-        }
-      );
+      props.navigation.navigate("ChatScreenPhone", {
+        channelId: channel.id,
+        channelName: channel.name,
+      });
       props.navigation.closeDrawer();
     },
     [props.navigation]
@@ -160,62 +113,38 @@ const CustomDrawerContent = (props: any) => {
 
       <DrawerItemList {...props} />
 
-      {/* <View style={styles.divider} />
-      <Text style={styles.sectionTitle}>Offices</Text> */}
-
-      {offices?.map((item) => (
-        <TouchableOpacity
-          key={item.id}
-          onPress={() => handleOfficePress(item.id)}
-          style={[
-            styles.channelItem,
-            activeOffice === item.id && styles.activeChannelItem,
-          ]}
-        >
-          <Text
-            style={[
-              styles.channelText,
-              activeOffice === item.id && styles.activeChannelText,
-            ]}
-          >
-            🏢 {item.name}
-          </Text>
-        </TouchableOpacity>
-      ))}
-
       <View style={styles.divider} />
-      <Text style={styles.sectionTitle}>Channels</Text>
+      {Platform.OS !== "web" && (
+  <Text style={styles.sectionTitle}>Channels</Text>
+)}
+
 
       {Platform.OS === "web" ? (
         <ChatChannelList />
+      ) : loading ? (
+        <ActivityIndicator size="small" style={{ marginTop: 10 }} />
+      ) : channels.length > 0 ? (
+        channels.map((channel) => (
+          <TouchableOpacity
+            key={channel.id}
+            onPress={() => handleChannelPress(channel)}
+            style={[
+              styles.channelItem,
+              activeChannelId === channel.id && styles.activeChannelItem,
+            ]}
+          >
+            <Text
+              style={[
+                styles.channelText,
+                activeChannelId === channel.id && styles.activeChannelText,
+              ]}
+            >
+              # {channel.name}
+            </Text>
+          </TouchableOpacity>
+        ))
       ) : (
-        <>
-          {loading ? (
-            <ActivityIndicator size="small" style={{ marginTop: 10 }} />
-          ) : channels.length > 0 ? (
-            channels.map((channel) => (
-              <TouchableOpacity
-                key={channel.id}
-                onPress={() => handleChannelPress(channel)}
-                style={[
-                  styles.channelItem,
-                  activeChannelId === channel.id && styles.activeChannelItem,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.channelText,
-                    activeChannelId === channel.id && styles.activeChannelText,
-                  ]}
-                >
-                  # {channel.name}
-                </Text>
-              </TouchableOpacity>
-            ))
-          ) : (
-            <Text style={styles.noChannelText}>No channels available.</Text>
-          )}
-        </>
+        <Text style={styles.noChannelText}>No channels available.</Text>
       )}
     </DrawerContentScrollView>
   );

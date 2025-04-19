@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+// GridCalendarView.tsx
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,21 +8,21 @@ import {
   ScrollView,
   TextInput,
   Modal,
-  Switch,
+  LayoutAnimation,
   Platform,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { RootStackParamList } from "../../../types/navigationTypes";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { useRoute, RouteProp } from "@react-navigation/native";
+import { RootStackParamList } from "../../../types/navigationTypes";
 import {
   addAccessToChannel,
   createNewChannel,
-  getAllChannelForCurrentServer,
+  getAllChannelForCurrentOffice,
 } from "../../../api/server/channelApi";
-import { getToken, Plat, saveToken } from "../../../api/auth/token";
+import { getAllOffices, createOffice } from "../../../api/office/officeApi";
 import { getLoggedInUserServer } from "../../../api/server/serverApi";
+import { Plat } from "../../../api/auth/token";
 import { ApiError } from "../../../api/utils/apiResponse";
 import Toast from "react-native-toast-message";
 
@@ -33,434 +34,408 @@ interface Channel {
   highestRoleToAccessChannel?: "admin" | "manager" | "employee";
 }
 
+interface OfficeWithChannels {
+  officeId: string;
+  officeName: string;
+  channels: Channel[];
+}
+
 const ChatChannelList: React.FC = () => {
   if (Platform.OS !== "web") return null;
-  const [channels, setChannels] = useState<Channel[]>([]);
-
+  const [groupedChannels, setGroupedChannels] = useState<OfficeWithChannels[]>([]);
+  const [expandedOfficeIds, setExpandedOfficeIds] = useState<string[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
+  const [createOfficeModalVisible, setCreateOfficeModalVisible] = useState(false);
   const [newChannelName, setNewChannelName] = useState("");
-  const [isPrivate, setIsPrivate] = useState(false);
+  const [newOfficeName, setNewOfficeName] = useState("");
+  const [newOfficeAddress, setNewOfficeAddress] = useState("");
+  const [newOfficeRadius, setNewOfficeRadius] = useState("");
+  const [selectedOfficeId, setSelectedOfficeId] = useState<string | null>(null);
   const [highestRoleToAccessChannel, setHighestRoleToAccessChannel] = useState<
     "employee" | "manager" | "admin"
   >("employee");
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-  const route =
-    useRoute<RouteProp<RootStackParamList, keyof RootStackParamList>>();
   const [serverId, setServerId] = useState<string | null>(null);
-  const currentChannel =
-    route.name === "ChatScreen" && route.params && "channelName" in route.params
-      ? route.params.channelName
-      : null;
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
-  // const fetchServerId = async () => {
-  //   const token = await getToken("accessToken", Plat.WEB);
-  //   console.log("Acess token:", token);
-  //   try {
-  //     const res = await getLoggedInUserServer(Plat.WEB);
-  //     console.log("getLoggedInUserServer response:", res);
-
-  //     if (res instanceof ApiError) {
-  //       Toast.show({
-  //         type: "error",
-  //         text1: "Server ID Error",
-  //         text2: res.message,
-  //       });
-  //     } else if ("statusCode" in res && "data" in res && res.data.serverId) {
-  //       console.log(" Server ID found:", res.data.serverId);
-  //       setServerId(res.data.serverId);
-  //       saveToken("serverId", res.data.serverId, Plat.WEB);
-  //       await fetchChannels(res.data.serverId);
-  //     } else {
-  //       console.warn("⚠️ Server ID not found in response data");
-  //     }
-  //   } catch (err) {
-  //     console.error(" Unexpected error in fetchServerId:", err);
-  //   }
-  // };
-
-  useEffect(() => {
-    // fetchServerId();
-  }, []);
-
-  //   const handleCreateChannel = () => {
-  //     if (newChannelName.trim()) {
-  //       const newChannel = {
-  //         name: newChannelName,
-  //         newMessages: 0,
-  //         isPrivate,
-  //         highestRoleToAccessChannel,
-  //       };
-  //       setChannels([...channels, newChannel]);
-  //       setNewChannelName('');
-  //       setIsPrivate(false);
-  //       setModalVisible(false);
-  //     }
-  //   };
-
-  const fetchChannels = async (serverId: string) => {
+  const fetchGroupedChannels = async () => {
     try {
-      const res = await getAllChannelForCurrentServer(serverId, Plat.WEB);
-      console.log("📥 Channels fetched from server:", res);
+      const serverRes = await getLoggedInUserServer(Plat.WEB);
+      if (serverRes instanceof ApiError || !serverRes.data?.joinedServer?.serverId) {
+        return;
+      }
 
-      if (res instanceof ApiError) {
-        Toast.show({
-          type: "error",
-          text1: "Failed to Load Channels",
-          text2: res.message || "Something went wrong.",
-        });
-      } else if ("data" in res && Array.isArray(res.data)) {
-        const parsedChannels = res.data.map((channel) => ({
-          id: channel.id,
-          name: channel.name,
-          newMessages: 0,
-          isPrivate: false, // Optional: Adjust based on your API
-          highestRoleToAccessChannel: channel.highestRoleToAccessChannel as
-            | "admin"
-            | "manager"
-            | "employee",
-        }));
+      const serverId = serverRes.data.joinedServer.serverId;
+      setServerId(serverId);
 
-        setChannels(parsedChannels);
-      } else {
-        Toast.show({
-          type: "error",
-          text1: "Invalid Response",
-          text2: "Unexpected format from channel API.",
+      const officeRes = await getAllOffices({ serverId });
+      if (officeRes instanceof ApiError || !Array.isArray(officeRes.data)) {
+        return;
+      }
+
+      const grouped: OfficeWithChannels[] = [];
+
+      for (const office of officeRes.data) {
+        const channelRes = await getAllChannelForCurrentOffice(office.id, Plat.WEB);
+
+        let channels: Channel[] = [];
+        if (!(channelRes instanceof ApiError) && Array.isArray(channelRes.data)) {
+          channels = channelRes.data.map((channel) => ({
+            id: channel.id,
+            name: channel.name,
+            newMessages: 0,
+            isPrivate: false,
+            highestRoleToAccessChannel: ["admin", "manager", "employee"].includes(channel.highestRoleToAccessChannel)
+    ? (channel.highestRoleToAccessChannel as "admin" | "manager" | "employee")
+    : undefined,
+          }));
+        }
+
+        grouped.push({
+          officeId: office.id,
+          officeName: office.name,
+          channels,
         });
       }
+
+      setGroupedChannels(grouped);
     } catch (err) {
-      console.error("❌ Unexpected error while fetching channels:", err);
-      Toast.show({
-        type: "error",
-        text1: "Fetch Error",
-        text2: "Could not load channels.",
-      });
+      console.error("Error fetching grouped channels:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchGroupedChannels();
+  }, []);
+
+  // const toggleOffice = (officeId: string) => {
+  //   LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  //   setExpandedOfficeIds((prev) =>
+  //     prev.includes(officeId)
+  //       ? prev.filter((id) => id !== officeId)
+  //       : [...prev, officeId]
+  //   );
+  //   setSelectedOfficeId(officeId);
+  // }; 
+
+  const toggleOffice = (officeId: string, officeName: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    if (expandedOfficeIds.includes(officeId)) {
+      setExpandedOfficeIds((prev) => prev.filter((id) => id !== officeId));
+    } else {
+      setExpandedOfficeIds((prev) => [...prev, officeId]);
     }
   };
 
   const handleCreateChannel = async () => {
-    if (!newChannelName.trim()) {
-      Toast.show({
-        type: "error",
-        text1: "Channel Name Required",
-        text2: "Please enter a valid channel name.",
+    if (!newChannelName.trim() || !selectedOfficeId || !serverId) return; //not important
+    try {
+      const createRes = await createNewChannel({ channelName: newChannelName, officeId: selectedOfficeId });
+      if (createRes instanceof ApiError || !createRes.data?.id) throw createRes;
+
+      await addAccessToChannel({
+        channelId: createRes.data.id,
+        highestRoleToAccessServer: highestRoleToAccessChannel,
       });
+
+      setModalVisible(false);
+      setNewChannelName("");
+      fetchGroupedChannels();
+      Toast.show({ type: "success", text1: "Channel Created" });
+    } catch {
+      Toast.show({ type: "error", text1: "Failed to create channel" });
+    }
+  };
+
+  const goToOfficeDetail = (officeId: string, officeName: string) => {
+    console.log("Navigating to office detail:", officeId, officeName);
+    // Uncomment the following line when the navigation is set up
+    navigation.navigate("OfficeDetail", { officeId, officeName });
+  };
+
+  //via openstreetmap
+  const geocodeAddress = async (address: string) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json`
+      );
+      const data = await response.json();
+      if (data.length > 0) {
+        return {
+          lat: data[0].lat,
+          lon: data[0].lon,
+        };
+      }
+    } catch (err) {
+      console.error("Geocoding failed:", err);
+    }
+    return null;
+  };
+
+  const handleCreateOffice = async () => {
+    if (!newOfficeName.trim() || !serverId || !newOfficeAddress.trim()) return;
+
+    const coords = await geocodeAddress(newOfficeAddress);
+    if (!coords) {
+      Toast.show({ type: "error", text1: "Invalid address" });
       return;
     }
 
     try {
-      // Step 1: Get the server ID
-      const serverId = await getToken("serverId", Plat.WEB);
-      console.log("📦 Retrieved serverId:", serverId);
-
-      if (!serverId) {
-        Toast.show({
-          type: "error",
-          text1: "Server ID Missing",
-          text2: "Could not find your server context.",
-        });
-        return;
-      }
-
-      // Step 2: Create channel
-      const createRes = await createNewChannel({
-        channelName: newChannelName,
+      const res = await createOffice({
         serverId,
+        name: newOfficeName,
+        lat: coords.lat,
+        long: coords.lon,
+        radius: parseFloat(newOfficeRadius),
+        address: newOfficeAddress,
       });
-
-      console.log("createRes:", createRes);
-
-      if (
-        createRes instanceof ApiError ||
-        !("data" in createRes) ||
-        !createRes.data?.id
-      ) {
-        console.warn("⚠️ Channel creation response invalid:", createRes);
-        Toast.show({
-          type: "error",
-          text1: "Channel Creation Failed",
-          text2: createRes.message || "Something went wrong.",
-        });
-        return;
-      }
-
-      const createdChannel = createRes.data;
-      console.log("✅ Channel created:", createdChannel);
-
-      // Step 3: Assign access permissions
-      const accessRes = await addAccessToChannel({
-        channelId: createdChannel.id,
-        highestRoleToAccessServer: highestRoleToAccessChannel,
-      });
-
-      console.log("🔐 accessRes:", accessRes);
-
-      if (
-        accessRes instanceof ApiError ||
-        !("statusCode" in accessRes) ||
-        accessRes.statusCode >= 400
-      ) {
-        console.warn("⚠️ Access control failed:", accessRes);
-        Toast.show({
-          type: "error",
-          text1: "Access Setup Failed",
-          text2: accessRes.message || "Could not assign role access.",
-        });
-        return;
-      }
-
-      // Step 4: Success
-      setChannels([
-        ...channels,
-        {
-          id: createdChannel.id,
-          name: newChannelName,
-          newMessages: 0,
-          isPrivate,
-          highestRoleToAccessChannel,
-        },
-      ]);
-
-      setNewChannelName("");
-      setIsPrivate(false);
-      setModalVisible(false);
-
-      Toast.show({
-        type: "success",
-        text1: "Channel Created",
-        text2: `${newChannelName} added successfully.`,
-      });
-
-      console.log("🎉 Channel added to UI successfully.");
-    } catch (err) {
-      console.error("❌ Unexpected error in handleCreateChannel:", err);
-      Toast.show({
-        type: "error",
-        text1: "Unexpected Error",
-        text2: "Something went wrong. Please try again.",
-      });
+      if (res instanceof ApiError) throw res;
+      setCreateOfficeModalVisible(false);
+      setNewOfficeName("");
+      setNewOfficeAddress("");
+      setNewOfficeRadius("100");
+      fetchGroupedChannels();
+      Toast.show({ type: "success", text1: "Office Created" });
+    } catch {
+      Toast.show({ type: "error", text1: "Failed to create office" });
     }
   };
 
-  //   const getRoleAccessLabel = (role: 'admin' | 'manager' | 'employee' | undefined) => {
-  //     if (!role) return '';
-  //     switch (role) {
-  //       case 'employee':
-  //         return 'all roles';
-  //       case 'manager':
-  //         return 'managers and admins';
-  //       case 'admin':
-  //         return 'admins only';
-  //       default:
-  //         return '';
-  //     }
-  //   };
 
-  const getRoleColor = (role: "admin" | "manager" | "employee" | undefined) => {
+  // const handleCreateOffice = async () => {
+  //   if (!newOfficeName.trim() || !serverId) return;
+  //   try {
+  //     const res = await createOffice({
+  //       serverId,
+  //       name: newOfficeName,
+  //       lat: "1.0000",
+  //       long: "1.0000",
+  //       radius: 100,
+  //       address: "N/A",
+  //     });
+  //     if (res instanceof ApiError) throw res;
+  //     setCreateOfficeModalVisible(false);
+  //     setNewOfficeName("");
+  //     fetchGroupedChannels();
+  //     Toast.show({ type: "success", text1: "Office Created" });
+  //   } catch {
+  //     Toast.show({ type: "error", text1: "Failed to create office" });
+  //   }
+  // };
+
+  const getRoleColor = (role: Channel["highestRoleToAccessChannel"]) => {
     switch (role) {
-      case "admin":
-        return "#D9534F"; // red
-      case "manager":
-        return "#FFA500"; // orange
-      case "employee":
-        return "#4CAF50"; // green
-      default:
-        return "#ccc";
+      case "admin": return "#D9534F";
+      case "manager": return "#FFA500";
+      case "employee": return "#4CAF50";
+      default: return "#ccc";
     }
   };
 
   return (
-    <View style={styles.chatSection}>
-      {/* Header */}
+    <ScrollView contentContainerStyle={styles.chatSection}>
       <View style={styles.chatHeader}>
-        <Text style={styles.chatTitle}>Channels</Text>
-
-        <TouchableOpacity
-          onPress={() => setModalVisible(true)}
-          style={styles.addChannelButton}
-        >
-          <Feather name="plus" size={16} color="black" />
+        <Text style={styles.chatTitle}>Offices</Text>
+        <TouchableOpacity onPress={() => setCreateOfficeModalVisible(true)}>
+          <Feather name="plus" size={18} color="black" />
         </TouchableOpacity>
       </View>
 
-      {/* Channel List */}
-     
-        {channels.length === 0 ? (
-          <Text style={{ color: "#666", padding: 10, fontSize: 14 }}>
-            No channels. Click '+' to create one.
-          </Text>
-        ) : (
-        channels.map((channel, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[
-              styles.chatItem,
-              currentChannel === channel.name && styles.activeChatItem,
-            ]}
-            onPress={() => {
-              // navigation.navigate("ChatScreen", {
-              //   channelName: channel.name,
-              //   channelId: channel.id,
-              //   refreshChannels: fetchServerId,
-              //   allChannels: channels,
-              // });
-            }}
+      {groupedChannels.map((group) => (
+        <View key={group.officeId}>
+          {/* <TouchableOpacity
+            style={styles.officeItem}
+            onPress={() => toggleOffice(group.officeId)}
           >
-            <View style={styles.chatLeft}>
-              <Text style={styles.chatHash}>#</Text>
-              <Text style={styles.chatName} numberOfLines={1}>
-                {channel.name.length > 14
-                  ? `${channel.name.slice(0, 12)}..`
-                  : channel.name}
-              </Text>
-              {channel.isPrivate && (
-                <Feather name="lock" size={14} style={styles.chatLock} />
-              )}
-            </View>
-            {/* Role hint line */}
-            {/* {channel.highestRoleToAccessChannel && (
-        <Text style={styles.roleHint}>
-        🔒 Accessible by {getRoleColor(channel.highestRoleToAccessChannel)}
-      </Text>
-      
-      )} */}
-            {/* Role color badge */}
-            {/* Role letter badge */}
-            {channel.highestRoleToAccessChannel && (
-              <View
-                style={[
-                  styles.roleBadge,
-                  {
-                    backgroundColor: getRoleColor(
-                      channel.highestRoleToAccessChannel
-                    ),
-                  },
-                ]}
-              >
-                <Text style={styles.roleLetterText}>
-                  {channel.highestRoleToAccessChannel.charAt(0).toUpperCase()}
-                </Text>
-              </View>
-            )}
+            <Text style={styles.officeName}>{group.officeName}</Text>
+            <Feather
+              name={expandedOfficeIds.includes(group.officeId) ? "chevron-up" : "chevron-down"}
+              size={16}
+              color="#555"
+            />
+          </TouchableOpacity> */}
 
-            {channel.newMessages > 0 && (
-              <Text style={styles.newMessageText}>
-                {channel.newMessages} new
-              </Text>
-            )}
-          </TouchableOpacity>
-        )))}
-      
+<View style={styles.officeItem}>
+            <TouchableOpacity onPress={() => goToOfficeDetail(group.officeId, group.officeName)}>
+              <Text style={styles.officeName}>{group.officeName}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => toggleOffice(group.officeId, group.officeName)}>
+              <Feather
+                name={expandedOfficeIds.includes(group.officeId) ? "chevron-up" : "chevron-down"}
+                size={16}
+                color="#555"
+              />
+            </TouchableOpacity>
+          </View>
+
+          {expandedOfficeIds.includes(group.officeId) && (
+            <>
+              {group.channels.length === 0 ? (
+                <Text style={styles.noChannelsText}>No channels. Click '+' to create one.</Text>
+              ) : (
+                group.channels.map((channel) => (
+                  <TouchableOpacity
+                    key={channel.id}
+                    style={styles.chatItem}
+                    onPress={() =>
+                      navigation.navigate("ChatScreen", {
+                        channelName: channel.name,
+                        channelId: channel.id,
+                        refreshChannels: fetchGroupedChannels,
+                        allChannels: group.channels,
+                      })
+                    }
+                  >
+                    <View style={styles.chatLeft}>
+                      <Text style={styles.chatHash}>#</Text>
+                      <Text style={styles.chatName}>{channel.name}</Text>
+                      {channel.highestRoleToAccessChannel && (
+                        <View
+                          style={{
+                            backgroundColor: getRoleColor(channel.highestRoleToAccessChannel),
+                            width: 16,
+                            height: 16,
+                            borderRadius: 8,
+                            marginLeft: 8,
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <Text style={{ color: "#fff", fontSize: 10, fontWeight: "bold" }}>
+                            {channel.highestRoleToAccessChannel.charAt(0).toUpperCase()}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                ))
+              )}
+
+              <TouchableOpacity
+                style={styles.addChannelBtn}
+                onPress={() => {
+                  setModalVisible(true);
+                  setSelectedOfficeId(group.officeId);
+                }}
+              >
+                <Text style={styles.addChannelText}>+ Add Channel</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      ))}
 
       {/* Create Channel Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
+      <Modal visible={modalVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Create Channel</Text>
-
+            <Text style={styles.modalTitle}>Create New Channel</Text>
             <TextInput
+              placeholder="Channel Name"
               style={styles.input}
-              placeholder="Enter channel name"
               value={newChannelName}
               onChangeText={setNewChannelName}
-              placeholderTextColor="#888"
             />
-
-            <View style={styles.roleSelectContainer}>
-              <Text style={styles.switchLabel}>Minimum Role Required:</Text>
-              {["employee", "manager", "admin"].map((role) => (
-                <TouchableOpacity
-                  key={role}
-                  style={[
-                    styles.roleOption,
-                    highestRoleToAccessChannel === role &&
-                      styles.roleOptionActive,
-                  ]}
-                  onPress={() => setHighestRoleToAccessChannel(role as any)}
-                >
-                  <Text
-                    style={[
-                      styles.roleOptionText,
-                      highestRoleToAccessChannel === role && { color: "#fff" },
-                    ]}
-                  >
-                    {role}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <View style={styles.switchRow}>
-              <Text style={styles.switchLabel}>Private Channel</Text>
-              <Switch
-                value={isPrivate}
-                onValueChange={setIsPrivate}
-                trackColor={{ false: "#ccc", true: "#4A90E2" }}
-                thumbColor={isPrivate ? "#fff" : "#fff"}
-              />
-            </View>
-
-            <View style={styles.modalButtons}>
+            <Text style={styles.modalSubtitle}>Access Role:</Text>
+            {(["employee", "manager", "admin"] as const).map((role) => (
               <TouchableOpacity
-                style={[styles.button, styles.cancelButton]}
-                onPress={() => setModalVisible(false)}
+                key={role}
+                style={[styles.roleOption, highestRoleToAccessChannel === role && styles.selectedRole]}
+                onPress={() => setHighestRoleToAccessChannel(role)}
               >
-                <Text style={styles.buttonText}>Cancel</Text>
+                <Text>{role}</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, styles.createButton]}
-                onPress={handleCreateChannel}
-              >
-                <Text style={[styles.buttonText, { color: "#fff" }]}>
-                  Create
-                </Text>
+            ))}
+            <View style={styles.modalButtons}>
+              <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <Text>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleCreateChannel}>
+                <Text>Create</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
-    </View>
+
+     {/* Create Office Modal */}
+     <Modal visible={createOfficeModalVisible} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Create New Office</Text>
+            <TextInput
+              placeholder="Office Name"
+              style={styles.input}
+              value={newOfficeName}
+              onChangeText={setNewOfficeName}
+            />
+            <TextInput
+              placeholder="Office Address"
+              style={styles.input}
+              value={newOfficeAddress}
+              onChangeText={setNewOfficeAddress}
+            />
+            <TextInput
+              placeholder="Radius (meters)"
+              style={styles.input}
+              keyboardType="numeric"
+              value={newOfficeRadius}
+              onChangeText={setNewOfficeRadius}
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity onPress={() => setCreateOfficeModalVisible(false)}>
+                <Text>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleCreateOffice}>
+                <Text>Create</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </ScrollView>
   );
 };
+
 const styles = StyleSheet.create({
   chatSection: {
-    borderTopWidth: 1,
-    borderTopColor: "#ccc",
-    paddingTop: 10,
-    paddingHorizontal: 12,
-    marginBottom: 20,
+    padding: 12,
   },
   chatHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 12,
   },
   chatTitle: {
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "bold",
     color: "black",
-    textTransform: "uppercase",
-    letterSpacing: 1,
   },
-  addChannelButton: {
-    
-    padding: 4,
-  },
-  chatItem: {
+  officeItem: {
+    backgroundColor: "#f8f9fb",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginTop: 10,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    marginBottom: 6,
-    backgroundColor: "#ffffff",
+  },
+  officeName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+  },
+  noChannelsText: {
+    fontSize: 14,
+    color: "#666",
+    paddingLeft: 16,
+    paddingVertical: 4,
+  },
+  chatItem: {
+    paddingLeft: 16,
+    paddingVertical: 6,
   },
   chatLeft: {
     flexDirection: "row",
@@ -477,124 +452,60 @@ const styles = StyleSheet.create({
   chatName: {
     fontSize: 15,
     color: "#333",
-    maxWidth: 120,
+    maxWidth: 140,
+    flexShrink: 1,
   },
-  chatLock: {
-    marginLeft: 4,
-    color: "#777",
+  addChannelBtn: {
+    paddingLeft: 16,
+    paddingVertical: 6,
   },
-  newMessageText: {
-    fontSize: 11,
+  addChannelText: {
     color: "#4A90E2",
-    backgroundColor: "#e0ecff",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 999,
-    overflow: "hidden",
+    fontSize: 13,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
-    padding: 20,
+    backgroundColor: "rgba(0,0,0,0.3)",
   },
   modalContainer: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    backgroundColor: "white",
+    marginHorizontal: 30,
     padding: 20,
-    elevation: 10,
+    borderRadius: 10,
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: "700",
-    marginBottom: 15,
-    color: "#333",
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  modalSubtitle: {
+    fontWeight: "600",
+    marginTop: 12,
   },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    fontSize: 15,
-    marginBottom: 15,
-    color: "#333",
+    borderRadius: 6,
+    padding: 8,
+    marginBottom: 10,
   },
-  switchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 20,
+  roleOption: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 6,
+    marginTop: 6,
   },
-  switchLabel: {
-    fontSize: 15,
-    color: "#333",
+  selectedRole: {
+    backgroundColor: "#4A90E2",
+    borderColor: "#4A90E2",
   },
   modalButtons: {
     flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 10,
-  },
-  button: {
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 8,
-  },
-  cancelButton: {
-    backgroundColor: "#eee",
-  },
-  createButton: {
-    backgroundColor: "#4A90E2",
-  },
-  buttonText: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#333",
-  },
-  activeChatItem: {
-    backgroundColor: "#88B6EC", // soft blue
-    borderWidth: 1,
-    borderColor: "#4A90E2",
-  },
-  roleSelectContainer: {
-    marginBottom: 20,
-  },
-  roleOption: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    marginTop: 6,
-    backgroundColor: "#f5f5f5",
-  },
-  roleOptionActive: {
-    backgroundColor: "#4A90E2",
-    borderColor: "#4A90E2",
-  },
-  roleOptionText: {
-    color: "#333",
-    fontWeight: "500",
-    textTransform: "capitalize",
-  },
-  roleHint: {
-    fontSize: 11,
-    color: "#777",
-    marginTop: 2,
-  },
-  roleBadge: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    marginLeft: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  roleLetterText: {
-    fontSize: 11,
-    fontWeight: "bold",
-    color: "#fff",
+    justifyContent: "space-between",
+    marginTop: 20,
   },
 });
 

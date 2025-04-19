@@ -26,7 +26,7 @@ const API = axios.create({
 export const getAllOffices = async (reqData: { serverId: string }) => {
   try {
     const accessToken = await getToken("accessToken", Plat.WEB);
-    console.log(accessToken);
+   
 
     const response = await API.get<ApiResponse<AllOfficesResponse[]>>(
       "getAllOffices",
@@ -39,7 +39,7 @@ export const getAllOffices = async (reqData: { serverId: string }) => {
         },
       }
     );
-    console.log(response.data.data);
+    // console.log(response.data.data);
     return response.data;
   } catch (error: any) {
     if (axios.isAxiosError(error)) {
@@ -55,10 +55,14 @@ export const getAllOffices = async (reqData: { serverId: string }) => {
 
 // this function creates a new office inside a server
 // a server id is required to create an office
-export const creteOffice = async (reqData: CreateOfficeRequest) => {
+export const createOffice = async (reqData: CreateOfficeRequest) => {
   try {
-    const response = await API.post<ApiResponse<{}>>("getAllOffices", {
-      params: reqData,
+    const accessToken = await getToken("accessToken", Plat.WEB);
+    const response = await API.post<ApiResponse<{}>>("createOffice", {}, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      params: reqData, // this goes in the config object, not in the body
     });
     return response.data;
   } catch (error: any) {
@@ -72,13 +76,23 @@ export const creteOffice = async (reqData: CreateOfficeRequest) => {
     }
   }
 };
+
 
 // this function will join an employee to an office
 // it takes in the office id and the employee id
 export const joinEmployeeToOffice = async (reqData: JoinOfficeRequest) => {
   try {
-    const response = await API.post<ApiResponse<{}>>("joinOffice", {
-      params: reqData,
+    const accessToken = await getToken("accessToken", Plat.WEB);
+    const response = await API.post<ApiResponse<{}>>("joinOffice",{},
+      {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      params: {
+        officeId: reqData.officeId,
+        employeeId: reqData.employeeId,
+      }
+      
     });
     return response.data;
   } catch (error: any) {
@@ -92,14 +106,30 @@ export const joinEmployeeToOffice = async (reqData: JoinOfficeRequest) => {
     }
   }
 };
+
+
 
 // this function will update an office detail
 // this function will join an employee to an office
 // it takes in the office id and the employee id
-export const updateOffice = async (reqData: UpdateOfficeRequest) => {
+export const updateOffice = async (reqData: {
+  officeId: string;
+  editField: "latitude" | "longitude" | "radius" | "name";
+  newValue: string;
+}) => {
   try {
-    const response = await API.patch<ApiResponse<{}>>("updateOfficeDetails", {
-      params: reqData,
+    const accessToken = await getToken("accessToken", Plat.WEB);
+    const response = await API.patch<ApiResponse<{}>>("updateOfficeDetails", {}, {
+    
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+      params: {
+        officeId: reqData.officeId,
+        editField: reqData.editField,
+        newValue: reqData.newValue,
+      },
+  
     });
     return response.data;
   } catch (error: any) {
@@ -113,15 +143,18 @@ export const updateOffice = async (reqData: UpdateOfficeRequest) => {
     }
   }
 };
-
 // this function gets all employees in an office
 export const getAllEmployeeInOffice = async (reqData: { officeId: string }) => {
   try {
+    const accessToken = await getToken("accessToken", Plat.WEB);
     const response = await API.get<EmployeesInOfficeResponse[]>(
       "getAllEmployeeInOffice",
       {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
         params: {
-          serverId: reqData.officeId,
+          officeId: reqData.officeId,
         },
       }
     );

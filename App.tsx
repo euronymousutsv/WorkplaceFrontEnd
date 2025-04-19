@@ -32,6 +32,7 @@ import {
 import ChatScreenPhone from "./src/mobile/employeeDashboard/screens/ChatScreen";
 import ClockInOutScreenPhone from "./src/mobile/employeeDashboard/screens/ClockInOutScreenPhone";
 import NoOfficeScreen from "./src/mobile/employeeDashboard/screens/NoOfficeScreen";
+import OfficeDetailAdmin from "./src/web/adminDashboard/screens/OfficeDetailAdmin";
 // Create a stack navigator
 const Stack = createStackNavigator();
 
@@ -224,6 +225,11 @@ const AppNavigator = () => {
       <Stack.Screen
         name="ChatScreen"
         component={ChatScreen}
+        options={{ headerShown: true }}
+      />
+      <Stack.Screen
+        name="OfficeDetail"
+        component={OfficeDetailAdmin}
         options={{ headerShown: true }}
       />
     </Stack.Navigator>
