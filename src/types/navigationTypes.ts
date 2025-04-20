@@ -25,5 +25,9 @@ export type RootStackParamList = {
     refreshChannels: () => Promise<void>;
     allChannels: Channel[];
   };
+  OfficeDetail: {
+    officeId: string;
+    officeName: string;
+  }; 
 
 };

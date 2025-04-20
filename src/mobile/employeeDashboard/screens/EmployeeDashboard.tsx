@@ -24,7 +24,7 @@ import { ApiError, ApiResponse } from "../../../api/utils/apiResponse";
 import { getToken, Plat, saveToken } from "../../../api/auth/token";
 import { getAllChannelForCurrentServer } from "../../../api/server/channelApi";
 import { getShiftsForLoggedInUser, Shifts } from "../../../api/auth/shiftApi";
-import { mockShifts } from "../../../mockData/mockShifts";  //mock data
+import { mockShifts } from "../../../mockData/mockShifts"; //mock data
 import "react-native-gesture-handler";
 import AdminDashboard from "../../../web/adminDashboard/screens/AdminDashboard";
 
@@ -78,7 +78,6 @@ const EmployeeDashboard: React.FC = () => {
   const notificationListener = useRef<Notifications.EventSubscription>();
   const responseListener = useRef<Notifications.EventSubscription>();
 
-  
   useEffect(() => {
     registerForPushNotificationsAsync()
       .then((token) => setExpoPushToken(token ?? ""))
@@ -104,52 +103,51 @@ const EmployeeDashboard: React.FC = () => {
     };
   }, []);
 
- 
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-    if (tab === "home") {
-      setContentTab("dashboard");
-      setIsChatView(false);
-      setActiveChannelId(null);
-      setActiveChannelName("");
-    } else if (tab === "chat") {
-      setIsChatView(true);
-    }
-  };
+  // const handleTabChange = (tab: string) => {
+  //   setActiveTab(tab);
+  //   if (tab === "home") {
+  //     setContentTab("dashboard");
+  //     setIsChatView(false);
+  //     setActiveChannelId(null);
+  //     setActiveChannelName("");
+  //   } else if (tab === "chat") {
+  //     setIsChatView(true);
+  //   }
+  // };
 
-  const handleContentTabChange = (tab: string) => {
-    setContentTab(tab);
-    setIsChatView(false);
-  };
+  // const handleContentTabChange = (tab: string) => {
+  //   setContentTab(tab);
+  //   setIsChatView(false);
+  // };
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
+  // const toggleMenu = () => {
+  //   setIsMenuOpen(!isMenuOpen);
+  // };
 
-  const toggleNotification = () => {
-    setIsNotificationOpen(!isNotificationOpen);
-  };
+  // const toggleNotification = () => {
+  //   setIsNotificationOpen(!isNotificationOpen);
+  // };
 
-  const handleChannelSelect = (channelId: string, channelName: string) => {
-    setActiveChannelId(channelId);
-    setActiveChannelName(channelName);
-    setIsChatView(true);
-  };
+  // const handleChannelSelect = (channelId: string, channelName: string) => {
+  //   setActiveChannelId(channelId);
+  //   setActiveChannelName(channelName);
+  //   setIsChatView(true);
+  // };
 
-  const handleGetServerDetail = async () => {
-    const res = await getLoggedInUserServer(Plat.PHONE);
-    if (res instanceof ApiError) {
-      console.log(res.message);
-    } else if ("statusCode" in res && "data" in res) {
-      const serverId = res.data.serverId;
-      saveToken("serverId", serverId);
-    } else {
-      console.log("Something went wrong");
-    }
-  };
+  // const handleGetServerDetail = async () => {
+  //   const res = await getLoggedInUserServer(Plat.PHONE);
+  //   if (res instanceof ApiError) {
+  //     console.log(res.message);
+  //   } else if ("statusCode" in res && "data" in res) {
+  //     const serverId = res.data.serverId;
+  //     saveToken("serverId", serverId);
+  //   } else {
+  //     console.log("Something went wrong");
+  //   }
+  // };
 
   //const [Shifts, setShifts] = useState<Shifts[]>([]); //todo: uncomment this to use real data
-   const [Shifts, setShifts] = useState<RosterAttributes[]>([]); //todo: remove mock data
+  const [Shifts, setShifts] = useState<RosterAttributes[]>([]); //todo: remove mock data
   // const handleGetCurrentUserRosterDetails = async () => {
   //   const res = await getShiftsForLoggedInUser();
   //   if (res instanceof ApiError) {
@@ -176,85 +174,111 @@ const EmployeeDashboard: React.FC = () => {
     );
     setShifts(filtered);
   }, []);
-  
 
   return (
-    <SafeAreaView style={styles.container}>
-  <ScrollView contentContainerStyle={styles.scrollContainer}>
-    {/* Welcome Header */}
-    <View style={styles.welcomeContainer}>
-      <Text style={styles.welcomeText}>Hi {firstName} </Text>
-      <Text style={styles.welcomeSubtext}>Here’s what’s happening today</Text>
-    </View>
 
-    {/* Today’s Shift Card */}
-    <View style={styles.shiftCard}>
-  {/* <Ionicons name="calendar-outline" size={24} color={PrimaryColor} /> */}
-  <View style={{ marginLeft: 12, flex: 1 }}>
-    <Text style={styles.shiftLabel}>Today's Shifts</Text>
-
-    {Shifts.length > 0 ? (
-  Shifts.map((shift) => (
-    <View key={shift.id} style={styles.individualShiftCardRow}>
-      {/* Icon on the left */}
-      <Ionicons name="calendar-outline" size={24} color={PrimaryColor} style={{ marginRight: 14, marginTop:19 }} />
-
-      {/* Text content on the right */}
-      <View style={{ flex: 1 }}>
-      {/* Time */}
-      <View style={styles.iconRow}>
-        <Ionicons name="time-outline" size={16} color={PrimaryColor} style={styles.icon} />
-        <Text style={styles.shiftLineText}>
-          {new Date(shift.startTime).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })} –{" "}
-          {new Date(shift.endTime).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </Text>
-      </View>
-
-      {/* Location */}
-      <View style={styles.iconRow}>
-        <Ionicons name="location-outline" size={16} color={PrimaryColor} style={styles.icon} />
-        <Text style={styles.shiftLineText}>Office ID: {shift.officeId}</Text>
-      </View>
-
-      {/* Description */}
-      <View style={styles.iconRow}>
-        <Ionicons name="document-text-outline" size={16} color={PrimaryColor} style={styles.icon} />
-        <Text style={styles.shiftLineText}>{shift.description}</Text>
-      </View>
-    </View>
-    </View>
-  ))
-) : (
-  <Text style={styles.noShiftText}>You have no shift today.</Text>
-)}
-
-  </View>
-</View>
-
-
-    {/* Clock In Shortcut */}
-    <TouchableOpacity
-      style={styles.clockButton}
-      onPress={() => navigation.navigate("ClockInOutScreenPhone")}
-    >
-      <Ionicons name="time" size={18} color="#fff" style={{ marginRight: 8 }} />
-      <Text style={styles.clockButtonText}>Go to Clock In / Out</Text>
-    </TouchableOpacity>
-
-    {/* Quick Action Buttons */}
     
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {/* Welcome Header */}
+        <View style={styles.welcomeContainer}>
+          <Text style={styles.welcomeText}>Hi {firstName} </Text>
+          <Text style={styles.welcomeSubtext}>
+            Here’s what’s happening today
+          </Text>
+        </View>
 
-  </ScrollView>
-</SafeAreaView>
+        {/* Today’s Shift Card */}
+        <View style={styles.shiftCard}>
+          {/* <Ionicons name="calendar-outline" size={24} color={PrimaryColor} /> */}
+          <View style={{ marginLeft: 12, flex: 1 }}>
+            <Text style={styles.shiftLabel}>Today's Shifts</Text>
 
-  
-   
+            {Shifts.length > 0 ? (
+              Shifts.map((shift) => (
+                <View key={shift.id} style={styles.individualShiftCardRow}>
+                  {/* Icon on the left */}
+                  <Ionicons
+                    name="calendar-outline"
+                    size={24}
+                    color={PrimaryColor}
+                    style={{ marginRight: 14, marginTop: 19 }}
+                  />
+
+                  {/* Text content on the right */}
+                  <View style={{ flex: 1 }}>
+                    {/* Time */}
+                    <View style={styles.iconRow}>
+                      <Ionicons
+                        name="time-outline"
+                        size={16}
+                        color={PrimaryColor}
+                        style={styles.icon}
+                      />
+                      <Text style={styles.shiftLineText}>
+                        {new Date(shift.startTime).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}{" "}
+                        –{" "}
+                        {new Date(shift.endTime).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </Text>
+                    </View>
+
+                    {/* Location */}
+                    <View style={styles.iconRow}>
+                      <Ionicons
+                        name="location-outline"
+                        size={16}
+                        color={PrimaryColor}
+                        style={styles.icon}
+                      />
+                      <Text style={styles.shiftLineText}>
+                        Office ID: {shift.officeId}
+                      </Text>
+                    </View>
+
+                    {/* Description */}
+                    <View style={styles.iconRow}>
+                      <Ionicons
+                        name="document-text-outline"
+                        size={16}
+                        color={PrimaryColor}
+                        style={styles.icon}
+                      />
+                      <Text style={styles.shiftLineText}>
+                        {shift.description}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.noShiftText}>You have no shift today.</Text>
+            )}
+          </View>
+        </View>
+
+        {/* Clock In Shortcut */}
+        <TouchableOpacity
+          style={styles.clockButton}
+          onPress={() => navigation.navigate("ClockInOutScreenPhone")}
+        >
+          <Ionicons
+            name="time"
+            size={18}
+            color="#fff"
+            style={{ marginRight: 8 }}
+          />
+          <Text style={styles.clockButtonText}>Go to Clock In / Out</Text>
+        </TouchableOpacity>
+
+        {/* Quick Action Buttons */}
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
@@ -377,7 +401,7 @@ const styles = StyleSheet.create({
     color: "#6C757D",
     marginTop: 4,
   },
-  
+
   shiftCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -391,7 +415,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  
+
   shiftLabel: {
     fontSize: 16,
     fontWeight: "600",
@@ -411,7 +435,7 @@ const styles = StyleSheet.create({
     color: "#D9534F",
     marginTop: 4,
   },
-  
+
   clockButton: {
     backgroundColor: "#2ECC71",
     margin: 20,
@@ -426,7 +450,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 15,
   },
-  
+
   quickActionScroll: {
     paddingHorizontal: 12,
     marginTop: 10,
@@ -461,8 +485,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
-  }
-,  
+  },
   shiftDescription: {
     fontSize: 14,
     fontWeight: "700",
@@ -480,11 +503,10 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   icon: {
-    color: 'gray',
+    color: "gray",
     opacity: 0.6,
     marginRight: 8,
   },
- 
 });
 
 export default EmployeeDashboard;

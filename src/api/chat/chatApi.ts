@@ -1,6 +1,7 @@
 import axios, { AxiosError } from "axios";
 import { getToken } from "../auth/token";
 import { ApiError, ApiResponse } from "../utils/apiResponse";
+import { Chats } from "./chat";
 
 const baseUrl =
   process.env.BASE_URL || "https://workplace-zdzja.ondigitalocean.app";

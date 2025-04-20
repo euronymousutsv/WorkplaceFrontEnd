@@ -8,7 +8,7 @@ import {
   joinAServerResponse,
   Role,
   SearchServerResponse,
-  userJoinedServerResponse,
+  UserJoinedServerResponse,
 } from "./server";
 
 const baseUrl = process.env.BASE_URL || "https://workhive.space";
@@ -26,7 +26,7 @@ const API = axios.create({
 const getLoggedInUserServer = async (plat: Plat) => {
   try {
     const accessToken = await getToken("accessToken", plat);
-    const response = await API.get<ApiResponse<userJoinedServerResponse>>(
+    const response = await API.get<ApiResponse<UserJoinedServerResponse>>(
       "getLoggedInUserServer",
       {
         params: { accessToken },

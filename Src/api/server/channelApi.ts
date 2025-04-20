@@ -74,6 +74,31 @@ const getAllChannelForCurrentServer = async (serverId: string, plat: Plat) => {
   }
 };
 
+// get all channels for current office
+const getAllChannelForCurrentOffice = async (officeId: string, plat: Plat) => {
+  try {
+    const accessToken = await getToken("accessToken", plat);
+    const response = await API.get<
+      ApiResponse<[getAllChannelForCurrentServerResponse]>
+    >("getAllChannelForCurrentOffice", {
+      params: { officeId },
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    console.log("response:", response.data);
+    return response.data;
+  } catch (error) {
+    if (error instanceof AxiosError) {
+      const err = error.response?.data as ApiError<{}>;
+      return new ApiError(err.statusCode, {}, err.message);
+    } else {
+      return new ApiError(400, {}, "Something went wrong");
+    }
+  }
+};
+
 // delete a channel
 // User requires a certain role to delete a channel.
 const deleteChannel = async (reqData: {
@@ -198,6 +223,7 @@ const getChannelDetails = async (reqData: {
 
 export {
   getAllChannelForCurrentServer,
+  getAllChannelForCurrentOffice,
   createNewChannel,
   deleteChannel,
   changeChannelName,
