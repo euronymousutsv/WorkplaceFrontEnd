@@ -115,9 +115,8 @@ const CustomDrawerContent = (props: any) => {
 
       <View style={styles.divider} />
       {Platform.OS !== "web" && (
-  <Text style={styles.sectionTitle}>Channels</Text>
-)}
-
+        <Text style={styles.sectionTitle}>Channels</Text>
+      )}
 
       {Platform.OS === "web" ? (
         <ChatChannelList />
