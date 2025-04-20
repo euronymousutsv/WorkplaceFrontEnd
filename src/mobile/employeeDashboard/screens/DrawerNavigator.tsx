@@ -186,7 +186,7 @@ const toggleSidebar = () => setIsSidebarOpen(prev => !prev);
           ),
         }}
       />
-      <Drawer.Screen
+      {/* <Drawer.Screen
         name="Schedules"
         component={SchedulesScreenWeb}
         options={{
@@ -194,7 +194,7 @@ const toggleSidebar = () => setIsSidebarOpen(prev => !prev);
             <Ionicons name="calendar" size={size} color={color} />
           ),
         }}
-      />
+      /> */}
       <Drawer.Screen
         name="Clock In/Out"
         component={ClockInOutScreen}

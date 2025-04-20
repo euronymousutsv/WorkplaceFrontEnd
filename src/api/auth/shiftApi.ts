@@ -1,191 +1,202 @@
+// Cleaned and Typed Shift API
 import axios, { AxiosError } from "axios";
 import { ApiError, ApiResponse } from "../utils/apiResponse";
 import { getToken, Plat } from "./token";
 
-const baseUrl =
-  process.env.BASE_URL || "https://workplace-zdzja.ondigitalocean.app";
+const baseUrl = process.env.BASE_URL || "https://workplace-zdzja.ondigitalocean.app";
 
 export const API = axios.create({
   baseURL: baseUrl,
   timeout: 10000,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  headers: { "Content-Type": "application/json" },
 });
 
-type getShiftsForLoggedInUserResponse = {
-  id: string;
-  employeeId: string;
-  officeId: string;
-  startTime: string;
-  endTime: string;
-};
-
-export class Shifts {
-  id: string;
-  employeeId: string;
-  employeeName: string;
-  officeId: string;
-  startTime: string;
-  endTime: string;
-  officeLocation: OfficeLocation;
-
+export class OfficeLocation {
   constructor(
-    id: string,
-    employeeId: string,
-    employeeName: string,
-    officeId: string,
-    startTime: string,
-    endTime: string,
-    officeLocation: OfficeLocation
-  ) {
-    this.id = id;
-    this.employeeId = employeeId;
-    this.employeeName = employeeName;
-    this.officeId = officeId;
-    this.startTime = startTime;
-    this.endTime = endTime;
-    this.officeLocation = officeLocation;
-  }
-}
-class OfficeLocation {
-  id: string;
-  name: string;
-  latitude: string;
-  longitude: string;
-  radius: number;
-
-  constructor(
-    id: string,
-    name: string,
-    latitude: string,
-    longitude: string,
-    radius: number
-  ) {
-    this.id = id;
-    this.name = name;
-    this.latitude = latitude;
-    this.longitude = longitude;
-    this.radius = radius;
-  }
+    public id: string,
+    public name: string,
+    public latitude: string,
+    public longitude: string,
+    public radius: number
+  ) {}
 
   getCoordinates(): string {
     return `Latitude: ${this.latitude}, Longitude: ${this.longitude}`;
   }
 }
 
-export const getShiftsForLoggedInUser = async () => {
+export class Shifts {
+  constructor(
+    public id: string,
+    public employeeId: string,
+    public employeeName: string,
+    public officeId: string,
+    public startTime: string,
+    public endTime: string,
+    public notes: string,
+    public officeLocation: OfficeLocation
+  ) {}
+}
+
+export type ShiftPayload = {
+  employeeId: string;
+  officeId: string;
+  startTime: string;
+  endTime: string;
+  status?: string;
+  notes?: string;
+  repeatFrequency?: string;
+  repeatEndDate?: string;
+};
+
+const handleError = (error: unknown) => {
+  if (error instanceof AxiosError) {
+    const err = error.response?.data as ApiError<unknown>;
+    return new ApiError(err.statusCode, {}, err.message);
+  }
+  return new ApiError(400, {}, "Something went wrong");
+};
+
+export const getShiftsForLoggedInUser = async (): Promise<ApiResponse<Shifts[]> | ApiError<unknown>> => {
   try {
     const accessToken = (await getToken("accessToken")) ?? "";
     const response = await API.get("api/roster/getShiftsForLoggedInUser", {
       params: { accessToken },
     });
-
-    const res = response.data as ApiResponse<[Shifts]>;
-    return res;
+    return response.data as ApiResponse<Shifts[]>;
   } catch (error) {
-    if (error instanceof AxiosError) {
-      const err = error.response?.data as ApiError<{}>;
-      return new ApiError(err.statusCode, {}, err.message);
-    } else {
-      return new ApiError(400, {}, "Something went wrong");
-    }
+    return handleError(error);
   }
 };
 
-//for manager/admin: fetch all shifts for all users
-export const getShiftsForAllUsers = async () => {
+export const getShiftsForAllUsers = async (): Promise<ApiResponse<Shifts[]> | ApiError<unknown>> => {
   try {
     const accessToken = (await getToken("accessToken")) ?? "";
     const response = await API.get("api/roster/", {
       params: { accessToken },
     });
-    const res = response.data as ApiResponse<Shifts[]>;
-    return res;
+    return response.data as ApiResponse<Shifts[]>;
   } catch (error) {
-    if (error instanceof AxiosError) {
-      const err = error.response?.data as ApiError<{}>;
-      return new ApiError(err.statusCode, {}, err.message);
-    } else {
-      return new ApiError(400, {}, "Something went wrong");
-    }
+    return handleError(error);
   }
 };
 
-//for manager/admin: create a shift
-export const createShift = async (
-  employeeId: string,
-  officeId: string,
-  startTime: string,
-  endTime: string,
-  date: string,
-  description: string
-) => {
-  try {
-    const accessToken = (await getToken("accessToken", Plat.WEB)) ?? "";
-    const response = await API.post(
-      "api/roster/createShift",
-      { employeeId, officeId, startTime, endTime, date, description },
-      {
-        params: { accessToken },
-      }
-    );
-    const res = response.data as ApiResponse<Shifts>;
-    return res;
-  } catch (error) {
-    if (error instanceof AxiosError) {
-      const err = error.response?.data as ApiError<{}>;
-      return new ApiError(err.statusCode, {}, err.message);
-    } else {
-      return new ApiError(400, {}, "Something went wrong");
-    }
-  }
-};
-
-//for manager/admin: update a shift
-export const updateShift = async (
-  shiftId: string,
-  employeeId: string,
-  officeId: string,
-  startTime: string,
-  endTime: string
-) => {
+export const createShift = async (payload: ShiftPayload): Promise<ApiResponse<Shifts> | ApiError<unknown>> => {
   try {
     const accessToken = (await getToken("accessToken")) ?? "";
-    const response = await API.put(
-      `api/roster/updateShift/${shiftId}`,
-      { employeeId, officeId, startTime, endTime },
-      {
-        params: { accessToken },
-      }
-    );
-    const res = response.data as ApiResponse<Shifts>;
-    return res;
+    const response = await API.post("api/schedule/create", payload, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return response.data as ApiResponse<Shifts>;
   } catch (error) {
-    if (error instanceof AxiosError) {
-      const err = error.response?.data as ApiError<{}>;
-      return new ApiError(err.statusCode, {}, err.message);
-    } else {
-      return new ApiError(400, {}, "Something went wrong");
-    }
+    return handleError(error);
   }
 };
 
-//for manager/admin: delete a shift
-export const deleteShift = async (shiftId: string) => {
+export const getShiftsByOffice = async (
+  officeId: string
+): Promise<ApiResponse<Shifts[]> | ApiError<unknown>> => {
+  try {
+    const accessToken = (await getToken("accessToken")) ?? "";
+
+    const response = await API.get("api/schedule/getShiftsByOffice", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      params: { officeId }, 
+    });
+
+    return response.data as ApiResponse<Shifts[]>;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+
+export const getShiftsByEmployee = async (employeeId: string): Promise<ApiResponse<Shifts[]> | ApiError<unknown>> => {
+  try {
+    const accessToken = (await getToken("accessToken")) ?? "";
+    const response = await API.get(`api/shifts/employee/${employeeId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return response.data as ApiResponse<Shifts[]>;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+export const getEmployeeShiftsByDate = async (employeeId: string, date: string): Promise<ApiResponse<Shifts[]> | ApiError<unknown>> => {
+  try {
+    const accessToken = (await getToken("accessToken")) ?? "";
+    const response = await API.get(`api/shifts/employee/${employeeId}/date`, {
+      params: { date },
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return response.data as ApiResponse<Shifts[]>;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+export const getShiftsByDateRangeForOffice = async (
+  officeId: string,
+  start: string,
+  end: string
+): Promise<ApiResponse<Shifts[]> | ApiError<unknown>> => {
+  try {
+    const accessToken = (await getToken("accessToken")) ?? "";
+    const response = await API.get(`api/shifts/range`, {
+      params: { officeId, start, end },
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return response.data as ApiResponse<Shifts[]>;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+export const updateShift = async (shiftId: string, payload: Partial<ShiftPayload>): Promise<ApiResponse<Shifts> | ApiError<unknown>> => {
+  try {
+    const accessToken = (await getToken("accessToken")) ?? "";
+    const response = await API.put(`api/shifts/${shiftId}`, payload, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return response.data as ApiResponse<Shifts>;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+export const getShiftWithDetails = async (id: string): Promise<ApiResponse<Shifts> | ApiError<unknown>> => {
+  try {
+    const accessToken = (await getToken("accessToken")) ?? "";
+    const response = await API.get(`api/shifts/details/${id}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return response.data as ApiResponse<Shifts>;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+export const getAllShiftsWithDetailsWithinAnOffice = async (officeId: string): Promise<ApiResponse<Shifts[]> | ApiError<unknown>> => {
+  try {
+    const accessToken = (await getToken("accessToken")) ?? "";
+    const response = await API.get(`api/shifts/office/${officeId}/details`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return response.data as ApiResponse<Shifts[]>;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+export const deleteShift = async (shiftId: string): Promise<ApiResponse<Shifts> | ApiError<unknown>> => {
   try {
     const accessToken = (await getToken("accessToken")) ?? "";
     const response = await API.delete(`api/roster/deleteShift/${shiftId}`, {
       params: { accessToken },
     });
-    const res = response.data as ApiResponse<Shifts>;
-    return res;
+    return response.data as ApiResponse<Shifts>;
   } catch (error) {
-    if (error instanceof AxiosError) {
-      const err = error.response?.data as ApiError<{}>;
-      return new ApiError(err.statusCode, {}, err.message);
-    } else {
-      return new ApiError(400, {}, "Something went wrong");
-    }
+    return handleError(error);
   }
 };

@@ -24,11 +24,13 @@ import { ApiError } from "../../../api/utils/apiResponse";
 import Toast from "react-native-toast-message";
 import axios, { AxiosError } from "axios";
 import { Feather } from "@expo/vector-icons";
-
+import { StackNavigationProp} from "@react-navigation/stack";
+import { RootStackParamList } from "../../../types/navigationTypes";
+type NavigationProp = StackNavigationProp<RootStackParamList, 'SchedulesScreen'>;
 
 const OfficeDetailAdmin = () => {
   const route = useRoute();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const { officeId, officeName } = route.params as {
     officeId: string;
     officeName: string;
@@ -40,6 +42,7 @@ const OfficeDetailAdmin = () => {
   const [addEmployeeModalVisible, setAddEmployeeModalVisible] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
   const [availableEmployees, setAvailableEmployees] = useState<any[]>([]);
+  const [resolvedAddress, setResolvedAddress] = useState<string>("");
 
   const fetchOfficeInfo = async () => {
     try {
@@ -48,10 +51,21 @@ const OfficeDetailAdmin = () => {
         Toast.show({ type: "error", text1: "Server ID is missing" });
         return;
       }
+  
       const res = await getAllOffices({ serverId });
       if (!(res instanceof ApiError) && Array.isArray(res.data)) {
         const office = res.data.find((o) => o.id === officeId);
+        if (!office) return;
+  
         setOfficeDetail(office);
+  
+        const lat = Number(office.latitude);
+        const lon = Number(office.longitude);
+  
+        if (!isNaN(lat) && !isNaN(lon)) {
+          const address = await reverseGeocode(lat, lon);
+          setResolvedAddress(address);
+        }
       }
     } catch (err) {
       console.error("Failed to fetch office info", err);
@@ -182,6 +196,19 @@ const OfficeDetailAdmin = () => {
     }
     return null;
   };
+
+  const reverseGeocode = async (lat: number, lon: number) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`
+      );
+      const data = await response.json();
+      return data.display_name;
+    } catch (error) {
+      console.error("Reverse geocoding failed:", error);
+      return "Unknown address";
+    }
+  };
   
   const handleSave = async () => {
     try {
@@ -251,11 +278,19 @@ const OfficeDetailAdmin = () => {
 
       <View style={styles.card}>
         <Text style={styles.label}>Address</Text>
-        <Text style={styles.staticText}>{officeDetail.address}</Text>
+        {/* <Text style={styles.staticText}>{officeDetail.address}</Text> */}
+        <Text style={styles.staticText}>{resolvedAddress || "Loading address..."}</Text>
 
         <Text style={styles.label}>Radius (meters)</Text>
         <Text style={styles.staticText}>{officeDetail.radius}</Text>
       </View>
+
+      <TouchableOpacity
+  style={styles.scheduleButton}
+  onPress={() => navigation.navigate("SchedulesScreen", { officeId })}
+>
+  <Text style={styles.scheduleButtonText}>View Schedules for this Office</Text>
+</TouchableOpacity>
 
       <Text style={styles.employeeHeader}>Employees ({employees.length})</Text>
 
@@ -516,6 +551,22 @@ const styles = StyleSheet.create({
   saveButton: { backgroundColor: "#28A745" },
   cancelButton: { backgroundColor: "#FFC107" },
   buttonText: { color: "#fff", fontWeight: "600", fontSize: 16 },
+  scheduleButton: {
+    backgroundColor: "#4A90E2",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  
+  scheduleButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 16,
+  }
+  
 });
 
 export default OfficeDetailAdmin;

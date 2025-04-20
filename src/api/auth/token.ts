@@ -35,7 +35,7 @@ export async function saveToken(
 // Get token
 export async function getToken(
   key: string,
-  plat: Plat = Plat.PHONE
+  plat: Plat = Plat.WEB
 ): Promise<string | null> {
   try {
     console.log(plat);
