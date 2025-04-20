@@ -11,7 +11,7 @@ import {
   TextInput,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { fetchEmployeeDetails } from '../../../api/server/serverApi';
+import { fetchEmployeeDetails, updateEmployeeInfo } from '../../../api/server/serverApi';
 import Toast from 'react-native-toast-message';
 import { Picker } from '@react-native-picker/picker';
 
@@ -63,6 +63,7 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const fetchEmployee = async () => {
@@ -141,15 +142,49 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
   };
 
   const handleSave = async () => {
-    // TODO: Implement save functionality
-    console.log('Saving employee details:', editedEmployee);
-    Toast.show({
-      type: 'success',
-      text1: 'Success',
-      text2: 'Employee details updated successfully',
-    });
-    setIsEditing(false);
-    setEmployee(editedEmployee);
+    if (!editedEmployee) return;
+
+    setIsSaving(true);
+    try {
+      const updateData = {
+        employeeId: editedEmployee.id,
+        username: editedEmployee.detailsEmployee.username,
+        baseRate: editedEmployee.detailsEmployee.baseRate,
+        contractHours: editedEmployee.detailsEmployee.contractHours,
+        employeeType: editedEmployee.detailsEmployee.employeeType,
+        department: editedEmployee.detailsEmployee.department,
+        position: editedEmployee.detailsEmployee.position,
+        hireDate: editedEmployee.detailsEmployee.hireDate,
+      };
+
+      const response = await updateEmployeeInfo(updateData);
+
+      if (response instanceof Error) {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: response.message || 'Failed to update employee details',
+        });
+        return;
+      }
+
+      setEmployee(editedEmployee);
+      setIsEditing(false);
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Employee details updated successfully',
+      });
+    } catch (error) {
+      console.error('Error saving employee details:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to update employee details',
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const renderField = (
@@ -246,13 +281,22 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
           {renderField('Employment Status', 'employmentStatus', editedEmployee.employmentStatus, 'text', undefined, true)}
 
           <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Employment Details</Text>
-          {renderField('Username', 'detailsEmployee.username', editedEmployee.detailsEmployee.username)}
-          {renderField('Base Rate', 'detailsEmployee.baseRate', editedEmployee.detailsEmployee.baseRate, 'number')}
-          {renderField('Contract Hours', 'detailsEmployee.contractHours', editedEmployee.detailsEmployee.contractHours, 'number')}
-          {renderField('Employee Type', 'detailsEmployee.employeeType', editedEmployee.detailsEmployee.employeeType, 'select', ['casual', 'full-time', 'part-time'])}
-          {renderField('Department', 'detailsEmployee.department', editedEmployee.detailsEmployee.department)}
-          {renderField('Position', 'detailsEmployee.position', editedEmployee.detailsEmployee.position)}
-          {renderField('Hire Date', 'detailsEmployee.hireDate', new Date(editedEmployee.detailsEmployee.hireDate).toLocaleDateString())}
+          {!isSaving ? (
+            <>
+              {renderField('Username', 'detailsEmployee.username', editedEmployee.detailsEmployee.username)}
+              {renderField('Base Rate', 'detailsEmployee.baseRate', editedEmployee.detailsEmployee.baseRate, 'number')}
+              {renderField('Contract Hours', 'detailsEmployee.contractHours', editedEmployee.detailsEmployee.contractHours, 'number')}
+              {renderField('Employee Type', 'detailsEmployee.employeeType', editedEmployee.detailsEmployee.employeeType, 'select', ['casual', 'full-time', 'part-time'])}
+              {renderField('Department', 'detailsEmployee.department', editedEmployee.detailsEmployee.department)}
+              {renderField('Position', 'detailsEmployee.position', editedEmployee.detailsEmployee.position)}
+              {renderField('Hire Date', 'detailsEmployee.hireDate', new Date(editedEmployee.detailsEmployee.hireDate).toLocaleDateString())}
+            </>
+          ) : (
+            <View style={styles.savingContainer}>
+              <ActivityIndicator size="small" color="#4A90E2" />
+              <Text style={styles.savingText}>Saving changes...</Text>
+            </View>
+          )}
           
           <View style={styles.timestamps}>
             <Text style={styles.timestampText}>Created: {new Date(editedEmployee.detailsEmployee.createdAt).toLocaleDateString()}</Text>
@@ -277,13 +321,23 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
             <View style={styles.headerButtons}>
               {isEditing ? (
                 <>
-                  <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
-                    <Text style={styles.saveButtonText}>Save</Text>
+                  <TouchableOpacity 
+                    onPress={handleSave} 
+                    style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
+                    disabled={isSaving}
+                  >
+                    <Text style={styles.saveButtonText}>
+                      {isSaving ? 'Saving...' : 'Save'}
+                    </Text>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => {
-                    setIsEditing(false);
-                    setEditedEmployee(employee);
-                  }} style={styles.cancelButton}>
+                  <TouchableOpacity 
+                    onPress={() => {
+                      setIsEditing(false);
+                      setEditedEmployee(employee);
+                    }} 
+                    style={styles.cancelButton}
+                    disabled={isSaving}
+                  >
                     <Text style={styles.cancelButtonText}>Cancel</Text>
                   </TouchableOpacity>
                 </>
@@ -467,6 +521,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#ff6b6b',
     textAlign: 'center',
+  },
+  savingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  savingText: {
+    marginLeft: 10,
+    fontSize: 16,
+    color: '#666',
+  },
+  saveButtonDisabled: {
+    opacity: 0.6,
   },
 });
 

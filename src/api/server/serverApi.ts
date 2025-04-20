@@ -377,6 +377,44 @@ const fetchEmployeeDetails = async (employeeId: string) => {
   }
 };
 
+interface EmployeeInfoUpdate {
+  employeeId: string;
+  username: string;
+  baseRate: string;
+  contractHours: string;
+  employeeType: string;
+  department: string;
+  position: string;
+  hireDate: string;
+}
+
+// update employee info
+const updateEmployeeInfo = async (employeeData: EmployeeInfoUpdate) => {
+  try {
+    const accessToken = await getToken("accessToken", Plat.WEB);
+    const response = await API.patch<ApiResponse<{}>>(
+      "updateEmployeeInfo",
+      employeeData,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("API error in updateEmployeeInfo:", error);
+
+    if (error instanceof AxiosError) {
+      const err = error.response?.data as ApiError<{}>;
+      return new ApiError(err.statusCode || 500, {}, err.message || 'Failed to update employee details');
+    } else {
+      return new ApiError(500, {}, "An unexpected error occurred");
+    }
+  }
+};
+
 export {
   updateRole,
   kickEmployee,
@@ -391,4 +429,5 @@ export {
   partialregisterEmployee,
   updateEmployeeDetails,
   fetchEmployeeDetails,
+  updateEmployeeInfo,
 };
