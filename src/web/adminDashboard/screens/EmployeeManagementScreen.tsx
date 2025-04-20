@@ -27,6 +27,7 @@ import {
 import { getLoggedInUserServer } from "../../../api/server/serverApi";
 import { Role, EmployeeStatus } from "../../../api/server/server";
 import { getToken, Plat, saveToken } from "../../../api/auth/token";
+import EmployeeDetailsModal from '../components/EmployeeDetailsModal';
 
 interface Employee {
   id: string;
@@ -102,6 +103,9 @@ const EmployeeManagementScreen = () => {
   const isMobile = screenWidth <= 768;
   const [employeesArr, setEmployeesArr] = useState<EmployeeDetails[]>([]);
   const [serverId, setServerId] = useState<string | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+  const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
 
   const handleFetchUsers = async () => {
     try {
@@ -437,6 +441,11 @@ const EmployeeManagementScreen = () => {
       .join("")
       .toUpperCase();
 
+  const handleRowClick = (employee: Employee) => {
+    setSelectedEmployeeId(employee.id);
+    setIsDetailsModalVisible(true);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* <Header
@@ -522,7 +531,11 @@ const EmployeeManagementScreen = () => {
             </View>
 
             {filteredEmployees.map((emp, index) => (
-              <View key={index} style={styles.row}>
+              <TouchableOpacity 
+                key={index} 
+                style={styles.row}
+                onPress={() => handleRowClick(emp)}
+              >
                 {formFields.map((field) => {
                   if (field === "firstName") {
                     return (
@@ -583,10 +596,16 @@ const EmployeeManagementScreen = () => {
                     </Text>
                   </TouchableOpacity>
                 </View>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         </ScrollView>
+
+        <EmployeeDetailsModal
+          isVisible={isDetailsModalVisible}
+          onClose={() => setIsDetailsModalVisible(false)}
+          employeeId={selectedEmployeeId}
+        />
 
         <Modal visible={modalVisible} animationType="slide" transparent>
           <View style={styles.modalOverlay}>
@@ -714,16 +733,16 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
   },
   row: {
-    flexDirection: "row",
+    flexDirection: 'row',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderColor: "#f0f0f0",
-    alignItems: "center",
+    borderBottomColor: '#f0f0f0',
+    alignItems: 'center',
+    backgroundColor: '#fff',
   },
   headerCell: {
     flex: 1,
-    fontWeight: "bold",
-    paddingHorizontal: 68,
+    // paddingHorizontal: 20,
     textAlign: "center",
   },
   cell: {
