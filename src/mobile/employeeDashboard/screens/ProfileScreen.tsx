@@ -81,7 +81,10 @@ const ProfileScreen = () =>
     useEffect(() => {
       const fetchUserDetails = async () => {
         try {
+          // Get the access token from storage
+          console.log("Fetching access token...");
           const accessToken = await getToken("accessToken");
+
           if (!accessToken) {
             alert("Token is missing. Please log in again.");
             return;
@@ -166,20 +169,6 @@ const ProfileScreen = () =>
 
     return (
       <SafeAreaView style={styles.container}>
-        {/* Header */}
-        {/* <View style={styles.header}>
-          <TouchableOpacity style={styles.menuButton} onPress={toggleMenu}>
-            <Ionicons name="menu" size={24} color="white" />
-          </TouchableOpacity>
-          <Text style={styles.headerText}>Profile</Text>
-          <TouchableOpacity
-            style={styles.notificationButton}
-            onPress={toggleNotification}
-          >
-            <Ionicons name="notifications" size={24} color="white" />
-          </TouchableOpacity>
-        </View> */}
-
         <ScrollView contentContainerStyle={styles.content}>
           {/* Profile Picture */}
           <TouchableOpacity

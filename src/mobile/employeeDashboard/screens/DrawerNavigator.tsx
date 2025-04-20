@@ -187,7 +187,7 @@ export const WebNavigatorDrawer = () => {
             ),
           }}
         />
-        <Drawer.Screen
+        {/* <Drawer.Screen
           name="Schedules"
           component={SchedulesScreenWeb}
           options={{
@@ -195,8 +195,8 @@ export const WebNavigatorDrawer = () => {
               <Ionicons name="calendar" size={size} color={color} />
             ),
           }}
-        />
-        <Drawer.Screen
+        /> */}
+        {/* <Drawer.Screen
           name="Clock In/Out"
           component={ClockInOutScreen}
           options={{
@@ -204,7 +204,7 @@ export const WebNavigatorDrawer = () => {
               <Ionicons name="time" size={size} color={color} />
             ),
           }}
-        />
+        /> */}
 
         <Drawer.Screen
           name="Leave Request"
@@ -212,6 +212,34 @@ export const WebNavigatorDrawer = () => {
           options={{
             drawerIcon: ({ color, size }) => (
               <Ionicons name="airplane" size={size} color={color} />
+            ),
+          }}
+        />
+        {/* 
+        <Drawer.Screen
+          name="Dashboard"
+          component={AdminDashboard}
+          options={{
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="home" size={size} color={color} />
+            ),
+          }}
+        /> */}
+        {/* <Drawer.Screen
+        name="Schedules"
+        component={SchedulesScreenWeb}
+        options={{
+          drawerIcon: ({ color, size }) => (
+            <Ionicons name="calendar" size={size} color={color} />
+          ),
+        }}
+      /> */}
+        <Drawer.Screen
+          name="Clock In/Out"
+          component={ClockInOutScreen}
+          options={{
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="time" size={size} color={color} />
             ),
           }}
         />

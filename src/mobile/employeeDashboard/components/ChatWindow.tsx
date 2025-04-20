@@ -10,10 +10,11 @@ import {
   Platform,
   Image,
 } from "react-native";
+import * as FileSystem from "expo-file-system";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { fetchChats } from "../../../api/chat/chatApi";
-import { ApiError } from "../../../api/utils/apiResponse";
+import { ApiError, ApiResponse } from "../../../api/utils/apiResponse";
 import { getToken } from "../../../api/auth/token";
 import JWT from "expo-jwt";
 import socket from "../../../config/Socket";
@@ -25,6 +26,9 @@ import {
   Chats,
   MessageData,
 } from "../../../api/chat/chat";
+import Toast from "react-native-toast-message";
+import { RefreshControl } from "react-native-gesture-handler";
+import { uploadFile } from "../../../api/files/fileApi";
 
 // Props for ChatWindow component
 type ChatWindowProps = {
@@ -38,8 +42,11 @@ const ChatWindow = ({
   activeChannelName,
   hideBottomNav,
 }: ChatWindowProps) => {
+  const [userId, setUserId] = useState<string | undefined>();
   const [newMessage, setNewMessage] = useState("");
   const [messages, setMessages] = useState<MessageData[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const getUserId = async (): Promise<string | undefined> => {
     const accessToken = (await getToken("accessToken")) ?? "";
@@ -63,14 +70,24 @@ const ChatWindow = ({
     };
   }, [activeChannelId]);
 
-  const handleGetMessage = async () => {
-    const res = await fetchChats(activeChannelId);
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const id = await getUserId();
+      setUserId(id);
+    };
+    fetchUserId();
+  }, []);
+  const handleGetMessage = async (page = currentPage) => {
+    const res = await fetchChats(activeChannelId, 20, page);
     console.log(activeChannelId);
 
     if (res instanceof ApiError) {
-      console.log(res.message, "...");
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: res.message,
+      });
     } else {
-      console.log("Chats fetched successfully:", res.data.chats, "-----------");
       const convertedMessages: MessageData[] = res.data.chats
         .map((chat: Chats) => castChatsToMessageData(chat, activeChannelName))
         .reverse();
@@ -90,18 +107,9 @@ const ChatWindow = ({
     hideBottomNav();
   }, [activeChannelId, hideBottomNav]);
 
-  // Automatically scroll to bottom when new message is added
-  useEffect(() => {
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, 100);
-  }, [messages.length]);
-
   // Send text message handler
   const handleSendMessage = async () => {
     if (newMessage.trim() === "") return;
-
-    const userId = await getUserId();
 
     if (socket) {
       const newId = uuid.v4();
@@ -110,8 +118,7 @@ const ChatWindow = ({
           id: userId!,
           name: (await getToken("name")) || "",
           profileImage:
-            (await getToken("profileImage")) ||
-            "https://cdn.pixabay.com/photo/2025/04/08/10/42/landscape-9521261_960_720.jpg",
+            (await getToken("profileImage")) || "/assets/avatar.png",
         },
         channelName: activeChannelName,
         messageId: newId,
@@ -126,43 +133,69 @@ const ChatWindow = ({
   };
 
   // Send photo message handler
-  // const handlePhotoSend = async () => {
-  //   const result = await ImagePicker.launchImageLibraryAsync({
-  //     mediaTypes: ["images", "videos"],
-  //     allowsEditing: true,
-  //     quality: 0.8,
-  //   });
+  const handlePhotoSend = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      base64: true,
+      quality: 0.8,
+    });
 
-  //   if (!result.canceled && result.assets && result.assets[0].uri) {
-  //     const userId = getUserId();
-  //     const newText: Chats = {
-  //       id: Date.now().toLocaleString(),
-  //       userId: (await userId) ?? "",
-  //       message: newMessage,
-  //       channelId: activeChannelId,
-  //       createdAt: new Date(),
-  //       Employee: {
-  //         firstName: "You",
-  //         email: "",
-  //         phoneNumber: "",
-  //         employmentStatus: "Active",
-  //         role: "employee",
-  //         profileImage: "",
-  //       },
-  //     };
-  //     if (socket) {
-  //       socket.emit("sendMessage", newText);
-  //     }
-  //     // const photoMessage = {
-  //     //   id: ,
-  //     //   user: "You",
-  //     //   message: "",
-  //     //   photo: result.assets[0].uri,
-  //     //   timestamp: new Date().toLocaleTimeString(),
-  //     // };
-  //     setMessages([...messages, newText]);
-  //   }
-  // };
+    if (!result.canceled && result.assets && result.assets[0].uri) {
+      if (socket) {
+        const newId = uuid.v4();
+
+        try {
+          const fileInfo = await FileSystem.getInfoAsync(result.assets[0].uri);
+
+          if (!fileInfo.exists) {
+            throw new Error("File not found at path: " + result.assets[0].uri);
+          }
+
+          const fileBlob = {
+            uri: result.assets[0].uri,
+            type: result.assets[0].type || "image/jpeg",
+            name: result.assets[0].fileName || `photo-${Date.now()}.jpg`,
+          };
+
+          const formData = new FormData();
+          formData.append("file", fileBlob as any);
+
+          const res = await uploadFile(formData, "workhive-chats");
+
+          if (res instanceof ApiError) {
+            throw new Error(res.message);
+          }
+
+          const messageData: MessageData = {
+            author: {
+              id: userId!,
+              name: (await getToken("name")) || "",
+              profileImage:
+                (await getToken("profileImage")) || "/assets/avatar.png",
+            },
+            channelName: activeChannelName,
+            messageId: newId,
+            message: res.data.fileUrl,
+            channel: activeChannelId,
+            time: new Date(),
+            isImage: true,
+          };
+
+          setNewMessage("");
+          socket.emit("send_message", messageData);
+        } catch (error) {
+          console.error("Error uploading file:", error);
+          Toast.show({
+            type: "error",
+            text1: "Error",
+            text2: "Failed to upload image.",
+          });
+          return;
+        }
+      }
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -171,54 +204,124 @@ const ChatWindow = ({
       keyboardVerticalOffset={80}
     >
       <FlatList
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoadingMore}
+            onRefresh={() => {
+              setIsLoadingMore(true);
+              setCurrentPage((prevPage) => {
+                const nextPage = prevPage + 1;
+                handleGetMessage(nextPage); // Pass it explicitly
+                setIsLoadingMore(false);
+                return nextPage;
+              });
+            }}
+          />
+        }
         ref={flatListRef}
         style={styles.messagesContainer}
         data={messages}
         keyExtractor={(item, index) => item.messageId || index.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.messageBox}>
-            {item.author?.profileImage ? (
-              <Image
-                source={{ uri: item.author?.profileImage }}
-                style={{ width: 40, height: 40, borderRadius: 8 }}
-              />
-            ) : (
-              <Text style={styles.messageText}>Image not found</Text>
-            )}
+        renderItem={({ item, index }) => {
+          const isMyMessage = userId === item.author?.id;
+          const isSameSenderAsPrev =
+            index > 0 && messages[index - 1].author?.id === item.author?.id;
+
+          return (
             <View
               style={[
-                styles.messageWrapper,
-                item.author?.name === "userId" && styles.myMessageWrapper,
+                styles.messageRow,
+                isMyMessage && { justifyContent: "flex-end" },
               ]}
             >
-              <View
-                style={[
-                  styles.message,
-                  item.author?.name === "You" && styles.myMessage,
-                ]}
-              >
-                <View style={styles.messageHeader}>
-                  <View>
-                    <Text style={styles.messageUser}>{item.author?.name}</Text>
-                    <Text style={styles.messageTime}>
-                      {dayjs(item.time).format("HH:mm")}
+              {/* Avatar or empty space */}
+              {!isMyMessage ? (
+                isSameSenderAsPrev ? (
+                  <View style={styles.avatarSpacer} />
+                ) : (
+                  <Image
+                    source={{
+                      uri: item.author?.profileImage
+                        ? item.author?.profileImage
+                        : "./assets/avatar.png",
+                    }}
+                    style={styles.avatar}
+                  />
+                )
+              ) : null}
+
+              {/* Message content */}
+
+              {item.isImage ? (
+                <View
+                  style={[
+                    styles.messageWrapper,
+                    isMyMessage && styles.myMessageWrapper,
+                  ]}
+                >
+                  {!isMyMessage && !isSameSenderAsPrev && (
+                    <View style={styles.messageHeader}>
+                      <Text style={styles.messageUser}>
+                        {item.author?.name}
+                      </Text>
+                      <Text style={styles.messageTime}>
+                        {dayjs(item.time).format("hh:mm A")}
+                      </Text>
+                    </View>
+                  )}
+                  {isMyMessage && !isSameSenderAsPrev && (
+                    <Text style={styles.messageTimeMine}>
+                      {dayjs(item.time).format("hh:mm A")}
                     </Text>
+                  )}
+                  <Image
+                    source={{ uri: item.message }}
+                    style={{
+                      width: 200,
+                      height: 200,
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: "#E0E0E0",
+                    }}
+                  />
+                </View>
+              ) : (
+                <View
+                  style={[
+                    styles.messageWrapper,
+                    isMyMessage && styles.myMessageWrapper,
+                  ]}
+                >
+                  {!isMyMessage && !isSameSenderAsPrev && (
+                    <View style={styles.messageHeader}>
+                      <Text style={styles.messageUser}>
+                        {item.author?.name}
+                      </Text>
+                      <Text style={styles.messageTime}>
+                        {dayjs(item.time).format("hh:mm A")}
+                      </Text>
+                    </View>
+                  )}
+                  {isMyMessage && !isSameSenderAsPrev && (
+                    <Text style={styles.messageTimeMine}>
+                      {dayjs(item.time).format("hh:mm A")}
+                    </Text>
+                  )}
+                  <View
+                    style={[styles.message, isMyMessage && styles.myMessage]}
+                  >
+                    <Text style={styles.messageText}>{item.message}</Text>
                   </View>
                 </View>
-                <View>
-                  <Text style={styles.messageText}>{item.message}</Text>
-                </View>
-              </View>
+              )}
             </View>
-          </View>
-        )}
+          );
+        }}
         onContentSizeChange={() => {
-          // Scroll to the bottom after rendering new content
           setTimeout(() => {
             flatListRef.current?.scrollToEnd({ animated: true });
           }, 100);
         }}
-        // Additional FlatList props to improve scrolling performance
         initialNumToRender={10}
         maxToRenderPerBatch={10}
         windowSize={5}
@@ -237,12 +340,7 @@ const ChatWindow = ({
         <TouchableOpacity onPress={handleSendMessage} style={styles.sendButton}>
           <Ionicons name="send" size={24} color="white" />
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => {
-            // handlePhotoSend
-          }}
-          style={styles.photoButton}
-        >
+        <TouchableOpacity onPress={handlePhotoSend} style={styles.photoButton}>
           <Ionicons name="camera" size={24} color="white" />
         </TouchableOpacity>
       </View>
@@ -251,7 +349,7 @@ const ChatWindow = ({
 };
 const styles = StyleSheet.create({
   messageBox: {
-    flex: 1,
+    marginBottom: 16,
     flexDirection: "row",
   },
   chatContainer: {
@@ -277,17 +375,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   messageWrapper: {
-    marginBottom: 16,
     marginLeft: 10,
+    maxWidth: "90%",
   },
   myMessageWrapper: {
+    marginLeft: "auto",
     alignSelf: "flex-end",
   },
   message: {
     borderRadius: 12,
     padding: 12,
     backgroundColor: "#F0F7FF",
-    maxWidth: "90%",
   },
   myMessage: {
     backgroundColor: "#DCF8C6",
@@ -297,7 +395,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 4,
-    minWidth: 50,
   },
   messageUser: {
     fontWeight: "bold",
@@ -305,13 +402,31 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   messageTime: {
-    fontSize: 12,
+    fontSize: 10,
     color: "#8E9196",
+
+    marginLeft: "0px",
+  },
+  messageTimeMine: {
+    fontSize: 10,
+    color: "#8E9196",
+    marginLeft: "auto",
+    marginBottom: 4,
   },
   messageText: {
     color: "#393D3F",
     fontSize: 16,
     lineHeight: 22,
+  },
+  messageRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 16,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 100,
   },
   inputContainer: {
     flexDirection: "row",
@@ -350,6 +465,11 @@ const styles = StyleSheet.create({
     height: 50,
     justifyContent: "center",
     alignItems: "center",
+  },
+
+  avatarSpacer: {
+    width: 40,
+    height: 40,
   },
 });
 

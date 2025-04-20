@@ -29,17 +29,21 @@ import { ApiError } from "../../../api/utils/apiResponse";
 import { Feather } from "@expo/vector-icons";
 import { Channel } from "../../../types/Channel";
 import * as ImagePicker from "expo-image-picker";
+import { getToken } from "../../../api/auth/token";
+import JWT from "expo-jwt";
+import { fetchChats } from "../../../api/chat/chatApi";
+import { Chats } from "../../../api/chat/chat";
 
 const ChatScreen = ({ route, navigation }: any) => {
   const { channelName, channelId, refreshChannels, allChannels } = route.params;
 
   const [currentChannelName, setCurrentChannelName] = useState(channelName);
-  const [selectedTab, setSelectedTab] = useState(channelName);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const sidebarWidth = useRef(new Animated.Value(250)).current;
-  const mainContentPadding = useRef(new Animated.Value(250)).current;
-  const [isMobile, setIsMobile] = useState(false);
-  const screenWidth = Dimensions.get("window").width;
+  // const [selectedTab, setSelectedTab] = useState(channelName);
+  // const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  // const sidebarWidth = useRef(new Animated.Value(250)).current;
+  // const mainContentPadding = useRef(new Animated.Value(250)).current;
+  // const [isMobile, setIsMobile] = useState(false);
+  // const screenWidth = Dimensions.get("window").width;
   const { userRole } = useAuth();
   const canEdit = userRole === "admin" || userRole === "manager";
   const [renameModalVisible, setRenameModalVisible] = useState(false);
@@ -50,6 +54,11 @@ const ChatScreen = ({ route, navigation }: any) => {
 
   const [message, setMessage] = useState("");
   const scrollRef = useRef<ScrollView>(null);
+  const getUserId = async (): Promise<string | undefined> => {
+    const accessToken = (await getToken("accessToken")) ?? "";
+    const decodedToken = JWT.decode(accessToken, null);
+    return decodedToken.userId;
+  };
 
   useEffect(() => {
     navigation.setOptions({
@@ -69,28 +78,62 @@ const ChatScreen = ({ route, navigation }: any) => {
   }, [navigation, currentChannelName, canEdit]);
 
   useEffect(() => {
-    socket.on("receive_message", (msg: { text: string; senderId: string }) => {
-      const currentUserId = "your-user-id";
-      setMessages((prev) => [
-        ...prev,
-        { text: msg.text, fromSelf: msg.senderId === currentUserId },
-      ]);
-      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
-    });
+    const join = async () => {
+      const userId = await getUserId();
+      socket.emit("join_channel", channelId, userId);
+    };
+    join();
+
+    socket.on(
+      "receive_message",
+      async (data: { text: string; senderId: string }) => {
+        const currentUserId = await getUserId();
+        setMessages((prev) => [
+          ...prev,
+          {
+            text: data.text,
+            fromSelf: data.senderId === currentUserId,
+          },
+        ]);
+        setTimeout(
+          () => scrollRef.current?.scrollToEnd({ animated: true }),
+          100
+        );
+      }
+    );
 
     return () => {
       socket.off("receive_message");
     };
-  }, []);
+  }, [channelId]);
 
-  // 🔁 React to channel changes
   useEffect(() => {
     setCurrentChannelName(channelName);
-    setMessages([]); // Clear old messages
-    setSelectedTab(channelName);
+    setMessages([]);
     setNewChannelName(channelName);
-  }, [channelId, channelName]);
 
+    const fetchOldMessages = async () => {
+      try {
+        const userId = await getUserId();
+        const res = await fetchChats(channelId);
+
+        if (res instanceof ApiError) {
+          console.error("Failed to fetch chats:", res.message);
+          return;
+        }
+
+        const formatted = res.data.chats.map((chat: Chats) => ({
+          text: chat.message ?? "",
+          fromSelf: chat.userId === userId,
+          image: chat.imageUrl ?? undefined,
+        }));
+        setMessages(formatted.reverse());
+      } catch (err) {
+        console.error("Unexpected error fetching messages:", err);
+      }
+    };
+    fetchOldMessages();
+  }, [channelId, channelName]);
   const handleDeleteChannel = async () => {
     const confirm = window.confirm(
       `Are you sure you want to delete #${currentChannelName}?`
@@ -189,7 +232,7 @@ const ChatScreen = ({ route, navigation }: any) => {
       Toast.show({ type: "success", text1: "Channel renamed" });
       setRenameModalVisible(false);
       setCurrentChannelName(newChannelName);
-      setSelectedTab(newChannelName);
+      // setSelectedTab(newChannelName);
       navigation.setParams({ channelName: newChannelName, channelId }); // force update
       await refreshChannels?.();
     } catch (err) {
@@ -202,13 +245,14 @@ const ChatScreen = ({ route, navigation }: any) => {
     }
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!message.trim()) return;
-    const currentUserId = "your-user-id";
+
+    const userId = await getUserId();
 
     socket.emit("send_message", {
       text: message,
-      senderId: currentUserId,
+      senderId: userId,
       channelName: currentChannelName,
     });
 
@@ -217,29 +261,29 @@ const ChatScreen = ({ route, navigation }: any) => {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
   };
 
-  useEffect(() => {
-    if (screenWidth <= 768) {
-      setIsMobile(true);
-      setIsSidebarOpen(false);
-    } else {
-      setIsMobile(false);
-      setIsSidebarOpen(true);
-    }
-  }, [screenWidth]);
+  // useEffect(() => {
+  //   if (screenWidth <= 768) {
+  //     setIsMobile(true);
+  //     setIsSidebarOpen(false);
+  //   } else {
+  //     setIsMobile(false);
+  //     setIsSidebarOpen(true);
+  //   }
+  // }, [screenWidth]);
 
-  useEffect(() => {
-    Animated.timing(sidebarWidth, {
-      toValue: isSidebarOpen ? 250 : 0,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
+  // useEffect(() => {
+  //   Animated.timing(sidebarWidth, {
+  //     toValue: isSidebarOpen ? 250 : 0,
+  //     duration: 300,
+  //     useNativeDriver: false,
+  //   }).start();
 
-    Animated.timing(mainContentPadding, {
-      toValue: isSidebarOpen ? 250 : 0,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  }, [isSidebarOpen]);
+  //   Animated.timing(mainContentPadding, {
+  //     toValue: isSidebarOpen ? 250 : 0,
+  //     duration: 300,
+  //     useNativeDriver: false,
+  //   }).start();
+  // }, [isSidebarOpen]);
 
   return (
     <SafeAreaView style={styles.container}>

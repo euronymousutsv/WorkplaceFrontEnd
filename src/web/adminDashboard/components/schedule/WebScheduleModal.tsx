@@ -9,14 +9,17 @@ import {
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import Toast from "react-native-toast-message";
-
+import { ShiftPayload } from "../../../../api/auth/shiftApi";
+import dayjs from "dayjs";
 interface Props {
   visible: boolean;
   onClose: () => void;
-  onSave: (data: any) => void;
+  onSave: (data: ShiftPayload, isEditing?: boolean, shiftId?: string) => void;
+
   employees: { id: string; name: string }[];
   // locations: {id : string; name: string}[]; use this
-  locations: string[];
+  // locations: string[];
+  officeId: string;
   selectedEmployee?: string;
   selectedDate?: string;
   editingShift?: any;
@@ -28,42 +31,57 @@ const WebScheduleModal: React.FC<Props> = ({
   onClose,
   onSave,
   employees,
-  locations,
   selectedEmployee,
+  officeId,
   selectedDate,
   editingShift,
   onDelete,
 }) => {
   const [employee, setEmployee] = useState("");
-  const [location, setLocation] = useState("");
+  // const [officeId, setofficeId] = useState("");
   const [desc, setDesc] = useState("");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
+  
   useEffect(() => {
     if (visible) {
       if (editingShift) {
         setEmployee(editingShift.employee);
-        setLocation(editingShift.location);
-        setDesc(editingShift.desc);
-        setStart(editingShift.start);
-        setEnd(editingShift.end);
+        setDesc(editingShift.notes);
+        const formattedStart = dayjs(editingShift.start).format("YYYY-MM-DDTHH:mm");
+      const formattedEnd = dayjs(editingShift.end).format("YYYY-MM-DDTHH:mm");
+
+      setStart(formattedStart);
+      setEnd(formattedEnd);
       } else {
         setEmployee(selectedEmployee || "");
-        setStart(selectedDate ? `${selectedDate}T09:00` : "");
-        setEnd(selectedDate ? `${selectedDate}T17:00` : "");
-        setLocation("");
+  
+        if (selectedDate) {
+          const base = new Date(selectedDate); // make sure this is a Date
+          const year = base.getFullYear();
+          const month = String(base.getMonth() + 1).padStart(2, "0");
+          const day = String(base.getDate()).padStart(2, "0");
+  
+          setStart(`${year}-${month}-${day}T09:00`);
+          setEnd(`${year}-${month}-${day}T17:00`);
+        } else {
+          setStart("");
+          setEnd("");
+        }
+  
         setDesc("");
       }
+  
       setErrors({});
     }
   }, [visible, selectedEmployee, selectedDate, editingShift]);
-
+  
   const validate = () => {
     const err: any = {};
     if (!employee) err.employee = "Select employee";
-    if (!location) err.location = "Select location";
+    // if (!location) err.location = "Select location";
     if (!desc) err.desc = "Add description";
     if (!start || !end || new Date(start) >= new Date(end))
       err.time = "Start must be before end";
@@ -82,16 +100,49 @@ const WebScheduleModal: React.FC<Props> = ({
 
   const handleSave = () => {
     if (!validate()) return;
-    onSave({ employee, location, desc, start, end });
+  
+    // Use a simple regex to cut off extra time if needed
+    const safeStart = start.trim().split("Z")[0];
+    const safeEnd = end.trim().split("Z")[0];
+  
+    const parsedStart = new Date(safeStart);
+    const parsedEnd = new Date(safeEnd);
+  
+    if (isNaN(parsedStart.getTime()) || isNaN(parsedEnd.getTime())) {
+      Toast.show({
+        type: "error",
+        text1: "Invalid Date Format",
+        text2: "Use format: YYYY-MM-DDTHH:mm (e.g. 2025-04-20T09:00)",
+      });
+      return;
+    }
+  
+    const formattedStart = parsedStart.toISOString();
+    const formattedEnd = parsedEnd.toISOString();
+  
+    console.log("🕓 Final Start:", formattedStart);
+    console.log("🕓 Final End:", formattedEnd);
+  
+    onSave({
+      employeeId: employee,
+      officeId,
+      startTime: formattedStart,
+      endTime: formattedEnd,
+      notes: desc,
+      status: "pending",
+      repeatFrequency: "weekly",
+      repeatEndDate: "2025-06-20T00:00:00.000Z",
+    }, !!editingShift, editingShift?.id);
+  
     Toast.show({
       type: "success",
       text1: editingShift ? "Shift Updated" : "Schedule Created",
-      text2: `${employee}'s shift has been ${
-        editingShift ? "updated" : "scheduled"
-      } successfully.`,
+      text2: `${employee}'s shift has been ${editingShift ? "updated" : "scheduled"} successfully.`,
     });
+  
     onClose();
   };
+
 
   const handleDelete = () => {
     onDelete?.();
@@ -127,45 +178,38 @@ const WebScheduleModal: React.FC<Props> = ({
               )}
             </View>
 
-            <View style={styles.field}>
+            {/* <View style={styles.field}>
               <Text style={styles.label}>Location</Text>
               <View style={styles.pickerWrapper}>
-                <Picker selectedValue={location} onValueChange={setLocation}>
-                  {/* <Picker.Item label="Select Location" value="" />
-                  {locations.map((l) => (
-  <Picker.Item key={l.id} label={l.name} value={l.id} />
-))} */}
-                  {locations.map((l) => (
-                    <Picker.Item key={l} label={l} value={l} />
-                  ))}
-                </Picker>
+               
               </View>
               {errors.location && (
                 <Text style={styles.error}>{errors.location}</Text>
               )}
-            </View>
+            </View> */}
           </View>
 
           <View style={styles.row}>
-            <View style={styles.field}>
-              <Text style={styles.label}>Start Time</Text>
-              <TextInput
-                value={start}
-                onChangeText={setStart}
-                style={styles.input}
-                placeholder="YYYY-MM-DDTHH:mm"
-              />
-            </View>
-            <View style={styles.field}>
-              <Text style={styles.label}>End Time</Text>
-              <TextInput
-                value={end}
-                onChangeText={setEnd}
-                style={styles.input}
-                placeholder="YYYY-MM-DDTHH:mm"
-              />
-            </View>
-          </View>
+  <View style={styles.field}>
+    <Text style={styles.label}>Start Time</Text>
+    <input
+      type="datetime-local"
+      value={start}
+      onChange={(e) => setStart(e.target.value)}
+      style={{ ...styles.input, height: 40 }}
+    />
+  </View>
+  <View style={styles.field}>
+    <Text style={styles.label}>End Time</Text>
+    <input
+      type="datetime-local"
+      value={end}
+      onChange={(e) => setEnd(e.target.value)}
+      style={{ ...styles.input, height: 40 }}
+    />
+  </View>
+</View>
+
           {errors.time && <Text style={styles.error}>{errors.time}</Text>}
 
           <View>

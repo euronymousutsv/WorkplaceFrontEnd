@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
 
-// const SOCKET_URL = "https://0b38-110-175-196-31.ngrok-free.app";
+// const SOCKET_URL = "https://310a-203-220-224-95.ngrok-free.app";
 const SOCKET_URL = "https://workhive.space";
 
 const socket = io(SOCKET_URL, {

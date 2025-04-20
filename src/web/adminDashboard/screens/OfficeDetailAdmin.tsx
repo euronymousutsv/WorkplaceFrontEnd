@@ -24,11 +24,16 @@ import { ApiError } from "../../../api/utils/apiResponse";
 import Toast from "react-native-toast-message";
 import axios, { AxiosError } from "axios";
 import { Feather } from "@expo/vector-icons";
-
+import { StackNavigationProp } from "@react-navigation/stack";
+import { RootStackParamList } from "../../../types/navigationTypes";
+type NavigationProp = StackNavigationProp<
+  RootStackParamList,
+  "SchedulesScreen"
+>;
 
 const OfficeDetailAdmin = () => {
   const route = useRoute();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const { officeId, officeName } = route.params as {
     officeId: string;
     officeName: string;
@@ -40,18 +45,30 @@ const OfficeDetailAdmin = () => {
   const [addEmployeeModalVisible, setAddEmployeeModalVisible] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
   const [availableEmployees, setAvailableEmployees] = useState<any[]>([]);
+  const [resolvedAddress, setResolvedAddress] = useState<string>("");
 
   const fetchOfficeInfo = async () => {
     try {
-      const serverId = await getToken("serverId", Plat.WEB);
+      const serverId = await getToken("serverId");
       if (!serverId) {
         Toast.show({ type: "error", text1: "Server ID is missing" });
         return;
       }
+
       const res = await getAllOffices({ serverId });
       if (!(res instanceof ApiError) && Array.isArray(res.data)) {
         const office = res.data.find((o) => o.id === officeId);
+        if (!office) return;
+
         setOfficeDetail(office);
+
+        const lat = Number(office.latitude);
+        const lon = Number(office.longitude);
+
+        if (!isNaN(lat) && !isNaN(lon)) {
+          const address = await reverseGeocode(lat, lon);
+          setResolvedAddress(address);
+        }
       }
     } catch (err) {
       console.error("Failed to fetch office info", err);
@@ -61,19 +78,19 @@ const OfficeDetailAdmin = () => {
   const fetchOfficeEmployees = async () => {
     try {
       console.log("Fetching employees linked to office:", officeId);
-  
+
       const joinedRes = await getAllEmployeeInOffice({ officeId });
       console.log("Raw joinedRes:", joinedRes);
-  
+
       const joinedEmployeeIds = Array.isArray((joinedRes as any)?.data)
         ? (joinedRes as any).data.map((entry: any) => entry.id)
         : [];
-  
+
       console.log("Joined employee IDs:", joinedEmployeeIds);
-  
+
       // Fetch all users from the server
       const allUsersRes = await fetchAllUsers();
-  
+
       if (!(allUsersRes instanceof ApiError)) {
         const matchedEmployees = allUsersRes.data
           .map((empWrapper: any) => empWrapper.Employee)
@@ -88,7 +105,7 @@ const OfficeDetailAdmin = () => {
             profileImage: emp.profileImage,
             status: emp.employmentStatus,
           }));
-  
+
         console.log("Final employee details:", matchedEmployees);
         setEmployees(matchedEmployees);
       }
@@ -96,14 +113,11 @@ const OfficeDetailAdmin = () => {
       console.error("Unexpected error in fetchOfficeEmployees()", err);
     }
   };
-  
-  
-  
 
   const fetchAvailableEmployees = async () => {
     try {
       const res = await fetchAllUsers();
-  
+
       if (res instanceof ApiError || res instanceof AxiosError) {
         console.log(res.message);
         Toast.show({
@@ -114,7 +128,7 @@ const OfficeDetailAdmin = () => {
         });
         return;
       }
-  
+
       const mapped = res.data.map((emp: any) => {
         return {
           id: emp.Employee.id,
@@ -129,27 +143,25 @@ const OfficeDetailAdmin = () => {
           profileImage: emp.Employee.profileImage ?? undefined,
         };
       });
-  
+
       const filtered = mapped.filter(
         (emp: any) => !employees.find((e) => e.id === emp.id)
       );
-  
+
       setAvailableEmployees(filtered);
     } catch (err) {
       console.error("Unexpected error in fetchAvailableEmployees()", err);
     }
   };
-  
-  
 
   const handleAddEmployee = async (employeeId: string) => {
     try {
       const res = await joinEmployeeToOffice({ officeId, employeeId });
       if (res instanceof ApiError) throw res;
-  
+
       Toast.show({ type: "success", text1: "Employee added successfully" });
       setAddEmployeeModalVisible(false);
-  
+
       // Refresh both lists
       fetchOfficeEmployees();
       fetchAvailableEmployees();
@@ -157,7 +169,6 @@ const OfficeDetailAdmin = () => {
       Toast.show({ type: "error", text1: "Failed to add employee" });
     }
   };
-  
 
   useEffect(() => {
     fetchOfficeInfo();
@@ -168,7 +179,9 @@ const OfficeDetailAdmin = () => {
   const geocodeAddress = async (address: string) => {
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json`
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+          address
+        )}&format=json`
       );
       const data = await response.json();
       if (data.length > 0) {
@@ -182,14 +195,27 @@ const OfficeDetailAdmin = () => {
     }
     return null;
   };
-  
+
+  const reverseGeocode = async (lat: number, lon: number) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`
+      );
+      const data = await response.json();
+      return data.display_name;
+    } catch (error) {
+      console.error("Reverse geocoding failed:", error);
+      return "Unknown address";
+    }
+  };
+
   const handleSave = async () => {
     try {
       const updates = [
         { editField: "name", newValue: officeDetail.name },
         { editField: "radius", newValue: String(officeDetail.radius) },
       ];
-  
+
       //  Geocode address to get lat/lon
       if (officeDetail.address) {
         const coords = await geocodeAddress(officeDetail.address);
@@ -200,21 +226,25 @@ const OfficeDetailAdmin = () => {
           );
         }
       }
-  
+
       // Loop through all updates
       for (const update of updates) {
         const res = await updateOffice({
           officeId,
-          editField: update.editField as "name" | "radius" | "latitude" | "longitude",
+          editField: update.editField as
+            | "name"
+            | "radius"
+            | "latitude"
+            | "longitude",
           newValue: update.newValue,
         });
-  
+
         if (res instanceof ApiError) {
           Toast.show({ type: "error", text1: res.message });
           return;
         }
       }
-  
+
       Toast.show({ type: "success", text1: "Office updated successfully" });
       setEditModalVisible(false);
       fetchOfficeInfo();
@@ -223,39 +253,57 @@ const OfficeDetailAdmin = () => {
       Toast.show({ type: "error", text1: "Failed to update office" });
     }
   };
-  
-  
+
   if (loading || !officeDetail)
     return <ActivityIndicator style={{ marginTop: 40 }} />;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+    >
       <View style={styles.headerRow}>
         <Text style={styles.title}>{officeDetail.name}</Text>
         <View style={{ flexDirection: "row", gap: 10 }}>
-          <TouchableOpacity onPress={() => {
-            fetchAvailableEmployees();
-            setAddEmployeeModalVisible(true);
-          }} style={styles.addBtn}>
+          <TouchableOpacity
+            onPress={() => {
+              fetchAvailableEmployees();
+              setAddEmployeeModalVisible(true);
+            }}
+            style={styles.addBtn}
+          >
             <Text style={styles.buttonText}>+ Add Employee</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setEditModalVisible(true)}
             style={styles.editIconBtn}
           >
-            <Text style={styles.editIconText}><Feather name="edit" size={18} color="#4A90E2" /></Text>
+            <Text style={styles.editIconText}>
+              <Feather name="edit" size={18} color="#4A90E2" />
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
-      
 
       <View style={styles.card}>
         <Text style={styles.label}>Address</Text>
-        <Text style={styles.staticText}>{officeDetail.address}</Text>
+        {/* <Text style={styles.staticText}>{officeDetail.address}</Text> */}
+        <Text style={styles.staticText}>
+          {resolvedAddress || "Loading address..."}
+        </Text>
 
         <Text style={styles.label}>Radius (meters)</Text>
         <Text style={styles.staticText}>{officeDetail.radius}</Text>
       </View>
+
+      <TouchableOpacity
+        style={styles.scheduleButton}
+        onPress={() => navigation.navigate("SchedulesScreen", { officeId })}
+      >
+        <Text style={styles.scheduleButtonText}>
+          View Schedules for this Office
+        </Text>
+      </TouchableOpacity>
 
       <Text style={styles.employeeHeader}>Employees ({employees.length})</Text>
 
@@ -278,10 +326,14 @@ const OfficeDetailAdmin = () => {
             renderItem={({ item }) => (
               <View style={styles.employeeRow}>
                 <Image
-                  source={{ uri: item.profileImage || "https://via.placeholder.com/40" }}
+                  source={{
+                    uri: item.profileImage || "https://via.placeholder.com/40",
+                  }}
                   style={styles.profileImg}
                 />
-                <Text style={styles.employeeText}>{item.firstName} {item.lastName}</Text>
+                <Text style={styles.employeeText}>
+                  {item.firstName} {item.lastName}
+                </Text>
                 <Text style={styles.employeeText}>{item.email}</Text>
                 <Text style={styles.employeeText}>{item.phoneNumber}</Text>
                 <Text style={styles.employeeText}>{item.role}</Text>
@@ -302,7 +354,9 @@ const OfficeDetailAdmin = () => {
             <TextInput
               style={styles.input}
               value={officeDetail.name || ""}
-              onChangeText={(text) => setOfficeDetail({ ...officeDetail, name: text })}
+              onChangeText={(text) =>
+                setOfficeDetail({ ...officeDetail, name: text })
+              }
             />
             <Text style={styles.label}>Radius (meters)</Text>
             <TextInput
@@ -314,11 +368,13 @@ const OfficeDetailAdmin = () => {
               }
             />
             <Text style={styles.label}>Address</Text>
-<TextInput
-  style={styles.input}
-  value={officeDetail.address || ""}
-  onChangeText={(text) => setOfficeDetail({ ...officeDetail, address: text })}
-/>
+            <TextInput
+              style={styles.input}
+              value={officeDetail.address || ""}
+              onChangeText={(text) =>
+                setOfficeDetail({ ...officeDetail, address: text })
+              }
+            />
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={[styles.button, styles.saveButton]}
@@ -336,47 +392,55 @@ const OfficeDetailAdmin = () => {
           </View>
         </View>
       </Modal>
-      
+
       {/* Add Employee Modal */}
-      <Modal visible={addEmployeeModalVisible} transparent animationType="slide">
-  <View style={styles.modalOverlay}>
-    <View style={styles.modalContent}>
-      <Text style={styles.modalTitle}>Add Employee to Office</Text>
-
-      <FlatList
-        data={availableEmployees}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.employeeRow}
-            onPress={() => handleAddEmployee(item.id)}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Image
-                source={{ uri: item.profileImage || "https://via.placeholder.com/32" }}
-                style={styles.profileImg}
-              />
-              <Text style={styles.employeeText}>
-                {item.firstName} {item.lastName}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        )}
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>No available employees to add.</Text>
-        }
-      />
-
-      <TouchableOpacity
-        onPress={() => setAddEmployeeModalVisible(false)}
-        style={[styles.button, styles.cancelButton, { marginTop: 10 }]}
+      <Modal
+        visible={addEmployeeModalVisible}
+        transparent
+        animationType="slide"
       >
-        <Text style={styles.buttonText}>Close</Text>
-      </TouchableOpacity>
-    </View>
-  </View>
-</Modal>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Add Employee to Office</Text>
 
+            <FlatList
+              data={availableEmployees}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.employeeRow}
+                  onPress={() => handleAddEmployee(item.id)}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Image
+                      source={{
+                        uri:
+                          item.profileImage || "https://via.placeholder.com/32",
+                      }}
+                      style={styles.profileImg}
+                    />
+                    <Text style={styles.employeeText}>
+                      {item.firstName} {item.lastName}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <Text style={styles.emptyText}>
+                  No available employees to add.
+                </Text>
+              }
+            />
+
+            <TouchableOpacity
+              onPress={() => setAddEmployeeModalVisible(false)}
+              style={[styles.button, styles.cancelButton, { marginTop: 10 }]}
+            >
+              <Text style={styles.buttonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 };
@@ -516,6 +580,21 @@ const styles = StyleSheet.create({
   saveButton: { backgroundColor: "#28A745" },
   cancelButton: { backgroundColor: "#FFC107" },
   buttonText: { color: "#fff", fontWeight: "600", fontSize: 16 },
+  scheduleButton: {
+    backgroundColor: "#4A90E2",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 10,
+    marginBottom: 20,
+  },
+
+  scheduleButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 16,
+  },
 });
 
 export default OfficeDetailAdmin;
