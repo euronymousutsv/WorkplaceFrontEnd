@@ -8,16 +8,12 @@ import {
   Image,
   ScrollView,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { fetchEmployeeDetails } from '../../../api/server/serverApi';
 import Toast from 'react-native-toast-message';
-
-interface EmployeeDetailsModalProps {
-  isVisible: boolean;
-  onClose: () => void;
-  employeeId: string | null;
-}
+import { Picker } from '@react-native-picker/picker';
 
 interface EmployeeData {
   id: string;
@@ -26,14 +22,35 @@ interface EmployeeData {
   email: string;
   phoneNumber: string;
   role: string;
-  employmentStatus: string | { [key: string]: string };
+  employmentStatus: string;
   profileImage?: string;
+  detailsEmployee: {
+    id: string;
+    employeeId: string;
+    username: string;
+    baseRate: string;
+    contractHours: string;
+    employeeType: string;
+    department: string;
+    position: string;
+    hireDate: string;
+    createdAt: string;
+    updatedAt: string;
+    deletedAt: string | null;
+  };
 }
 
 interface ApiResponse<T> {
   statusCode: number;
   data: T;
   message: string;
+  success: boolean;
+}
+
+interface EmployeeDetailsModalProps {
+  isVisible: boolean;
+  onClose: () => void;
+  employeeId: string | null;
 }
 
 const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
@@ -42,8 +59,10 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
   employeeId,
 }) => {
   const [employee, setEmployee] = useState<EmployeeData | null>(null);
+  const [editedEmployee, setEditedEmployee] = useState<EmployeeData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     const fetchEmployee = async () => {
@@ -52,12 +71,9 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
       setLoading(true);
       setError(null);
       try {
-        console.log('Fetching employee details for ID:', employeeId);
         const response = await fetchEmployeeDetails(employeeId);
-        console.log('API Response:', response);
         
         if (response instanceof Error) {
-          console.error('API Error:', response);
           setError(response.message || 'Failed to fetch employee details');
           Toast.show({
             type: 'error',
@@ -67,33 +83,17 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
           return;
         }
 
-        // Check if response has the expected structure
         if (!response.data) {
-          console.error('Invalid response structure:', response);
           setError('Invalid response from server');
           return;
         }
 
-        const employeeData: EmployeeData = {
-          id: response.data.id,
-          firstName: response.data.firstName,
-          lastName: response.data.lastName,
-          email: response.data.email,
-          phoneNumber: response.data.phoneNumber,
-          role: response.data.role,
-          employmentStatus: response.data.employmentStatus,
-          profileImage: response.data.profileImage,
-        };
-
+        const employeeData = response.data as EmployeeData;
         setEmployee(employeeData);
+        setEditedEmployee(employeeData);
       } catch (error) {
         console.error('Error in fetchEmployee:', error);
         setError('An unexpected error occurred');
-        Toast.show({
-          type: 'error',
-          text1: 'Error',
-          text2: 'An unexpected error occurred',
-        });
       } finally {
         setLoading(false);
       }
@@ -103,26 +103,92 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
       fetchEmployee();
     } else {
       setEmployee(null);
+      setEditedEmployee(null);
       setError(null);
+      setIsEditing(false);
     }
   }, [isVisible, employeeId]);
 
-  if (!employeeId) return null;
+  const handleInputChange = (field: string, value: string) => {
+    if (!editedEmployee) return;
 
-  const getInitials = (firstName: string, lastName: string) =>
-    `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-
-  const getRoleBadgeStyle = (role: string) => {
-    switch (role.trim().toLowerCase()) {
-      case 'admin':
-        return styles.adminBadge;
-      case 'manager':
-        return styles.managerBadge;
-      case 'employee':
-        return styles.employeeBadge;
-      default:
-        return { backgroundColor: '#999' };
+    if (field.includes('.')) {
+      // Handle nested fields (detailsEmployee)
+      const [parent, child] = field.split('.');
+      setEditedEmployee(prev => {
+        if (!prev) return prev;
+        if (parent === 'detailsEmployee') {
+          return {
+            ...prev,
+            detailsEmployee: {
+              ...prev.detailsEmployee,
+              [child]: value,
+            },
+          };
+        }
+        return prev;
+      });
+    } else {
+      // Handle top-level fields
+      setEditedEmployee(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          [field]: value,
+        };
+      });
     }
+  };
+
+  const handleSave = async () => {
+    // TODO: Implement save functionality
+    console.log('Saving employee details:', editedEmployee);
+    Toast.show({
+      type: 'success',
+      text1: 'Success',
+      text2: 'Employee details updated successfully',
+    });
+    setIsEditing(false);
+    setEmployee(editedEmployee);
+  };
+
+  const renderField = (
+    label: string, 
+    field: string, 
+    value: string, 
+    type: 'text' | 'number' | 'select' = 'text', 
+    options?: string[],
+    isReadOnly: boolean = false
+  ) => {
+    return (
+      <View style={styles.fieldContainer}>
+        <Text style={styles.fieldLabel}>{label}</Text>
+        {isEditing && !isReadOnly ? (
+          type === 'select' ? (
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={value}
+                onValueChange={(itemValue) => handleInputChange(field, itemValue)}
+                style={styles.picker}
+              >
+                {options?.map((option) => (
+                  <Picker.Item key={option} label={option} value={option} />
+                ))}
+              </Picker>
+            </View>
+          ) : (
+            <TextInput
+              style={styles.input}
+              value={value}
+              onChangeText={(text) => handleInputChange(field, text)}
+              keyboardType={type === 'number' ? 'numeric' : 'default'}
+            />
+          )
+        ) : (
+          <Text style={styles.fieldValue}>{value}</Text>
+        )}
+      </View>
+    );
   };
 
   const renderContent = () => {
@@ -144,7 +210,7 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
       );
     }
 
-    if (!employee) {
+    if (!editedEmployee) {
       return (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>No employee data available</Text>
@@ -155,36 +221,43 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
     return (
       <ScrollView style={styles.scrollView}>
         <View style={styles.profileSection}>
-          {employee.profileImage ? (
+          {editedEmployee.profileImage ? (
             <Image
-              source={{ uri: employee.profileImage }}
+              source={{ uri: editedEmployee.profileImage }}
               style={styles.profileImage}
             />
           ) : (
             <View style={styles.initialsCircle}>
               <Text style={styles.initialsText}>
-                {getInitials(employee.firstName, employee.lastName)}
+                {`${editedEmployee.firstName.charAt(0)}${editedEmployee.lastName.charAt(0)}`}
               </Text>
             </View>
           )}
-          <Text style={styles.employeeName}>
-            {employee.firstName} {employee.lastName}
-          </Text>
-          <Text style={[styles.roleBadge, getRoleBadgeStyle(employee.role)]}>
-            {employee.role}
-          </Text>
         </View>
 
         <View style={styles.detailsSection}>
-          <DetailRow label="Employee ID" value={employee.id} />
-          <DetailRow label="Email" value={employee.email} />
-          <DetailRow label="Phone" value={employee.phoneNumber} />
-          <DetailRow 
-            label="Status" 
-            value={typeof employee.employmentStatus === 'string' 
-              ? employee.employmentStatus 
-              : Object.keys(employee.employmentStatus)[0]} 
-          />
+          <Text style={styles.sectionTitle}>Basic Information</Text>
+          {renderField('Employee ID', 'id', editedEmployee.id, 'text', undefined, true)}
+          {renderField('First Name', 'firstName', editedEmployee.firstName, 'text', undefined, true)}
+          {renderField('Last Name', 'lastName', editedEmployee.lastName, 'text', undefined, true)}
+          {renderField('Email', 'email', editedEmployee.email, 'text', undefined, true)}
+          {renderField('Phone', 'phoneNumber', editedEmployee.phoneNumber, 'text', undefined, true)}
+          {renderField('Role', 'role', editedEmployee.role, 'text', undefined, true)}
+          {renderField('Employment Status', 'employmentStatus', editedEmployee.employmentStatus, 'text', undefined, true)}
+
+          <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Employment Details</Text>
+          {renderField('Username', 'detailsEmployee.username', editedEmployee.detailsEmployee.username)}
+          {renderField('Base Rate', 'detailsEmployee.baseRate', editedEmployee.detailsEmployee.baseRate, 'number')}
+          {renderField('Contract Hours', 'detailsEmployee.contractHours', editedEmployee.detailsEmployee.contractHours, 'number')}
+          {renderField('Employee Type', 'detailsEmployee.employeeType', editedEmployee.detailsEmployee.employeeType, 'select', ['casual', 'full-time', 'part-time'])}
+          {renderField('Department', 'detailsEmployee.department', editedEmployee.detailsEmployee.department)}
+          {renderField('Position', 'detailsEmployee.position', editedEmployee.detailsEmployee.position)}
+          {renderField('Hire Date', 'detailsEmployee.hireDate', new Date(editedEmployee.detailsEmployee.hireDate).toLocaleDateString())}
+          
+          <View style={styles.timestamps}>
+            <Text style={styles.timestampText}>Created: {new Date(editedEmployee.detailsEmployee.createdAt).toLocaleDateString()}</Text>
+            <Text style={styles.timestampText}>Updated: {new Date(editedEmployee.detailsEmployee.updatedAt).toLocaleDateString()}</Text>
+          </View>
         </View>
       </ScrollView>
     );
@@ -201,9 +274,28 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Employee Details</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <MaterialIcons name="close" size={24} color="#666" />
-            </TouchableOpacity>
+            <View style={styles.headerButtons}>
+              {isEditing ? (
+                <>
+                  <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
+                    <Text style={styles.saveButtonText}>Save</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => {
+                    setIsEditing(false);
+                    setEditedEmployee(employee);
+                  }} style={styles.cancelButton}>
+                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <TouchableOpacity onPress={() => setIsEditing(true)} style={styles.editButton}>
+                  <MaterialIcons name="edit" size={24} color="#4A90E2" />
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                <MaterialIcons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
           </View>
           {renderContent()}
         </View>
@@ -211,13 +303,6 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
     </Modal>
   );
 };
-
-const DetailRow: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-  <View style={styles.detailRow}>
-    <Text style={styles.detailLabel}>{label}</Text>
-    <Text style={styles.detailValue}>{value}</Text>
-  </View>
-);
 
 const styles = StyleSheet.create({
   modalOverlay: {
@@ -230,8 +315,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 10,
     width: '90%',
-    maxWidth: 500,
-    maxHeight: '80%',
+    maxWidth: 600,
+    maxHeight: '90%',
     overflow: 'hidden',
   },
   modalHeader: {
@@ -247,8 +332,36 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
   },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   closeButton: {
     padding: 8,
+  },
+  editButton: {
+    padding: 8,
+  },
+  saveButton: {
+    backgroundColor: '#4A90E2',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  cancelButton: {
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  cancelButtonText: {
+    color: '#666',
+    fontWeight: '600',
   },
   scrollView: {
     padding: 16,
@@ -258,15 +371,15 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     marginBottom: 16,
   },
   initialsCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     backgroundColor: '#4A90E2',
     alignItems: 'center',
     justifyContent: 'center',
@@ -274,52 +387,70 @@ const styles = StyleSheet.create({
   },
   initialsText: {
     color: '#fff',
-    fontSize: 36,
+    fontSize: 48,
     fontWeight: 'bold',
   },
-  employeeName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#333',
-  },
-  roleBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    color: '#fff',
-    fontWeight: '600',
-    textAlign: 'center',
-    overflow: 'hidden',
-    fontSize: 14,
-  },
-  adminBadge: { backgroundColor: '#8e44ad' },
-  managerBadge: { backgroundColor: '#27ae60' },
-  employeeBadge: { backgroundColor: '#2980b9' },
   detailsSection: {
     backgroundColor: '#f8f8f8',
     borderRadius: 8,
     padding: 16,
   },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  detailLabel: {
-    color: '#666',
-    fontSize: 16,
-  },
-  detailValue: {
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
     color: '#333',
+    marginBottom: 16,
+  },
+  fieldContainer: {
+    marginBottom: 16,
+  },
+  fieldLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  fieldValue: {
     fontSize: 16,
-    fontWeight: '500',
+    color: '#333',
+    paddingVertical: 8,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 6,
+    padding: 8,
+    fontSize: 16,
+    backgroundColor: '#fff',
+    height: 40,
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 6,
+    backgroundColor: '#fff',
+    height: 40,
+    justifyContent: 'center',
+  },
+  picker: {
+    height: 40,
+    width: '100%',
+    marginTop: -8,
+  },
+  timestamps: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
+  },
+  timestampText: {
+    fontSize: 12,
+    color: '#999',
+    marginBottom: 4,
   },
   loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
+    padding: 40,
     alignItems: 'center',
   },
   loadingText: {
@@ -328,10 +459,8 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
+    padding: 40,
     alignItems: 'center',
-    padding: 20,
   },
   errorText: {
     marginTop: 12,
