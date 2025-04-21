@@ -25,6 +25,7 @@ import { DrawerNavigationProp } from "@react-navigation/drawer";
 import { useNavigation } from "@react-navigation/native";
 import AdminDashboard from "../../../web/adminDashboard/screens/AdminDashboard";
 import Header from "../../../web/adminDashboard/components/Header";
+import ChatScreen from "./ChatScreen";
 const Drawer = createDrawerNavigator();
 
 const Tab = createBottomTabNavigator();

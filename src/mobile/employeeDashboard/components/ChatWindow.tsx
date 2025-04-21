@@ -10,7 +10,7 @@ import {
   Platform,
   Image,
   ImageBackground,
-  SafeAreaView,
+  Dimensions,
 } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { Ionicons } from "@expo/vector-icons";
@@ -32,6 +32,11 @@ import Toast from "react-native-toast-message";
 import { RefreshControl } from "react-native-gesture-handler";
 import { uploadFile } from "../../../api/files/fileApi";
 import { themes } from "../screens/MessageThemeScreen";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { createDrawerNavigator } from "@react-navigation/drawer";
+import CustomDrawerContent from "../screens/ChannelsDrawerView";
+import EmployeeDashboard from "../screens/EmployeeDashboard";
+import ChatScreen from "../../../auth/Chat";
 
 // Props for ChatWindow component
 type ChatWindowProps = {
@@ -50,6 +55,7 @@ const ChatWindow = ({
   const [messages, setMessages] = useState<MessageData[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [uploading, setIsUploading] = useState(false);
 
   const getUserId = async (): Promise<string | undefined> => {
     const accessToken = (await getToken("accessToken")) ?? "";
@@ -58,10 +64,18 @@ const ChatWindow = ({
     return userId;
   };
 
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const id = await getUserId();
+      setUserId(id);
+    };
+    fetchUserId();
+  }, []);
   useEffect(() => {
     // Join the channel
-    // const author: AuthorDetail = { name: "", profileImage: "", id: "" };
-    socket.emit("join_channel", activeChannelId, getUserId);
+    socket.emit("join_channel", activeChannelId, userId);
 
     // Listen for incoming messages
     socket.on("receive_message", (data: MessageData) => {
@@ -73,13 +87,6 @@ const ChatWindow = ({
     };
   }, [activeChannelId]);
 
-  useEffect(() => {
-    const fetchUserId = async () => {
-      const id = await getUserId();
-      setUserId(id);
-    };
-    fetchUserId();
-  }, []);
   const handleGetMessage = async (page = currentPage) => {
     const res = await fetchChats(activeChannelId, 20, page);
     console.log(activeChannelId);
@@ -137,18 +144,26 @@ const ChatWindow = ({
 
   // Send photo message handler
   const handlePhotoSend = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      base64: true,
-      quality: 0.8,
-    });
+    const pickImage = async () => {
+      // No permissions request is necessary for launching the image library
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: [4, 3],
+        base64: true,
+        quality: 1,
+      });
+      return result;
+    };
+
+    const result = await pickImage();
 
     if (!result.canceled && result.assets && result.assets[0].uri) {
       if (socket) {
         const newId = uuid.v4();
 
         try {
+          setIsUploading(true);
           const fileInfo = await FileSystem.getInfoAsync(result.assets[0].uri);
 
           if (!fileInfo.exists) {
@@ -195,45 +210,53 @@ const ChatWindow = ({
             text2: "Failed to upload image.",
           });
           return;
+        } finally {
+          setIsUploading(false);
         }
       }
     }
   };
 
   const [selectedTheme, setSelectedTheme] =
-    useState<keyof typeof themes>("blue-pink");
-  const [percent, setPercent] = useState<10 | 15 | 20 | 100>(10);
+    useState<keyof typeof themes>("white");
 
   useEffect(() => {
     const fetchThemeData = async () => {
       const savedTheme = (await getToken(
         "selectedTheme"
       )) as keyof typeof themes;
-      const savedPercent = parseInt(
-        (await getToken("selectedThemePercent")) || "10",
-        10
-      ) as 10 | 15 | 20 | 100;
 
       if (savedTheme && themes[savedTheme]) {
         setSelectedTheme(savedTheme);
       }
-      if ([10, 15, 20, 100].includes(savedPercent)) {
-        setPercent(savedPercent);
-      }
     };
 
     fetchThemeData();
+    const setHeaderStyle = async () => {
+      navigation.setOptions({
+        headerBackTitle: "back",
+        headerTransparent: true,
+        headerTitleStyle: {
+          color: selectedTheme !== "white" ? "#000" : "#fff",
+        },
+        headerTintColor: selectedTheme !== "white" ? "#000" : "#fff",
+      });
+    };
+
+    console.log(selectedTheme);
+
+    setHeaderStyle();
   }, []);
   return (
     <ImageBackground
-      source={themes[selectedTheme][percent]}
+      source={themes[selectedTheme]}
       style={{ flex: 1 }}
       resizeMode="cover"
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.chatContainer}
-        keyboardVerticalOffset={80}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 0}
       >
         <FlatList
           refreshControl={
@@ -359,6 +382,11 @@ const ChatWindow = ({
           windowSize={5}
         />
 
+        {uploading && (
+          <View>
+            <Text style={styles.emptyChatText}>Uploading your image...</Text>
+          </View>
+        )}
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
@@ -413,6 +441,7 @@ const styles = StyleSheet.create({
   emptyChatText: {
     color: "#8E9196",
     fontSize: 16,
+    marginVertical: 10,
   },
   messageWrapper: {
     marginLeft: 10,
@@ -472,7 +501,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     // paddingVertical: 20,
-    paddingTop: 20,
+    paddingTop: 12,
+    marginTop: 10,
     paddingHorizontal: 10,
     borderTopWidth: 1,
     borderTopColor: "#EFEFEF",

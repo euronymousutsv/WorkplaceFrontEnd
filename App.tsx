@@ -34,6 +34,7 @@ import ClockInOutScreenPhone from "./src/mobile/employeeDashboard/screens/ClockI
 import NoOfficeScreen from "./src/mobile/employeeDashboard/screens/NoOfficeScreen";
 import OfficeDetailAdmin from "./src/web/adminDashboard/screens/OfficeDetailAdmin";
 import MessageThemeScreen from "./src/mobile/employeeDashboard/screens/MessageThemeScreen";
+import { getToken } from "./src/api/auth/token";
 
 // Create a stack navigator
 const Stack = createStackNavigator();
@@ -54,7 +55,6 @@ const App = () => {
 // Centralized AppNavigator for role-based navigation
 const AppNavigator = () => {
   const { userRole, isAuthenticated } = useAuth(); // Access userRole and isAuthenticated from context
-
   return (
     <Stack.Navigator>
       <Stack.Screen
@@ -156,11 +156,7 @@ const AppNavigator = () => {
         options={({ route }) => ({
           headerBackTitle: "back",
           title: route.params?.channelName || "Chat",
-          headerTransparent: true, // <-- makes the header background transparent
-          headerTitleStyle: {
-            color: "#fff", // optional: makes the title text white for visibility
-          },
-          headerTintColor: "#fff", // optional: makes the back button white
+          headerTransparent: true,
         })}
       />
       <Stack.Screen
