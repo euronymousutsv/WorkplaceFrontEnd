@@ -239,6 +239,16 @@ const ProfileScreen = () =>
           <TouchableOpacity
             style={styles.infoCard}
             onPress={() => {
+              navigation.navigate("MessageThemeScreen");
+            }}
+          >
+            <Ionicons name="color-fill" size={22} color="#4A90E2" />
+            <Text style={styles.infoText}>Message Theme</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.infoCard}
+            onPress={() => {
               navigation.navigate("EditUserDetailScreens");
             }}
           >

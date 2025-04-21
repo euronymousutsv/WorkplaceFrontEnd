@@ -9,6 +9,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  ImageBackground,
+  SafeAreaView,
 } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { Ionicons } from "@expo/vector-icons";
@@ -29,6 +31,7 @@ import {
 import Toast from "react-native-toast-message";
 import { RefreshControl } from "react-native-gesture-handler";
 import { uploadFile } from "../../../api/files/fileApi";
+import { themes } from "../screens/MessageThemeScreen";
 
 // Props for ChatWindow component
 type ChatWindowProps = {
@@ -176,7 +179,7 @@ const ChatWindow = ({
             },
             channelName: activeChannelName,
             messageId: newId,
-            message: res.data.fileUrl,
+            message: res.fileUrl,
             channel: activeChannelId,
             time: new Date(),
             isImage: true,
@@ -197,154 +200,190 @@ const ChatWindow = ({
     }
   };
 
+  const [selectedTheme, setSelectedTheme] =
+    useState<keyof typeof themes>("blue-pink");
+  const [percent, setPercent] = useState<10 | 15 | 20 | 100>(10);
+
+  useEffect(() => {
+    const fetchThemeData = async () => {
+      const savedTheme = (await getToken(
+        "selectedTheme"
+      )) as keyof typeof themes;
+      const savedPercent = parseInt(
+        (await getToken("selectedThemePercent")) || "10",
+        10
+      ) as 10 | 15 | 20 | 100;
+
+      if (savedTheme && themes[savedTheme]) {
+        setSelectedTheme(savedTheme);
+      }
+      if ([10, 15, 20, 100].includes(savedPercent)) {
+        setPercent(savedPercent);
+      }
+    };
+
+    fetchThemeData();
+  }, []);
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.chatContainer}
-      keyboardVerticalOffset={80}
+    <ImageBackground
+      source={themes[selectedTheme][percent]}
+      style={{ flex: 1 }}
+      resizeMode="cover"
     >
-      <FlatList
-        refreshControl={
-          <RefreshControl
-            refreshing={isLoadingMore}
-            onRefresh={() => {
-              setIsLoadingMore(true);
-              setCurrentPage((prevPage) => {
-                const nextPage = prevPage + 1;
-                handleGetMessage(nextPage); // Pass it explicitly
-                setIsLoadingMore(false);
-                return nextPage;
-              });
-            }}
-          />
-        }
-        ref={flatListRef}
-        style={styles.messagesContainer}
-        data={messages}
-        keyExtractor={(item, index) => item.messageId || index.toString()}
-        renderItem={({ item, index }) => {
-          const isMyMessage = userId === item.author?.id;
-          const isSameSenderAsPrev =
-            index > 0 && messages[index - 1].author?.id === item.author?.id;
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.chatContainer}
+        keyboardVerticalOffset={80}
+      >
+        <FlatList
+          refreshControl={
+            <RefreshControl
+              refreshing={isLoadingMore}
+              onRefresh={() => {
+                setIsLoadingMore(true);
+                setCurrentPage((prevPage) => {
+                  const nextPage = prevPage + 1;
+                  handleGetMessage(nextPage); // Pass it explicitly
+                  setIsLoadingMore(false);
+                  return nextPage;
+                });
+              }}
+            />
+          }
+          ref={flatListRef}
+          style={styles.messagesContainer}
+          data={messages}
+          keyExtractor={(item, index) => item.messageId || index.toString()}
+          renderItem={({ item, index }) => {
+            const isMyMessage = userId === item.author?.id;
+            const isSameSenderAsPrev =
+              index > 0 && messages[index - 1].author?.id === item.author?.id;
 
-          return (
-            <View
-              style={[
-                styles.messageRow,
-                isMyMessage && { justifyContent: "flex-end" },
-              ]}
-            >
-              {/* Avatar or empty space */}
-              {!isMyMessage ? (
-                isSameSenderAsPrev ? (
-                  <View style={styles.avatarSpacer} />
-                ) : (
-                  <Image
-                    source={{
-                      uri: item.author?.profileImage
-                        ? item.author?.profileImage
-                        : "./assets/avatar.png",
-                    }}
-                    style={styles.avatar}
-                  />
-                )
-              ) : null}
+            return (
+              <View
+                style={[
+                  styles.messageRow,
+                  isMyMessage && { justifyContent: "flex-end" },
+                ]}
+              >
+                {/* Avatar or empty space */}
+                {!isMyMessage ? (
+                  isSameSenderAsPrev ? (
+                    <View style={styles.avatarSpacer} />
+                  ) : (
+                    <Image
+                      source={{
+                        uri: item.author?.profileImage
+                          ? item.author?.profileImage
+                          : "./assets/avatar.png",
+                      }}
+                      style={styles.avatar}
+                    />
+                  )
+                ) : null}
 
-              {/* Message content */}
+                {/* Message content */}
 
-              {item.isImage ? (
-                <View
-                  style={[
-                    styles.messageWrapper,
-                    isMyMessage && styles.myMessageWrapper,
-                  ]}
-                >
-                  {!isMyMessage && !isSameSenderAsPrev && (
-                    <View style={styles.messageHeader}>
-                      <Text style={styles.messageUser}>
-                        {item.author?.name}
-                      </Text>
-                      <Text style={styles.messageTime}>
-                        {dayjs(item.time).format("hh:mm A")}
-                      </Text>
-                    </View>
-                  )}
-                  {isMyMessage && !isSameSenderAsPrev && (
-                    <Text style={styles.messageTimeMine}>
-                      {dayjs(item.time).format("hh:mm A")}
-                    </Text>
-                  )}
-                  <Image
-                    source={{ uri: item.message }}
-                    style={{
-                      width: 200,
-                      height: 200,
-                      borderRadius: 12,
-                      borderWidth: 1,
-                      borderColor: "#E0E0E0",
-                    }}
-                  />
-                </View>
-              ) : (
-                <View
-                  style={[
-                    styles.messageWrapper,
-                    isMyMessage && styles.myMessageWrapper,
-                  ]}
-                >
-                  {!isMyMessage && !isSameSenderAsPrev && (
-                    <View style={styles.messageHeader}>
-                      <Text style={styles.messageUser}>
-                        {item.author?.name}
-                      </Text>
-                      <Text style={styles.messageTime}>
-                        {dayjs(item.time).format("hh:mm A")}
-                      </Text>
-                    </View>
-                  )}
-                  {isMyMessage && !isSameSenderAsPrev && (
-                    <Text style={styles.messageTimeMine}>
-                      {dayjs(item.time).format("hh:mm A")}
-                    </Text>
-                  )}
+                {item.isImage ? (
                   <View
-                    style={[styles.message, isMyMessage && styles.myMessage]}
+                    style={[
+                      styles.messageWrapper,
+                      isMyMessage && styles.myMessageWrapper,
+                    ]}
                   >
-                    <Text style={styles.messageText}>{item.message}</Text>
+                    {!isMyMessage && !isSameSenderAsPrev && (
+                      <View style={styles.messageHeader}>
+                        <Text style={styles.messageUser}>
+                          {item.author?.name}
+                        </Text>
+                        <Text style={styles.messageTime}>
+                          {dayjs(item.time).format("hh:mm A")}
+                        </Text>
+                      </View>
+                    )}
+                    {isMyMessage && !isSameSenderAsPrev && (
+                      <Text style={styles.messageTimeMine}>
+                        {dayjs(item.time).format("hh:mm A")}
+                      </Text>
+                    )}
+                    <Image
+                      source={{ uri: item.message }}
+                      style={{
+                        width: 200,
+                        height: 200,
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        borderColor: "#E0E0E0",
+                      }}
+                    />
                   </View>
-                </View>
-              )}
-            </View>
-          );
-        }}
-        onContentSizeChange={() => {
-          setTimeout(() => {
-            flatListRef.current?.scrollToEnd({ animated: true });
-          }, 100);
-        }}
-        initialNumToRender={10}
-        maxToRenderPerBatch={10}
-        windowSize={5}
-      />
-
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Type a message"
-          textContentType="none"
-          value={newMessage}
-          onChangeText={setNewMessage}
-          returnKeyType="send"
-          onSubmitEditing={handleSendMessage}
+                ) : (
+                  <View
+                    style={[
+                      styles.messageWrapper,
+                      isMyMessage && styles.myMessageWrapper,
+                    ]}
+                  >
+                    {!isMyMessage && !isSameSenderAsPrev && (
+                      <View style={styles.messageHeader}>
+                        <Text style={styles.messageUser}>
+                          {item.author?.name}
+                        </Text>
+                        <Text style={styles.messageTime}>
+                          {dayjs(item.time).format("hh:mm A")}
+                        </Text>
+                      </View>
+                    )}
+                    {isMyMessage && !isSameSenderAsPrev && (
+                      <Text style={styles.messageTimeMine}>
+                        {dayjs(item.time).format("hh:mm A")}
+                      </Text>
+                    )}
+                    <View
+                      style={[styles.message, isMyMessage && styles.myMessage]}
+                    >
+                      <Text style={styles.messageText}>{item.message}</Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+            );
+          }}
+          onContentSizeChange={() => {
+            setTimeout(() => {
+              flatListRef.current?.scrollToEnd({ animated: true });
+            }, 100);
+          }}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={5}
         />
-        <TouchableOpacity onPress={handleSendMessage} style={styles.sendButton}>
-          <Ionicons name="send" size={24} color="white" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handlePhotoSend} style={styles.photoButton}>
-          <Ionicons name="camera" size={24} color="white" />
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Type a message"
+            textContentType="none"
+            value={newMessage}
+            onChangeText={setNewMessage}
+            returnKeyType="send"
+            onSubmitEditing={handleSendMessage}
+          />
+          <TouchableOpacity
+            onPress={handleSendMessage}
+            style={styles.sendButton}
+          >
+            <Ionicons name="send" size={24} color="white" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handlePhotoSend}
+            style={styles.photoButton}
+          >
+            <Ionicons name="camera" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </ImageBackground>
   );
 };
 const styles = StyleSheet.create({
@@ -354,8 +393,9 @@ const styles = StyleSheet.create({
   },
   chatContainer: {
     flex: 1,
-    backgroundColor: "#FDFDFF",
+    // backgroundColor: "#FDFDFF",
     paddingTop: 16,
+    marginTop: 90,
     paddingHorizontal: 16,
     marginBottom: 20,
   },
@@ -431,7 +471,8 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 20,
+    // paddingVertical: 20,
+    paddingTop: 20,
     paddingHorizontal: 10,
     borderTopWidth: 1,
     borderTopColor: "#EFEFEF",

@@ -33,6 +33,7 @@ import ChatScreenPhone from "./src/mobile/employeeDashboard/screens/ChatScreen";
 import ClockInOutScreenPhone from "./src/mobile/employeeDashboard/screens/ClockInOutScreenPhone";
 import NoOfficeScreen from "./src/mobile/employeeDashboard/screens/NoOfficeScreen";
 import OfficeDetailAdmin from "./src/web/adminDashboard/screens/OfficeDetailAdmin";
+import MessageThemeScreen from "./src/mobile/employeeDashboard/screens/MessageThemeScreen";
 
 // Create a stack navigator
 const Stack = createStackNavigator();
@@ -110,6 +111,18 @@ const AppNavigator = () => {
           headerShadowVisible: false,
         }}
       />
+
+      <Stack.Screen
+        name="MessageThemeScreen"
+        component={MessageThemeScreen}
+        options={{
+          headerShown: true,
+          title: "Theme",
+          headerShadowVisible: false,
+          headerBackTitle: "back",
+        }}
+      />
+
       <Stack.Screen
         name="EditDetailScreens"
         component={EditDetailScreens}
@@ -143,6 +156,11 @@ const AppNavigator = () => {
         options={({ route }) => ({
           headerBackTitle: "back",
           title: route.params?.channelName || "Chat",
+          headerTransparent: true, // <-- makes the header background transparent
+          headerTitleStyle: {
+            color: "#fff", // optional: makes the title text white for visibility
+          },
+          headerTintColor: "#fff", // optional: makes the back button white
         })}
       />
       <Stack.Screen
