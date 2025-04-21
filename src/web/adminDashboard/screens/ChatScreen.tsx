@@ -389,7 +389,7 @@ const ChatScreen = ({ route, navigation }: any) => {
             />
           }
           ref={flatListRef}
-          style={styles.messagesContainer}
+          style={[styles.messagesContainer]}
           data={messages}
           keyExtractor={(item, index) => item.messageId || index.toString()}
           renderItem={({ item, index }) => {
@@ -567,8 +567,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     marginBottom: 0,
-    flexGrow: 1,
-    overflow: "scroll",
   },
   photoButton: {
     marginLeft: 10,
@@ -585,6 +583,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 10,
     borderTopWidth: 1,
+    paddingVertical: 10,
     borderTopColor: "#EFEFEF",
     backgroundColor: "#fff",
   },
