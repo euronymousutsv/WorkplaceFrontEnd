@@ -19,21 +19,23 @@ import { fetchAllUsers } from "../../../api/server/serverApi";
 import { EmployeeDetails } from "../../../api/server/server";
 import { ApiError } from "../../../api/utils/apiResponse";
 import Toast from "react-native-toast-message";
-import { createShift, getShiftsByOffice, ShiftPayload, updateShift } from "../../../api/auth/shiftApi";
+import {
+  createShift,
+  getShiftsByOffice,
+  ShiftPayload,
+  updateShift,
+} from "../../../api/auth/shiftApi";
 // import FilterControls from '../components/FilterControls';
 import { RouteProp, useRoute } from "@react-navigation/native";
 import { getShiftsByDateRangeForOffice } from "../../../api/auth/shiftApi";
 import { RootStackParamList } from "../../../types/navigationTypes";
 import { getAllEmployeeInOffice } from "../../../api/office/officeApi";
-
-
-
+import { getToken } from "../../../api/auth/token";
 
 const SchedulesScreen: React.FC = () => {
   const route = useRoute<RouteProp<RootStackParamList, "SchedulesScreen">>();
   const { officeId } = route.params;
- 
- 
+
   const [activeTab, setActiveTab] = useState<"calendar" | "list" | "auto">(
     "calendar"
   );
@@ -58,9 +60,9 @@ const SchedulesScreen: React.FC = () => {
         const joinedEmployeeIds = Array.isArray((joinedRes as any)?.data)
           ? (joinedRes as any).data.map((entry: any) => entry.id)
           : [];
-  
+
         const allUsersRes = await fetchAllUsers();
-  
+
         if (!(allUsersRes instanceof ApiError)) {
           const matchedEmployees = allUsersRes.data
             .map((empWrapper: any) => empWrapper.Employee)
@@ -69,28 +71,28 @@ const SchedulesScreen: React.FC = () => {
               id: emp.id,
               name: `${emp.firstName} ${emp.lastName}`,
             }));
-  
+
           setEmployeeNames(matchedEmployees);
         }
       } catch (err) {
         console.error("Failed to load employees for this office", err);
       }
     };
-  
+
     fetchOfficeEmployees();
   }, [officeId]);
-  
 
-  // Fetch shifts 
+  // Fetch shifts
   useEffect(() => {
     const fetchShifts = async () => {
       const res = await getShiftsByOffice(officeId);
-      console.log("🔍 Raw shift response for office:", res); 
+      console.log("🔍 Raw shift response for office:", res);
       if (!(res instanceof ApiError)) {
         const mapped = res.data.map((shift) => {
           const fullName =
-            employeeNames.find((emp) => emp.id === shift.employeeId)?.name || "Unknown";
-        
+            employeeNames.find((emp) => emp.id === shift.employeeId)?.name ||
+            "Unknown";
+
           return {
             id: shift.id,
             employeeId: shift.employeeId,
@@ -100,7 +102,7 @@ const SchedulesScreen: React.FC = () => {
             notes: shift.notes || "",
           };
         });
-        
+
         console.log("📦 Mapped Shifts:", mapped);
         setSchedules(mapped);
       } else {
@@ -111,12 +113,11 @@ const SchedulesScreen: React.FC = () => {
         });
       }
     };
-  
+
     if (employeeNames.length > 0) {
       fetchShifts();
     }
   }, [officeId, employeeNames]);
-  
 
   //todo (error: backend missing/incomplete)
   const handleSaveSchedule = async (
@@ -126,7 +127,7 @@ const SchedulesScreen: React.FC = () => {
   ) => {
     const parsedStart = new Date(newSchedule.startTime);
     const parsedEnd = new Date(newSchedule.endTime);
-  
+
     if (isNaN(parsedStart.getTime()) || isNaN(parsedEnd.getTime())) {
       Toast.show({
         type: "error",
@@ -136,9 +137,10 @@ const SchedulesScreen: React.FC = () => {
       return;
     }
     const employeeId = newSchedule.employeeId; // this will always be UUID
-const name =
-  employeeNames.find((e) => e.id === employeeId)?.name || "Unnamed Employee";
-  
+    const name =
+      employeeNames.find((e) => e.id === employeeId)?.name ||
+      "Unnamed Employee";
+
     const payload = {
       ...newSchedule,
       employeeId,
@@ -159,8 +161,7 @@ const name =
           (newEnd > existingStart && newEnd <= existingEnd) ||
           (newStart <= existingStart && newEnd >= existingEnd))
       );
-    }
-    );
+    });
     if (hasOverlap) {
       Toast.show({
         type: "error",
@@ -201,11 +202,10 @@ const name =
       });
       return;
     }
-   
-  
+
     try {
       let res;
-  
+
       if (isEditing && shiftId) {
         res = await updateShift(shiftId, payload);
         Toast.show({
@@ -220,26 +220,25 @@ const name =
           text2: "The shift has been added successfully.",
         });
       }
-  
+
       // Refresh schedule list
       const name =
         employeeNames.find((e) => e.id === newSchedule.employeeId)?.name ||
         newSchedule.employeeId;
-  
+
       const updatedShift = {
-        id: shiftId ?? Date.now(), 
+        id: shiftId ?? Date.now(),
         employee: name,
         notes: newSchedule.notes,
         start: parsedStart.toISOString(),
         end: parsedEnd.toISOString(),
       };
-  
+
       setSchedules((prev) =>
         isEditing
           ? prev.map((s) => (s.id === shiftId ? updatedShift : s))
           : [...prev, updatedShift]
       );
-  
     } catch (err) {
       console.error("Unexpected error while saving shift:", err);
       Toast.show({
@@ -248,13 +247,10 @@ const name =
         text2: "Something went wrong while saving the shift.",
       });
     }
-  
+
     setModalVisible(false);
     setEditingShift(null);
   };
-  
-  
-  
 
   const handleDeleteSchedule = (id: number) => {
     setSchedules((prev) => prev.filter((shift) => shift.id !== id));
@@ -393,7 +389,8 @@ const name =
             setEditingShift(null);
           }}
           onSave={(payload, isEditing, shiftId) =>
-            handleSaveSchedule(payload, isEditing, shiftId)}
+            handleSaveSchedule(payload, isEditing, shiftId)
+          }
           onDelete={() => {
             if (editingShift) {
               handleDeleteSchedule(editingShift.id);
@@ -418,7 +415,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
 
-    marginTop: 60
+    marginTop: 60,
   },
   tabBar: { flexDirection: "row", gap: 10, marginBottom: 20 },
   tabButton: {

@@ -23,9 +23,9 @@ const API = axios.create({
 });
 
 //todo :: pass phone or web
-const getLoggedInUserServer = async (plat: Plat) => {
+const getLoggedInUserServer = async () => {
   try {
-    const accessToken = await getToken("accessToken", plat);
+    const accessToken = await getToken("accessToken");
     const response = await API.get<ApiResponse<UserJoinedServerResponse>>(
       "getLoggedInUserServer",
       {

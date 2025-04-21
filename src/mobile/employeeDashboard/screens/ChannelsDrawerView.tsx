@@ -56,6 +56,8 @@ const CustomDrawerContent = (props: any) => {
         const serverName = res.data.joinedServer.name;
         setServerName(serverName);
 
+        console.log("Server ID -----------------:", serverId);
+
         await saveToken("serverId", serverId);
         await saveToken("officeId", officeId);
         await saveToken("serverName", serverName);
