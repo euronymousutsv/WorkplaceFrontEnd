@@ -77,7 +77,7 @@ const getAllChannelForCurrentServer = async (serverId: string, plat: Plat) => {
 // get all channels for current office
 const getAllChannelForCurrentOffice = async (officeId: string, plat: Plat) => {
   try {
-    const accessToken = await getToken("accessToken", plat);
+    const accessToken = await getToken("accessToken");
     const response = await API.get<
       ApiResponse<[getAllChannelForCurrentServerResponse]>
     >("getAllChannelForCurrentOffice", {
