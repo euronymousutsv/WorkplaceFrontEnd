@@ -11,6 +11,7 @@
   "dependencies": {
     "@expo/metro-runtime": "~4.0.1",
     "@expo/vector-icons": "^14.0.2",
+    "@expo/webpack-config": "^19.0.1",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@react-native-community/checkbox": "^0.5.17",
     "@react-native-community/datetimepicker": "github:react-native-community/datetimepicker",
@@ -27,6 +28,7 @@
     "expo-constants": "~17.0.8",
     "expo-dev-client": "~5.0.20",
     "expo-device": "~7.0.3",
+    "expo-file-system": "~18.0.12",
     "expo-image-picker": "~16.0.6",
     "expo-jwt": "^1.8.2",
     "expo-notifications": "~0.29.14",
@@ -60,8 +62,7 @@
     "react-native-web": "~0.19.13",
     "react-pro-sidebar": "^1.1.0",
     "react-router-dom": "^7.4.0",
-    "socket.io-client": "^4.8.1",
-    "expo-file-system": "~18.0.12"
+    "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
