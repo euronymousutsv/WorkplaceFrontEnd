@@ -22,7 +22,7 @@ export interface NotificationsResponsePayload {
 
 export const fetchAllNotificationsPhone = async () => {
   try {
-    const accessToken = await getToken("accessToken", Plat.PHONE);
+    const accessToken = await getToken("accessToken");
     const response = await API.get<ApiResponse<[NotificationsResponsePayload]>>(
       "fetchAllNotifications",
       {

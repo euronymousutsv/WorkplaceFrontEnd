@@ -1,4 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
+import uuid from "react-native-uuid";
+import * as FileSystem from "expo-file-system";
+
 import {
   View,
   Text,
@@ -9,11 +12,10 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
   Platform,
-  Alert,
   Modal,
   Image,
+  FlatList,
 } from "react-native";
 import Sidebar from "../components/Sidebar";
 // import Header from '../components/Header';
@@ -26,30 +28,35 @@ import {
 } from "../../../api/server/channelApi";
 import Toast from "react-native-toast-message";
 import { ApiError } from "../../../api/utils/apiResponse";
-import { Feather } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { Channel } from "../../../types/Channel";
 import * as ImagePicker from "expo-image-picker";
+import { getToken } from "../../../api/auth/token";
+import JWT from "expo-jwt";
+import { fetchChats } from "../../../api/chat/chatApi";
+import {
+  castChatsToMessageData,
+  Chats,
+  MessageData,
+} from "../../../api/chat/chat";
+import { uploadFile } from "../../../api/files/fileApi";
+import { RefreshControl } from "react-native-gesture-handler";
+import dayjs from "dayjs";
 
 const ChatScreen = ({ route, navigation }: any) => {
   const { channelName, channelId, refreshChannels, allChannels } = route.params;
-
   const [currentChannelName, setCurrentChannelName] = useState(channelName);
-  const [selectedTab, setSelectedTab] = useState(channelName);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const sidebarWidth = useRef(new Animated.Value(250)).current;
-  const mainContentPadding = useRef(new Animated.Value(250)).current;
-  const [isMobile, setIsMobile] = useState(false);
-  const screenWidth = Dimensions.get("window").width;
   const { userRole } = useAuth();
   const canEdit = userRole === "admin" || userRole === "manager";
   const [renameModalVisible, setRenameModalVisible] = useState(false);
   const [newChannelName, setNewChannelName] = useState(channelName);
-  const [messages, setMessages] = useState<
-    { text: string; fromSelf: boolean; image?: string }[]
-  >([]);
-
+  const [userId, setUserId] = useState<string | undefined>();
+  const [newMessage, setNewMessage] = useState("");
+  const [messages, setMessages] = useState<MessageData[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [uploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState("");
-  const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     navigation.setOptions({
@@ -68,29 +75,63 @@ const ChatScreen = ({ route, navigation }: any) => {
     });
   }, [navigation, currentChannelName, canEdit]);
 
-  useEffect(() => {
-    socket.on("receive_message", (msg: { text: string; senderId: string }) => {
-      const currentUserId = "your-user-id";
-      setMessages((prev) => [
-        ...prev,
-        { text: msg.text, fromSelf: msg.senderId === currentUserId },
-      ]);
-      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
-    });
+  // useEffect(() => {
+  //   const join = async () => {
+  //     const userId = await getUserId();
+  //     socket.emit("join_channel", channelId, userId);
+  //   };
+  //   join();
 
-    return () => {
-      socket.off("receive_message");
-    };
-  }, []);
+  //   socket.on(
+  //     "receive_message",
+  //     async (data: { text: string; senderId: string }) => {
+  //       const currentUserId = await getUserId();
+  //       setMessages((prev) => [
+  //         ...prev,
+  //         {
+  //           text: data.text,
+  //           fromSelf: data.senderId === currentUserId,
+  //         },
+  //       ]);
+  //       setTimeout(
+  //         () => scrollRef.current?.scrollToEnd({ animated: true }),
+  //         100
+  //       );
+  //     }
+  //   );
 
-  // 🔁 React to channel changes
-  useEffect(() => {
-    setCurrentChannelName(channelName);
-    setMessages([]); // Clear old messages
-    setSelectedTab(channelName);
-    setNewChannelName(channelName);
-  }, [channelId, channelName]);
+  //   return () => {
+  //     socket.off("receive_message");
+  //   };
+  // }, [channelId]);
 
+  // useEffect(() => {
+  //   setCurrentChannelName(channelName);
+  //   setMessages([]);
+  //   setNewChannelName(channelName);
+
+  //   const fetchOldMessages = async () => {
+  //     try {
+  //       const userId = await getUserId();
+  //       const res = await fetchChats(channelId);
+
+  //       if (res instanceof ApiError) {
+  //         console.error("Failed to fetch chats:", res.message);
+  //         return;
+  //       }
+
+  //       const formatted = res.data.chats.map((chat: Chats) => ({
+  //         text: chat.message ?? "",
+  //         fromSelf: chat.userId === userId,
+  //         image: chat.imageUrl ?? undefined,
+  //       }));
+  //       setMessages(formatted.reverse());
+  //     } catch (err) {
+  //       console.error("Unexpected error fetching messages:", err);
+  //     }
+  //   };
+  //   fetchOldMessages();
+  // }, [channelId, channelName]);
   const handleDeleteChannel = async () => {
     const confirm = window.confirm(
       `Are you sure you want to delete #${currentChannelName}?`
@@ -139,36 +180,6 @@ const ChatScreen = ({ route, navigation }: any) => {
     }
   };
 
-  const handlePickImage = async () => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: false,
-        quality: 0.7,
-        base64: true,
-      });
-
-      if (!result.canceled && result.assets.length > 0) {
-        const selectedAsset = result.assets[0];
-
-        const base64Image = `data:${selectedAsset.type};base64,${selectedAsset.base64}`;
-
-        // Send via socket or upload it to your server
-        socket.emit("send_message", {
-          text: "",
-          image: base64Image, // send image here
-          senderId: "your-user-id",
-          channelName: currentChannelName,
-        });
-
-        setMessages((prev) => [...prev, { text: "[Image]", fromSelf: true }]);
-      }
-    } catch (error) {
-      console.error("Image pick error:", error);
-      Toast.show({ type: "error", text1: "Image pick failed" });
-    }
-  };
-
   const handleRenameChannel = async () => {
     try {
       const res = await changeChannelName({ channelId, newChannelName });
@@ -189,7 +200,7 @@ const ChatScreen = ({ route, navigation }: any) => {
       Toast.show({ type: "success", text1: "Channel renamed" });
       setRenameModalVisible(false);
       setCurrentChannelName(newChannelName);
-      setSelectedTab(newChannelName);
+      // setSelectedTab(newChannelName);
       navigation.setParams({ channelName: newChannelName, channelId }); // force update
       await refreshChannels?.();
     } catch (err) {
@@ -202,212 +213,461 @@ const ChatScreen = ({ route, navigation }: any) => {
     }
   };
 
-  const handleSendMessage = () => {
-    if (!message.trim()) return;
-    const currentUserId = "your-user-id";
-
-    socket.emit("send_message", {
-      text: message,
-      senderId: currentUserId,
-      channelName: currentChannelName,
-    });
-
-    setMessages((prev) => [...prev, { text: message, fromSelf: true }]);
-    setMessage("");
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+  const getUserId = async (): Promise<string | undefined> => {
+    const accessToken = (await getToken("accessToken")) ?? "";
+    const decodedToken = JWT.decode(accessToken, null);
+    const userId = decodedToken.userId;
+    return userId;
   };
 
   useEffect(() => {
-    if (screenWidth <= 768) {
-      setIsMobile(true);
-      setIsSidebarOpen(false);
-    } else {
-      setIsMobile(false);
-      setIsSidebarOpen(true);
-    }
-  }, [screenWidth]);
-
+    const fetchUserId = async () => {
+      const id = await getUserId();
+      setUserId(id);
+    };
+    fetchUserId();
+  }, []);
   useEffect(() => {
-    Animated.timing(sidebarWidth, {
-      toValue: isSidebarOpen ? 250 : 0,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
+    // Join the channel
+    socket.emit("join_channel", channelId, userId);
 
-    Animated.timing(mainContentPadding, {
-      toValue: isSidebarOpen ? 250 : 0,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  }, [isSidebarOpen]);
+    // Listen for incoming messages
+    socket.on("receive_message", (data: MessageData) => {
+      setMessages((prev) => [...prev, data]);
+    });
+
+    return () => {
+      socket.off("receive_message");
+    };
+  }, [channelId]);
+
+  const handleGetMessage = async (page = currentPage) => {
+    const res = await fetchChats(channelId, 20, page);
+    console.log(channelId);
+
+    if (res instanceof ApiError) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: res.message,
+      });
+    } else {
+      const convertedMessages: MessageData[] = res.data.chats
+        .map((chat: Chats) => castChatsToMessageData(chat, channelName))
+        .reverse();
+      setMessages((prevMsg) => [...convertedMessages, ...prevMsg]);
+
+      if (res.data.chats.length > 1) {
+        console.log("Additional chat log");
+      }
+    }
+  };
+
+  const flatListRef = useRef<FlatList>(null);
+  // Update messages when the active channel changes
+  useEffect(() => {
+    setMessages([]);
+    handleGetMessage();
+  }, [channelId]);
+
+  // Send text message handler
+  const handleSendMessage = async () => {
+    if (newMessage.trim() === "") return;
+
+    if (socket) {
+      const newId = uuid.v4();
+      const messageData: MessageData = {
+        author: {
+          id: userId!,
+          name: (await getToken("name")) || "",
+          profileImage:
+            (await getToken("profileImage")) || "/assets/avatar.png",
+        },
+        channelName: channelName,
+        messageId: newId,
+        message: newMessage,
+        channel: channelId,
+        time: new Date(),
+        isImage: false,
+      };
+      setNewMessage("");
+      socket.emit("send_message", messageData);
+    }
+  };
+
+  // Send photo message handler
+  const handlePhotoSend = async () => {
+    let fileUri: string | null = null;
+    let fileType: string | null = null;
+    let fileName: string | null = null;
+    let fileObject: any;
+
+    try {
+      setIsUploading(true);
+
+      if (Platform.OS === "web") {
+        // 🌐 Web file input
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "image/*";
+
+        const filePromise = new Promise<File>((resolve, reject) => {
+          input.onchange = () => {
+            if (input.files && input.files.length > 0) {
+              resolve(input.files[0]);
+            } else {
+              reject(new Error("No file selected"));
+            }
+          };
+        });
+
+        input.click();
+
+        const file = await filePromise;
+        fileName = file.name;
+        fileType = file.type;
+
+        fileObject = file;
+      }
+
+      const formData = new FormData();
+      formData.append("file", fileObject);
+
+      const res = await uploadFile(formData, "workhive-chats");
+
+      if (res instanceof ApiError) {
+        throw new Error(res.message);
+      }
+
+      const newId = uuid.v4();
+      const messageData: MessageData = {
+        author: {
+          id: userId!,
+          name: (await getToken("name")) || "",
+          profileImage:
+            (await getToken("profileImage")) || "/assets/avatar.png",
+        },
+        channelName: channelName,
+        messageId: newId,
+        message: res.fileUrl,
+        channel: channelId,
+        time: new Date(),
+        isImage: true,
+      };
+
+      setNewMessage("");
+      socket.emit("send_message", messageData);
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to upload image.",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Animated.View
-        style={[
-          styles.mainContent,
-          // { paddingLeft: isMobile ? 0 : mainContentPadding },
-        ]}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={{ flex: 1 }}
-        >
-          {/* <View style={styles.chatTitleRow}>
-            <Text style={styles.chatTitle}>#{currentChannelName}</Text>
-            {canEdit && (
-              <View style={styles.channelActions}>
-                <TouchableOpacity onPress={() => setRenameModalVisible(true)}>
-                  <Feather name="edit" size={18} color="#4A90E2" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleDeleteChannel}>
-                  <Feather name="trash" size={18} color="#D9534F" />
-                </TouchableOpacity>
-              </View>
-            )}
-          </View> */}
+    <View style={styles.container}>
+      <View style={styles.chatContainer}>
+        <FlatList
+          contentContainerStyle={{ paddingBottom: 100 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={isLoadingMore}
+              onRefresh={() => {
+                setIsLoadingMore(true);
+                setCurrentPage((prevPage) => {
+                  const nextPage = prevPage + 1;
+                  handleGetMessage(nextPage);
+                  setIsLoadingMore(false);
+                  return nextPage;
+                });
+              }}
+            />
+          }
+          ref={flatListRef}
+          style={styles.messagesContainer}
+          data={messages}
+          keyExtractor={(item, index) => item.messageId || index.toString()}
+          renderItem={({ item, index }) => {
+            const isMyMessage = userId === item.author?.id;
+            const isSameSenderAsPrev =
+              index > 0 && messages[index - 1].author?.id === item.author?.id;
 
-          <ScrollView
-            ref={scrollRef}
-            contentContainerStyle={styles.scrollContainer}
-          >
-            {messages.map((msg, index) => (
+            return (
               <View
-                key={index}
                 style={[
-                  styles.messageBubble,
-                  msg.fromSelf ? styles.messageRight : styles.messageLeft,
+                  styles.messageRow,
+                  isMyMessage && { justifyContent: "flex-end" },
                 ]}
               >
-                {msg.image ? (
-                  <Image
-                    source={{ uri: msg.image }}
-                    style={{
-                      width: 200,
-                      height: 200,
-                      borderRadius: 8,
-                      marginBottom: 5,
-                    }}
-                    resizeMode="cover"
-                  />
+                {/* Avatar or empty space */}
+                {!isMyMessage ? (
+                  isSameSenderAsPrev ? (
+                    <View style={styles.avatarSpacer} />
+                  ) : (
+                    <Image
+                      source={{
+                        uri: item.author?.profileImage
+                          ? item.author?.profileImage
+                          : "./assets/avatar.png",
+                      }}
+                      style={styles.avatar}
+                    />
+                  )
+                ) : null}
+
+                {/* Message content */}
+                {item.isImage ? (
+                  <View
+                    style={[
+                      styles.messageWrapper,
+                      isMyMessage && styles.myMessageWrapper,
+                    ]}
+                  >
+                    {!isMyMessage && !isSameSenderAsPrev && (
+                      <View style={styles.messageHeader}>
+                        <Text style={styles.messageUser}>
+                          {item.author?.name}
+                        </Text>
+                        <Text style={styles.messageTime}>
+                          {dayjs(item.time).format("hh:mm A")}
+                        </Text>
+                      </View>
+                    )}
+                    {isMyMessage && !isSameSenderAsPrev && (
+                      <Text style={styles.messageTimeMine}>
+                        {dayjs(item.time).format("hh:mm A")}
+                      </Text>
+                    )}
+                    <Image
+                      source={{ uri: item.message }}
+                      style={{
+                        width: 200,
+                        height: 200,
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        borderColor: "#E0E0E0",
+                      }}
+                    />
+                  </View>
                 ) : (
-                  <Text style={styles.messageText}>{msg.text}</Text>
+                  <View
+                    style={[
+                      styles.messageWrapper,
+                      isMyMessage && styles.myMessageWrapper,
+                    ]}
+                  >
+                    {!isMyMessage && !isSameSenderAsPrev && (
+                      <View style={styles.messageHeader}>
+                        <Text style={styles.messageUser}>
+                          {item.author?.name}
+                        </Text>
+                        <Text style={styles.messageTime}>
+                          {dayjs(item.time).format("hh:mm A")}
+                        </Text>
+                      </View>
+                    )}
+                    {isMyMessage && !isSameSenderAsPrev && (
+                      <Text style={styles.messageTimeMine}>
+                        {dayjs(item.time).format("hh:mm A")}
+                      </Text>
+                    )}
+                    <View
+                      style={[styles.message, isMyMessage && styles.myMessage]}
+                    >
+                      <Text style={styles.messageText}>{item.message}</Text>
+                    </View>
+                  </View>
                 )}
               </View>
-            ))}
-          </ScrollView>
+            );
+          }}
+          onContentSizeChange={() => {
+            setTimeout(() => {
+              flatListRef.current?.scrollToEnd({ animated: true });
+            }, 100);
+          }}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+        />
 
-          <View style={styles.inputBar}>
-            <TextInput
-              style={styles.input}
-              value={message}
-              onChangeText={setMessage}
-              placeholder="Type a message..."
-              placeholderTextColor="#aaa"
-            />
-
-            <TouchableOpacity
-              onPress={handlePickImage}
-              style={styles.iconButton}
-            >
-              <Feather name="image" size={20} color="#4A90E2" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={handleSendMessage}
-              style={styles.sendButton}
-            >
-              <Text style={styles.sendButtonText}>Send</Text>
-            </TouchableOpacity>
+        {uploading && (
+          <View>
+            <Text style={styles.emptyChatText}>Uploading your image...</Text>
           </View>
-        </KeyboardAvoidingView>
-      </Animated.View>
+        )}
 
-      <Modal
-        visible={renameModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setRenameModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.renameModal}>
-            <Text style={styles.modalTitle}>Rename Channel</Text>
-            <TextInput
-              style={styles.input}
-              value={newChannelName}
-              onChangeText={setNewChannelName}
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.button, styles.cancelButton]}
-                onPress={() => setRenameModalVisible(false)}
-              >
-                <Text style={styles.buttonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, styles.createButton]}
-                onPress={handleRenameChannel}
-              >
-                <Text style={[styles.buttonText, { color: "#fff" }]}>Save</Text>
-              </TouchableOpacity>
+        <Modal
+          visible={renameModalVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setRenameModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.renameModal}>
+              <Text style={styles.modalTitle}>Rename Channel</Text>
+              <TextInput
+                style={styles.input}
+                value={newChannelName}
+                onChangeText={setNewChannelName}
+              />
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.button, styles.cancelButton]}
+                  onPress={() => setRenameModalVisible(false)}
+                >
+                  <Text style={styles.buttonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.button, styles.createButton]}
+                  onPress={handleRenameChannel}
+                >
+                  <Text style={[styles.buttonText, { color: "#fff" }]}>
+                    Save
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
-      </Modal>
-    </SafeAreaView>
+        </Modal>
+      </View>
+      {/* Input Bar */}
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="Type a message"
+          textContentType="none"
+          value={newMessage}
+          onChangeText={setNewMessage}
+          returnKeyType="send"
+          onSubmitEditing={handleSendMessage}
+        />
+        <TouchableOpacity onPress={handleSendMessage} style={styles.sendButton}>
+          <Ionicons name="send" size={24} color="white" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handlePhotoSend} style={styles.photoButton}>
+          <Ionicons name="camera" size={24} color="white" />
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: "row",
     backgroundColor: BackgroundColor,
+  },
+  chatContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
+    marginBottom: 0,
+    flexGrow: 1,
+    overflow: "scroll",
+  },
+  photoButton: {
+    marginLeft: 10,
+    padding: 12,
+    backgroundColor: "#4A90E2",
+    borderRadius: 25,
+    width: 50,
+    height: 50,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#EFEFEF",
+    backgroundColor: "#fff",
   },
   mainContent: {
     flex: 1,
-    // marginTop: 60,
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 80, // extra space for input bar
     marginLeft: 30,
   },
-  scrollContainer: { paddingBottom: 80 },
-  chatTitle: { fontSize: 24, fontWeight: "700", color: TextColor },
-  chatTitleRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  channelActions: { flexDirection: "row", gap: 12 },
-  actionText: { fontSize: 18, color: "#777" },
-  renameModal: {
-    backgroundColor: "#FDFDFF",
-    padding: 20,
-    marginHorizontal: 40,
-    borderRadius: 12,
-  },
-  modalOverlay: {
+  messagesContainer: {
     flex: 1,
-    justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
   },
-  messageBubble: {
-    maxWidth: "80%",
-    marginVertical: 6,
-    padding: 12,
+  messageRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 16,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 100,
+  },
+  avatarSpacer: {
+    width: 40,
+    height: 40,
+  },
+  messageWrapper: {
+    marginLeft: 10,
+    maxWidth: "90%",
+  },
+  myMessageWrapper: {
+    marginLeft: "auto",
+    alignSelf: "flex-end",
+  },
+  message: {
     borderRadius: 12,
+    padding: 12,
+    backgroundColor: "#F0F7FF",
   },
-  messageLeft: { alignSelf: "flex-start", backgroundColor: "#f1f1f1" },
-  messageRight: { alignSelf: "flex-end", backgroundColor: "#4A90E2" },
-  messageText: { color: "#fff", fontSize: 15 },
-  inputBar: {
+  myMessage: {
+    backgroundColor: "#DCF8C6",
+    alignSelf: "flex-end",
+  },
+  messageHeader: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 10,
+    marginBottom: 4,
+  },
+  messageUser: {
+    fontWeight: "bold",
+    color: "#333",
+    marginRight: 8,
+  },
+  messageTime: {
+    fontSize: 10,
+    color: "#8E9196",
+  },
+  messageTimeMine: {
+    fontSize: 10,
+    color: "#8E9196",
+    marginLeft: "auto",
+    marginBottom: 4,
+  },
+  messageText: {
+    fontSize: 15,
+    color: "#333",
+  },
+  emptyChatText: {
+    color: "#8E9196",
+    fontSize: 16,
+    marginVertical: 10,
+  },
+  inputBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
     borderTopWidth: 1,
     borderColor: "#ccc",
-    marginTop: 10,
+    backgroundColor: "#FDFDFF",
   },
   input: {
     flex: 1,
@@ -423,22 +683,52 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 20,
   },
-  sendButtonText: { color: "#fff", fontWeight: "600" },
+  sendButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+  iconButton: {
+    padding: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  renameModal: {
+    backgroundColor: "#FDFDFF",
+    padding: 20,
+    marginHorizontal: 40,
+    borderRadius: 12,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
   modalTitle: {
     fontSize: 18,
     fontWeight: "bold",
     color: TextColor,
     marginBottom: 10,
   },
-  modalButtons: { flexDirection: "row", justifyContent: "flex-end", gap: 10 },
-  button: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8 },
-  cancelButton: { backgroundColor: "#eee" },
-  createButton: { backgroundColor: "#4A90E2" },
-  buttonText: { fontSize: 15, fontWeight: "600", color: "#333" },
-  iconButton: {
-    padding: 8,
-    justifyContent: "center",
-    alignItems: "center",
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 10,
+  },
+  button: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  cancelButton: {
+    backgroundColor: "#eee",
+  },
+  createButton: {
+    backgroundColor: "#4A90E2",
+  },
+  buttonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#333",
   },
 });
 

@@ -23,7 +23,9 @@ import { getLoggedInUserServer } from "../../api/server/serverApi";
 
 const LoginScreen = ({ navigation }: { navigation: any }) => {
   const { setUserRole, setIsAuthenticated } = useAuth(); // Get AuthContext functions
-  const [Email, setEmail] = useState("11111@gmail.com");
+  const [Email, setEmail] = useState(
+    Platform.OS === "web" ? "sabin@gmail.com" : "11111@gmail.com"
+  );
   const [Password, setPassword] = useState("Abcde1@345");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
@@ -99,8 +101,8 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
 
       // Save tokens
       if (Platform.OS === "web") {
-        saveToken("accessToken", accessToken, Plat.WEB);
-        saveToken("refreshToken", refreshToken, Plat.WEB);
+        saveToken("accessToken", accessToken);
+        saveToken("refreshToken", refreshToken);
       } else {
         saveToken("accessToken", accessToken);
         saveToken("refreshToken", refreshToken);

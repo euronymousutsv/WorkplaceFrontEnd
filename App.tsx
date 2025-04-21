@@ -33,6 +33,9 @@ import ChatScreenPhone from "./src/mobile/employeeDashboard/screens/ChatScreen";
 import ClockInOutScreenPhone from "./src/mobile/employeeDashboard/screens/ClockInOutScreenPhone";
 import NoOfficeScreen from "./src/mobile/employeeDashboard/screens/NoOfficeScreen";
 import OfficeDetailAdmin from "./src/web/adminDashboard/screens/OfficeDetailAdmin";
+import MessageThemeScreen from "./src/mobile/employeeDashboard/screens/MessageThemeScreen";
+import { getToken } from "./src/api/auth/token";
+
 // Create a stack navigator
 const Stack = createStackNavigator();
 
@@ -52,7 +55,6 @@ const App = () => {
 // Centralized AppNavigator for role-based navigation
 const AppNavigator = () => {
   const { userRole, isAuthenticated } = useAuth(); // Access userRole and isAuthenticated from context
-
   return (
     <Stack.Navigator>
       <Stack.Screen
@@ -73,7 +75,7 @@ const AppNavigator = () => {
       <Stack.Screen
         name="SchedulesScreen"
         component={SchedulesScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: true }}
       />
       <Stack.Screen
         name="ClockInOutScreen"
@@ -109,6 +111,18 @@ const AppNavigator = () => {
           headerShadowVisible: false,
         }}
       />
+
+      <Stack.Screen
+        name="MessageThemeScreen"
+        component={MessageThemeScreen}
+        options={{
+          headerShown: true,
+          title: "Theme",
+          headerShadowVisible: false,
+          headerBackTitle: "back",
+        }}
+      />
+
       <Stack.Screen
         name="EditDetailScreens"
         component={EditDetailScreens}
@@ -142,6 +156,7 @@ const AppNavigator = () => {
         options={({ route }) => ({
           headerBackTitle: "back",
           title: route.params?.channelName || "Chat",
+          headerTransparent: true,
         })}
       />
       <Stack.Screen

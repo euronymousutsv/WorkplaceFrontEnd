@@ -1,4 +1,5 @@
 export interface Chats {
+  imageUrl: undefined;
   id?: string;
   userId?: string;
   message?: string;

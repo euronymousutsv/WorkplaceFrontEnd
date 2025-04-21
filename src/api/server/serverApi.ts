@@ -153,7 +153,7 @@ const changeServerOwnership = async (newOwnerId: string) => {
 // delete a server
 const deleteServer = async (password: string) => {
   try {
-    const accessToken = await getToken("accessToken", Plat.WEB);
+    const accessToken = await getToken("accessToken");
     const response = await API.delete<ApiResponse<{}>>("deleteServer", {
       headers: {
         "user-password": password,
@@ -175,7 +175,7 @@ const deleteServer = async (password: string) => {
 //kick an employee
 const kickEmployee = async (userId: string) => {
   try {
-    const accessToken = await getToken("accessToken", Plat.WEB);
+    const accessToken = await getToken("accessToken");
     const response = await API.delete<ApiResponse<{}>>("kickEmployee", {
       params: { userId },
       headers: {
@@ -249,7 +249,7 @@ export interface ParitalEmployeePayload {
 // admins can partially register an employee
 const partialregisterEmployee = async (reqData: ParitalEmployeePayload) => {
   try {
-    const accessToken = await getToken("accessToken", Plat.WEB);
+    const accessToken = await getToken("accessToken");
     const response = await API.post<ApiResponse<{}>>(
       "partialRegestrationEmployee",
       reqData,
@@ -273,7 +273,7 @@ const partialregisterEmployee = async (reqData: ParitalEmployeePayload) => {
 
 const updateEmployeeDetails = async (payload: EmployeeDetailsPayload) => {
   try {
-    const accessToken = await getToken("accessToken", Plat.WEB);
+    const accessToken = await getToken("accessToken");
     const response = await API.put<ApiResponse<{}>>(
       "updateEmployeeDetails",
       payload,
@@ -297,7 +297,7 @@ const updateEmployeeDetails = async (payload: EmployeeDetailsPayload) => {
 
 // get all users with a server
 const fetchAllUsers = async () => {
-  const accessToken = await getToken("accessToken", Plat.WEB);
+  const accessToken = await getToken("accessToken");
   console.log("---------", accessToken, "----");
   try {
     const response = await API.get<ApiResponse<[EmployeeDetails]>>(

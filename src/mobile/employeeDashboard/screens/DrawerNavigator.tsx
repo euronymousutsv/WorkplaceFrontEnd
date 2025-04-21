@@ -1,12 +1,7 @@
-import {
-  createDrawerNavigator,
-  DrawerContentScrollView,
-  DrawerItem,
-  DrawerItemList,
-} from "@react-navigation/drawer";
+import { createDrawerNavigator } from "@react-navigation/drawer";
 import EmployeeDashboard from "./EmployeeDashboard";
 import SchedulesScreen from "./SchedulesScreen";
-import SchedulesScreenWeb from "../../../web/adminDashboard/screens/SchedulesScreen";
+import { NavigationContainer } from "@react-navigation/native";
 import IncomeScreen from "./IncomeScreen";
 import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -21,10 +16,11 @@ import LeaveRequestScreen from "../../../web/adminDashboard/screens/LeaveRequest
 import GrossPaymentScreen from "../../../web/adminDashboard/screens/GrossPaymentScreen";
 import SettingsScreen from "../../../web/adminDashboard/screens/SettingsScreen";
 import { useEffect, useState } from "react";
-import { DrawerNavigationProp } from "@react-navigation/drawer";
-import { useNavigation } from "@react-navigation/native";
+
 import AdminDashboard from "../../../web/adminDashboard/screens/AdminDashboard";
 import Header from "../../../web/adminDashboard/components/Header";
+import { SafeAreaView } from "react-native-web";
+
 const Drawer = createDrawerNavigator();
 
 const Tab = createBottomTabNavigator();
@@ -147,104 +143,97 @@ const AppNavigatorDrawer = () => {
 
 export const WebNavigatorDrawer = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const screenWidth = Dimensions.get('window').width;
-const toggleSidebar = () => setIsSidebarOpen(prev => !prev);
+  const screenWidth = Dimensions.get("window").width;
+  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
 
   return (
-    <View style={{ flex: 1 }}>
-      <Header isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+    <SafeAreaView style={{ flex: 1, flexDirection: "row" }}>
+      <Header isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} /> 
+      <Drawer.Navigator
+        initialRouteName="Dashboard"
+        drawerContent={(props) => (
+          <CustomDrawerContent {...props} isSidebarOpen={isSidebarOpen} />
+        )}
+        screenOptions={{
+          drawerType: "permanent",
 
-    <Drawer.Navigator
-      initialRouteName="Dashboard"
-      drawerContent={(props) => <CustomDrawerContent {...props} isSidebarOpen={isSidebarOpen} />}
-      screenOptions={{
-        drawerType: "permanent",
+          drawerStyle: {
+            width: isSidebarOpen ? 260 : 0, // 20% of screen width
+          },
+          headerShown: false,
+          drawerActiveBackgroundColor: "#e6f0ff", // background when selected
+          drawerActiveTintColor: "#1e90ff", // text/icon color when selected
+          drawerInactiveTintColor: "#333",
+          drawerItemStyle: {
+            borderRadius: 12,
+            marginHorizontal: 10,
+            marginVertical: 4,
+          },
+          drawerLabelStyle: {
+            fontSize: 16,
+          },
+        }}
+      >
+        <Drawer.Screen
+          name="Dashboard"
+          component={AdminDashboard}
+          options={{
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="home" size={size} color={color} />
+            ),
+          }}
+        />
 
-        drawerStyle: {
-          width: isSidebarOpen ? 260 : 0, // 20% of screen width
-        },
-        headerShown: false,
-        drawerActiveBackgroundColor: "#e6f0ff", // background when selected
-        drawerActiveTintColor: "#1e90ff", // text/icon color when selected
-        drawerInactiveTintColor: "#333",
-        drawerItemStyle: {
-          borderRadius: 12, 
-          marginHorizontal: 10,
-          marginVertical: 4,
-        },
-        drawerLabelStyle: {
-          fontSize: 16,
-        },
-      }}
-    >
-      <Drawer.Screen
-        name="Dashboard"
-        component={AdminDashboard}
-        options={{
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="Schedules"
-        component={SchedulesScreenWeb}
-        options={{
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="calendar" size={size} color={color} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="Clock In/Out"
-        component={ClockInOutScreen}
-        options={{
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="time" size={size} color={color} />
-          ),
-        }}
-      />
+        <Drawer.Screen
+          name="Leave Request"
+          component={LeaveRequestScreen}
+          options={{
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="airplane" size={size} color={color} />
+            ),
+          }}
+        />
 
-      <Drawer.Screen
-        name="Leave Request"
-        component={LeaveRequestScreen}
-        options={{
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="airplane" size={size} color={color} />
-          ),
-        }}
-      />
+        <Drawer.Screen
+          name="Clock In/Out"
+          component={ClockInOutScreen}
+          options={{
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="time" size={size} color={color} />
+            ),
+          }}
+        />
 
-      <Drawer.Screen
-        name="Employee Management"
-        component={EmployeeManagementScreen}
-        options={{
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="person" size={size} color={color} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="Gross Payment"
-        component={GrossPaymentScreen}
-        options={{
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="cash" size={size} color={color} />
-          ),
-        }}
-      />
+        <Drawer.Screen
+          name="Employee Management"
+          component={EmployeeManagementScreen}
+          options={{
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="person" size={size} color={color} />
+            ),
+          }}
+        />
+        <Drawer.Screen
+          name="Gross Payment"
+          component={GrossPaymentScreen}
+          options={{
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="cash" size={size} color={color} />
+            ),
+          }}
+        />
 
-      <Drawer.Screen
-        name="Settings"
-        component={SettingsScreen}
-        options={{
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="settings" size={size} color={color} />
-          ),
-        }}
-      />
-    </Drawer.Navigator>
-    </View>
+        <Drawer.Screen
+          name="Settings"
+          component={SettingsScreen}
+          options={{
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="settings" size={size} color={color} />
+            ),
+          }}
+        />
+      </Drawer.Navigator>
+    </SafeAreaView>
   );
 };
 

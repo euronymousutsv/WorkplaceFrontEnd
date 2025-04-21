@@ -56,9 +56,9 @@ const CustomDrawerContent = (props: any) => {
         const serverName = res.data.joinedServer.name;
         setServerName(serverName);
 
-        await saveToken("serverId", serverId, platformType);
-        await saveToken("officeId", officeId, platformType);
-        await saveToken("serverName", serverName, platformType);
+        await saveToken("serverId", serverId);
+        await saveToken("officeId", officeId);
+        await saveToken("serverName", serverName);
       } else {
         console.log("Unexpected response while fetching server.");
       }
@@ -70,7 +70,7 @@ const CustomDrawerContent = (props: any) => {
   const handleGetAllChannels = async () => {
     try {
       const platformType = Plat.PHONE;
-      const officeId = await getToken("officeId", platformType);
+      const officeId = await getToken("officeId");
 
       if (!officeId) {
         Toast.show({
@@ -115,9 +115,8 @@ const CustomDrawerContent = (props: any) => {
 
       <View style={styles.divider} />
       {Platform.OS !== "web" && (
-  <Text style={styles.sectionTitle}>Channels</Text>
-)}
-
+        <Text style={styles.sectionTitle}>Channels</Text>
+      )}
 
       {Platform.OS === "web" ? (
         <ChatChannelList />
@@ -158,7 +157,8 @@ const styles = StyleSheet.create({
   drawerTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    marginTop: 40,
+
+    marginTop: Platform.OS === "web" ? 40 : 0,
   },
   divider: {
     height: 1,

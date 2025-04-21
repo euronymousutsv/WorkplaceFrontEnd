@@ -1,4 +1,5 @@
 import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
 
 export enum Plat {
   WEB = "web",
@@ -6,12 +7,9 @@ export enum Plat {
 }
 
 // Save token
-export async function saveToken(
-  key: string,
-  value: string,
-  plat: Plat = Plat.PHONE
-): Promise<void> {
+export async function saveToken(key: string, value: string): Promise<void> {
   try {
+    const plat = Platform.OS === "web" ? Plat.WEB : Plat.PHONE;
     switch (plat) {
       // when the platform is web, store details in LocalStorage
       case Plat.WEB:
@@ -33,12 +31,9 @@ export async function saveToken(
 }
 
 // Get token
-export async function getToken(
-  key: string,
-  plat: Plat = Plat.PHONE
-): Promise<string | null> {
+export async function getToken(key: string): Promise<string | null> {
   try {
-    console.log(plat);
+    const plat = Platform.OS === "web" ? Plat.WEB : Plat.PHONE;
 
     switch (plat) {
       // when the platform is web, get details from LocalStorage
@@ -57,11 +52,10 @@ export async function getToken(
 }
 
 // Delete token
-export async function deleteToken(
-  key: string,
-  plat: Plat = Plat.PHONE
-): Promise<void> {
+export async function deleteToken(key: string): Promise<void> {
   try {
+    const plat = Platform.OS === "web" ? Plat.WEB : Plat.PHONE;
+
     switch (plat) {
       // when the platform is web, remove details from LocalStorage
       case Plat.WEB:

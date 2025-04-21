@@ -18,7 +18,7 @@ export const sendAnnouncementToSelectedUsers = async (
   title: string,
   body: string
 ) => {
-  const accessToken = await getToken("accessToken", Plat.WEB);
+  const accessToken = await getToken("accessToken");
 
   try {
     const response = await API.post(

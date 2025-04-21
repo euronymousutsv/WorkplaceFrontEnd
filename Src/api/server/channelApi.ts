@@ -29,7 +29,7 @@ type CreateChannelRequest = {
 // only admins can create a new channels
 const createNewChannel = async (reqData: CreateChannelRequest) => {
   try {
-    const accessToken = await getToken("accessToken", Plat.WEB);
+    const accessToken = await getToken("accessToken");
     const response = await API.post<ApiResponse<createChannelResponse>>(
       "create",
       reqData,
@@ -53,7 +53,7 @@ const createNewChannel = async (reqData: CreateChannelRequest) => {
 // sends a get request for all the channels that are in the server
 const getAllChannelForCurrentServer = async (serverId: string, plat: Plat) => {
   try {
-    const accessToken = await getToken("accessToken", plat);
+    const accessToken = await getToken("accessToken");
     const response = await API.get<
       ApiResponse<[getAllChannelForCurrentServerResponse]>
     >("getAllChannelForCurrentServer", {
@@ -106,7 +106,7 @@ const deleteChannel = async (reqData: {
   channelName: string;
 }) => {
   try {
-    const accessToken = await getToken("accessToken", Plat.WEB);
+    const accessToken = await getToken("accessToken");
     const channelId = reqData.channelId;
     const response = await API.delete<ApiResponse<{}>>("delete", {
       params: {
@@ -135,7 +135,7 @@ const addAccessToChannel = async (reqData: {
 }) => {
   try {
     const { channelId, highestRoleToAccessServer } = reqData;
-    const accessToken = await getToken("accessToken", Plat.WEB);
+    const accessToken = await getToken("accessToken");
 
     const response = await API.post<ApiResponse<{}>>(
       "addAccessToChannel",
@@ -170,7 +170,7 @@ const changeChannelName = async (reqData: {
   try {
     const { channelId, newChannelName } = reqData;
     console.log("channelID:", channelId);
-    const accessToken = await getToken("accessToken", Plat.WEB);
+    const accessToken = await getToken("accessToken");
     const response = await API.put<ApiResponse<{}>>(
       "changeAChannelName",
       { channelId, newChannelName },
@@ -200,7 +200,7 @@ const getChannelDetails = async (reqData: {
 }) => {
   try {
     const { channelId } = reqData;
-    const accessToken = await getToken("accessToken", reqData.plat);
+    const accessToken = await getToken("accessToken");
     const response = await API.get<ApiResponse<ChannelDetailsResponse>>(
       "getChannelDetails",
       {

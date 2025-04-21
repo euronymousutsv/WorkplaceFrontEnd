@@ -19,33 +19,21 @@ import { fetchAllUsers } from "../../../api/server/serverApi";
 import { EmployeeDetails } from "../../../api/server/server";
 import { ApiError } from "../../../api/utils/apiResponse";
 import Toast from "react-native-toast-message";
-import { createShift } from "../../../api/auth/shiftApi";
+import { createShift, getShiftsByOffice, ShiftPayload, updateShift } from "../../../api/auth/shiftApi";
 // import FilterControls from '../components/FilterControls';
+import { RouteProp, useRoute } from "@react-navigation/native";
+import { getShiftsByDateRangeForOffice } from "../../../api/auth/shiftApi";
+import { RootStackParamList } from "../../../types/navigationTypes";
+import { getAllEmployeeInOffice } from "../../../api/office/officeApi";
 
-const initialSchedules = [
-  {
-    id: 1,
-    employee: "Sabin",
-    start: "2025-04-10T09:00:00",
-    end: "2025-04-10T17:00:00",
-    location: "Melbourne",
-    desc: "Morning shift",
-  },
-  {
-    id: 2,
-    employee: "Pranish",
-    start: "2025-04-11T22:00:00",
-    end: "2025-04-12T06:00:00",
-    location: "Sydney",
-    desc: "Night shift",
-  },
-];
 
-const employees = ["Sabin", "Pranish", "Aashish"];
-const locations = ["Melbourne", "Sydney", "Brisbane"];
+
 
 const SchedulesScreen: React.FC = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const route = useRoute<RouteProp<RootStackParamList, "SchedulesScreen">>();
+  const { officeId } = route.params;
+ 
+ 
   const [activeTab, setActiveTab] = useState<"calendar" | "list" | "auto">(
     "calendar"
   );
@@ -56,89 +44,144 @@ const SchedulesScreen: React.FC = () => {
   >([]);
 
   const [selectedDate, setSelectedDate] = useState("");
-  const [schedules, setSchedules] = useState(initialSchedules);
   const [employeeFilter, setEmployeeFilter] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
   const [editingShift, setEditingShift] = useState<any | null>(null);
+  const [schedules, setSchedules] = useState<any[]>([]);
 
   const isMobile = Dimensions.get("window").width <= 768;
 
   useEffect(() => {
-    const fetchEmployees = async () => {
-      const res = await fetchAllUsers();
-      if (!(res instanceof ApiError)) {
-        const mapped = res.data.map((emp: EmployeeDetails) => ({
-          id: emp.Employee.id,
-          name: `${emp.Employee.firstName} ${emp.Employee.lastName}`,
-        }));
-        setEmployeeNames(mapped);
+    const fetchOfficeEmployees = async () => {
+      try {
+        const joinedRes = await getAllEmployeeInOffice({ officeId });
+        const joinedEmployeeIds = Array.isArray((joinedRes as any)?.data)
+          ? (joinedRes as any).data.map((entry: any) => entry.id)
+          : [];
+  
+        const allUsersRes = await fetchAllUsers();
+  
+        if (!(allUsersRes instanceof ApiError)) {
+          const matchedEmployees = allUsersRes.data
+            .map((empWrapper: any) => empWrapper.Employee)
+            .filter((emp: any) => joinedEmployeeIds.includes(emp.id))
+            .map((emp: any) => ({
+              id: emp.id,
+              name: `${emp.firstName} ${emp.lastName}`,
+            }));
+  
+          setEmployeeNames(matchedEmployees);
+        }
+      } catch (err) {
+        console.error("Failed to load employees for this office", err);
       }
     };
+  
+    fetchOfficeEmployees();
+  }, [officeId]);
+  
 
-    fetchEmployees();
-  }, []);
+  // Fetch shifts 
+  useEffect(() => {
+    const fetchShifts = async () => {
+      const res = await getShiftsByOffice(officeId);
+      console.log("🔍 Raw shift response for office:", res); 
+      if (!(res instanceof ApiError)) {
+        const mapped = res.data.map((shift) => ({
+          id: shift.id,
+          employee: shift.employeeName,
+          start: shift.startTime,
+          end: shift.endTime,
+          // location: shift.officeLocation.name,
+          notes: shift.notes || "",
+        }));
+  
+        setSchedules(mapped);
+      } else {
+        Toast.show({ type: "error", text1: "Failed to fetch shifts", text2: res.message });
+      }
+    };
+  
+    fetchShifts();
+  }, [officeId]);
+  
 
   //todo (error: backend missing/incomplete)
-  const handleCreateSchedule = async (newSchedule: any) => {
+  const handleSaveSchedule = async (
+    newSchedule: ShiftPayload,
+    isEditing = false,
+    shiftId?: string
+  ) => {
+    const parsedStart = new Date(newSchedule.startTime);
+    const parsedEnd = new Date(newSchedule.endTime);
+  
+    if (isNaN(parsedStart.getTime()) || isNaN(parsedEnd.getTime())) {
+      Toast.show({
+        type: "error",
+        text1: "Invalid Time Format",
+        text2: "Start or End time is invalid. Use YYYY-MM-DDTHH:mm format.",
+      });
+      return;
+    }
+  
     const payload = {
-      employeeId: newSchedule.employee,
-      officeId: newSchedule.location,
-      startTime: newSchedule.start,
-      endTime: newSchedule.end,
-      date: newSchedule.start.split("T")[0],
-      description: newSchedule.desc,
+      ...newSchedule,
+      startTime: parsedStart.toISOString(),
+      endTime: parsedEnd.toISOString(),
     };
-
+  
     try {
-      const res = await createShift(
-        payload.employeeId,
-        payload.officeId,
-        payload.startTime,
-        payload.endTime,
-        payload.date,
-        payload.description
-      );
-
-      if (res instanceof ApiError) {
+      let res;
+  
+      if (isEditing && shiftId) {
+        res = await updateShift(shiftId, payload);
         Toast.show({
-          type: "error",
-          text1: "Failed to create shift",
-          text2: res.message,
+          type: "success",
+          text1: "Shift updated successfully",
         });
       } else {
+        res = await createShift(payload);
         Toast.show({
           type: "success",
           text1: "Shift created!",
           text2: "The shift has been added successfully.",
         });
-
-        // Optional: update local state
-        const name =
-          employeeNames.find((e) => e.id === newSchedule.employee)?.name ||
-          newSchedule.employee;
-        setSchedules((prev) => [
-          ...prev,
-          {
-            id: prev.length + 1, //res.data.id,
-            employee: name, // show name in UI
-            location: newSchedule.location,
-            desc: newSchedule.desc,
-            start: newSchedule.start,
-            end: newSchedule.end,
-          },
-        ]);
       }
+  
+      // Refresh schedule list
+      const name =
+        employeeNames.find((e) => e.id === newSchedule.employeeId)?.name ||
+        newSchedule.employeeId;
+  
+      const updatedShift = {
+        id: shiftId ?? Date.now(), // temporary ID for UI
+        employee: name,
+        notes: newSchedule.notes,
+        start: parsedStart.toISOString(),
+        end: parsedEnd.toISOString(),
+      };
+  
+      setSchedules((prev) =>
+        isEditing
+          ? prev.map((s) => (s.id === shiftId ? updatedShift : s))
+          : [...prev, updatedShift]
+      );
+  
     } catch (err) {
-      console.error("Unexpected error while creating shift:", err);
+      console.error("Unexpected error while saving shift:", err);
       Toast.show({
         type: "error",
         text1: "Error",
-        text2: "Something went wrong while creating the shift.",
+        text2: "Something went wrong while saving the shift.",
       });
     }
-
+  
     setModalVisible(false);
+    setEditingShift(null);
   };
+  
+  
+  
 
   const handleDeleteSchedule = (id: number) => {
     setSchedules((prev) => prev.filter((shift) => shift.id !== id));
@@ -276,7 +319,8 @@ const SchedulesScreen: React.FC = () => {
             setModalVisible(false);
             setEditingShift(null);
           }}
-          onSave={handleCreateSchedule}
+          onSave={(payload, isEditing, shiftId) =>
+            handleSaveSchedule(payload, isEditing, shiftId)}
           onDelete={() => {
             if (editingShift) {
               handleDeleteSchedule(editingShift.id);
@@ -285,7 +329,7 @@ const SchedulesScreen: React.FC = () => {
             }
           }}
           employees={employeeNames}
-          locations={locations}
+          officeId={officeId}
           selectedEmployee={selectedEmployee}
           selectedDate={selectedDate}
           editingShift={editingShift}
