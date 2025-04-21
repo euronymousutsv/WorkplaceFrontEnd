@@ -95,7 +95,7 @@ const ProfileScreen = () =>
           const userId = decodedToken?.userId;
 
           if (userId) {
-            const response = await getCurrentUserDetails(userId, accessToken);
+            const response = await getCurrentUserDetails();
             // console.log("Fetched User Details:", response); // Log the entire response
 
             if (response?.data) {

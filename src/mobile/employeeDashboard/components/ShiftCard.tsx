@@ -1,19 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { Shifts } from "../../../api/auth/shiftApi";
 
-interface Shift {
-  id: string;
-  // location: string;
-  description: string;
-  startTime: Date;
-  endTime: Date;
+interface Props {
+  shift: Shifts;
 }
 
-const ShiftCard = ({ shift }: { shift: Shifts }) => {
+const ShiftCard = ({ shift }: Props) => {
   const [canClockIn, setCanClockIn] = useState(false);
-  const startTime = new Date(shift.startTime); // Convert string to Date
+  const startTime = new Date(shift.startTime);
   const endTime = new Date(shift.endTime);
 
   useEffect(() => {
@@ -29,31 +25,41 @@ const ShiftCard = ({ shift }: { shift: Shifts }) => {
     return () => clearInterval(timer);
   }, [shift.startTime]);
 
-  // //for testing clock in button
-  // useEffect(() => {
-  //     setCanClockIn(true);  // Always show the button for testing purposes
-  //   }, []);
-
+  
   return (
     <View style={styles.card}>
-      <Text style={styles.location}>{shift.officeLocation.name}</Text>
-      {/* <Text style={styles.description}>{"shift.description"}</Text> */}
+      {/* Office Name */}
+      {/* <Text style={styles.location}>
+        {shift.officeLocation?.name || "Office"}
+      </Text> */}
+      <View style={styles.headerRow}>
+  <Feather name="briefcase" size={16} color="#4A90E2" style={{ marginRight: 6, marginBottom:5 }} />
+  <Text style={styles.location}>Assigned Shift</Text>
+</View>
 
+      {/* Time */}
       <View style={styles.timeContainer}>
         <Ionicons name="time-outline" size={16} color="#4A90E2" />
         <Text style={styles.time}>
-          {startTime.toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}{" "}
+          {startTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}{" "}
           -{" "}
-          {endTime.toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
+          {endTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
         </Text>
       </View>
 
+      {/* Notes/Description */}
+      {shift.notes && (
+        <View style={styles.notesContainer}>
+          <Ionicons name="document-text-outline" size={16} color="#6C757D" />
+          <Text style={styles.notes}>{shift.notes}</Text>
+        </View>
+      )}
+
+      {/* Status */}
+      {/* status can go here in future */}
+
+
+      {/* Clock In Button */}
       {canClockIn && (
         <TouchableOpacity style={styles.clockInButton}>
           <Text style={styles.clockInButtonText}>Clock In</Text>
@@ -62,6 +68,8 @@ const ShiftCard = ({ shift }: { shift: Shifts }) => {
     </View>
   );
 };
+
+
 
 const styles = StyleSheet.create({
   card: {
@@ -76,25 +84,40 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   location: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: "bold",
-    color: "#393D3F",
-    marginBottom: 4,
-  },
-  description: {
-    fontSize: 14,
-    color: "#6C757D",
-    marginBottom: 8,
+    color: "#393D3",
+    marginBottom: 6,
   },
   timeContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   time: {
     fontSize: 14,
     color: "#4A90E2",
     fontWeight: "500",
+    marginLeft: 6,
+  },
+  notesContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  notes: {
+    fontSize: 14,
+    color: "#6C757D",
+    marginLeft: 6,
+  },
+  status: {
+    fontSize: 14,
+    color: "#888",
+    marginBottom: 6,
+  },
+  statusValue: {
+    color: "#4A90E2",
+    fontWeight: "bold",
   },
   clockInButton: {
     backgroundColor: "#2ECC71",
@@ -102,12 +125,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: 12,
+    marginTop: 10,
   },
   clockInButtonText: {
     color: "#FFFFFF",
     fontSize: 15,
     fontWeight: "bold",
+  },
+  statusBadge: {
+    alignSelf: "flex-start",
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    marginTop: 8,
+  },
+  statusText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 12,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
   },
 });
 

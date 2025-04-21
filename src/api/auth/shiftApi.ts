@@ -57,17 +57,16 @@ const handleError = (error: unknown) => {
   return new ApiError(400, {}, "Something went wrong");
 };
 
-export const getShiftsForLoggedInUser = async (): Promise<ApiResponse<Shifts[]> | ApiError<unknown>> => {
-  try {
-    const accessToken = (await getToken("accessToken")) ?? "";
-    const response = await API.get("api/roster/getShiftsForLoggedInUser", {
-      params: { accessToken },
-    });
-    return response.data as ApiResponse<Shifts[]>;
-  } catch (error) {
-    return handleError(error);
-  }
-};
+//   try {
+//     const accessToken = (await getToken("accessToken")) ?? "";
+//     const response = await API.get("api/roster/getShiftsForLoggedInUser", {
+//       params: { accessToken },
+//     });
+//     return response.data as ApiResponse<Shifts[]>;
+//   } catch (error) {
+//     return handleError(error);
+//   }
+// };
 
 export const getShiftsForAllUsers = async (): Promise<ApiResponse<Shifts[]> | ApiError<unknown>> => {
   try {
@@ -114,7 +113,9 @@ export const getShiftsByOffice = async (
 export const getShiftsByEmployee = async (employeeId: string): Promise<ApiResponse<Shifts[]> | ApiError<unknown>> => {
   try {
     const accessToken = (await getToken("accessToken")) ?? "";
-    const response = await API.get(`api/shifts/employee/${employeeId}`, {
+    
+    const response = await API.get("api/schedule/getShiftsByEmployee", {
+      params: { employeeId },
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     return response.data as ApiResponse<Shifts[]>;
@@ -122,6 +123,7 @@ export const getShiftsByEmployee = async (employeeId: string): Promise<ApiRespon
     return handleError(error);
   }
 };
+
 
 export const getEmployeeShiftsByDate = async (employeeId: string, date: string): Promise<ApiResponse<Shifts[]> | ApiError<unknown>> => {
   try {
@@ -156,7 +158,8 @@ export const getShiftsByDateRangeForOffice = async (
 export const updateShift = async (shiftId: string, payload: Partial<ShiftPayload>): Promise<ApiResponse<Shifts> | ApiError<unknown>> => {
   try {
     const accessToken = (await getToken("accessToken")) ?? "";
-    const response = await API.put(`api/shifts/${shiftId}`, payload, {
+    const response = await API.put(`api/schedule/updateShift?shiftId=${shiftId}`, payload, {
+
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     return response.data as ApiResponse<Shifts>;

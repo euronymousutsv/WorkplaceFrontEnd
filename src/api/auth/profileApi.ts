@@ -11,7 +11,7 @@ const API = axios.create({
 });
 
 // Fetch user details
-const getCurrentUserDetails = async (userId: any, accessToken: string) => {
+const getCurrentUserDetails = async () => {
   try {
     // Retrieve the access token
     const accessToken = await getToken("accessToken");

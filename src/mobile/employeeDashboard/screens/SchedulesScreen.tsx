@@ -1,34 +1,66 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-import { getShiftsForLoggedInUser } from '../../../api/auth/shiftApi'; // Import your fetch function
+import { getShiftsByEmployee, Shifts } from '../../../api/auth/shiftApi'; // Import your fetch function
 import ShiftCard from '../components/ShiftCard';
 import { ApiError } from '../../../api/utils/apiResponse'; // Import for error handling
+import { getUserIdFromToken } from "../../../utils/jwt";
 
 const SchedulesScreen: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [shifts, setShifts] = useState<any[]>([]); // To store shifts from the backend
+  const [shifts, setShifts] = useState<Shifts[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
+ 
 
-  // Fetch shifts when the component mounts
   useEffect(() => {
     const fetchShifts = async () => {
       setLoading(true);
-      const res = await getShiftsForLoggedInUser();
-      if (res instanceof ApiError) {
-        console.log(res.message);
-        setError('Error fetching shifts');
-      } else if ('statusCode' in res && 'data' in res) {
-        setShifts(res.data); // Set the fetched shifts
-      } else {
-        setError('Something went wrong');
+  
+      const employeeId = await getUserIdFromToken(); 
+      if (!employeeId) {
+        setError("Employee ID not found in token");
+        setLoading(false);
+        return;
       }
+  
+      const res = await getShiftsByEmployee(employeeId); 
+  
+      if (res instanceof ApiError) {
+        console.log("Shift fetch error:", res.message);
+        setError("Error fetching shifts");
+      } else if ("statusCode" in res && "data" in res) {
+        const mapped = res.data.map((shift: any) => ({
+          id: shift.id,
+          startTime: shift.startTime,
+          endTime: shift.endTime,
+          officeId: shift.officeId,
+          notes: shift.notes ?? "",
+  
+          employeeId: shift.employeeId ?? employeeId,
+          employeeName: shift.employeeName ?? "You",
+          officeLocation: shift.officeLocation ?? {
+            id: "",
+            name: "",
+            latitude: "",
+            longitude: "",
+            radius: 0,
+            getCoordinates: () => "",
+          },
+        }));
+  
+        setShifts(mapped);
+      
+      } else {
+        setError("Something went wrong");
+      }
+  
       setLoading(false);
     };
-
+  
     fetchShifts();
   }, []);
+  
 
   // Mark dates with shifts
   const markedDates = shifts.reduce((dates, shift) => {
@@ -67,7 +99,28 @@ const SchedulesScreen: React.FC = () => {
           <Text style={styles.errorText}>{error}</Text>
         ) : shiftsForSelectedDate.length > 0 ? (
           shiftsForSelectedDate.map(shift => (
-            <ShiftCard key={shift.id} shift={shift} />
+            <ShiftCard
+  key={shift.id}
+  shift={{
+    id: shift.id,
+    startTime: shift.startTime,
+    endTime: shift.endTime,
+    officeId: shift.officeId,
+    notes: shift.notes,
+    employeeId: "N/A",               // 👈 required by type, not UI
+    employeeName: "You",             // 👈 or fetch real name
+    officeLocation: {
+      id: "",
+      name: "",
+      latitude: "",
+      longitude: "",
+      radius: 0,
+      getCoordinates: () => "",
+    },
+  }}
+/>
+
+
           ))
         ) : (
           <Text style={styles.noShiftsText}>No shifts for selected date.</Text>

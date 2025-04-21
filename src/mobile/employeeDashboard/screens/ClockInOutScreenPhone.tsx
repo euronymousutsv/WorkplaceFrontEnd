@@ -8,8 +8,13 @@ import {
   Switch,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { mockShifts } from "../../../mockData/mockShifts"; // mock part
-import { RosterAttributes } from "../../../types/RosterAttributes"; // mock part
+import { getToken } from "../../../api/auth/token";
+import { getShiftsByEmployee } from "../../../api/auth/shiftApi";
+import { ApiError } from "../../../api/utils/apiResponse";
+import { getUserIdFromToken } from "../../../utils/jwt";
+import { clockIn, clockOut } from "../../../api/auth/clockinApi";
+import { AnimatedCircularProgress } from "react-native-circular-progress";
+
 
 const PrimaryColor = "#4A90E2";
 const AccentColor = "#2ECC71";
@@ -21,53 +26,157 @@ const ClockInOutScreenPhone: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [shiftEndTime, setShiftEndTime] = useState<Date | null>(null);
   const [insideGeoFence, setInsideGeoFence] = useState(true);
-  const [todaysShifts, setTodaysShifts] = useState<RosterAttributes[]>([]); // mock part
-  const [activeShift, setActiveShift] = useState<RosterAttributes | null>(null); // mock part
+  const [todaysShifts, setTodaysShifts] = useState<any[]>([]);
+  const [activeShift, setActiveShift] = useState<any | null>(null);
+  const [workDuration, setWorkDuration] = useState<number>(0); 
+const [totalShiftDuration, setTotalShiftDuration] = useState<number>(1); 
 
+const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
+  // useEffect(() => {
+  //   let interval: NodeJS.Timer;
+  //   if (isClockedIn) {
+  //     interval = setInterval(() => {
+  //       setWorkDuration((prev) => prev + 1);
+  //     }, 60000); // update every 1 minute
+  //   }
+  //   return () => clearInterval(interval);
+  // }, [isClockedIn]);
+  
+
   useEffect(() => {
-    const today = new Date().toISOString().split("T")[0];
-    const now = new Date();
-
-    const shiftsToday = mockShifts.filter(
-      (shift) => shift.date.toISOString().split("T")[0] === today
-    );
-
-    const current = shiftsToday.find(
-      (shift) =>
-        new Date(shift.startTime) <= now && new Date(shift.endTime) >= now
-    );
-
-    setTodaysShifts(shiftsToday);
-    setActiveShift(current ?? null);
-    if (current) setShiftEndTime(new Date(current.endTime));
-  }, [currentTime]);
-
-  const handleClockInOut = () => {
-    if (!activeShift) return;
-    if (!isClockedIn) {
-      setShiftEndTime(new Date(activeShift.endTime));
-    } else {
+    const fetchRelevantShifts = async () => {
+       const employeeId = await getUserIdFromToken(); 
+            if (!employeeId) {
+              setError("Employee ID not found in token");
+              setLoading(false);
+              return;
+            }
+      const res = await getShiftsByEmployee(employeeId);
+  
+      if (res instanceof ApiError) {
+        console.error("Failed to fetch shifts:", res.message);
+        return;
+      }
+  
+      const now = new Date();
+      const oneHour = 60 * 60 * 1000;
+  
+      const filteredShifts = res.data.filter((shift) => {
+        const shiftStart = new Date(shift.startTime);
+        const timeDiff = Math.abs(now.getTime() - shiftStart.getTime());
+        return timeDiff <= oneHour;
+      });
+  
+      setTodaysShifts(filteredShifts);
+      if (filteredShifts.length > 0) {
+        const current = filteredShifts.find(
+          (s) =>
+            new Date(s.startTime) <= now && new Date(s.endTime) >= now
+        );
+        setActiveShift(current ?? null);
+        if (current) {setShiftEndTime(new Date(current.endTime));
+      }else{
+        setShiftEndTime(null);
+      }
+    }else{
+      setActiveShift(null);
       setShiftEndTime(null);
     }
-    setIsClockedIn((prev) => !prev);
+      }
+    
+  
+    fetchRelevantShifts();
+  }, []);
+  
+
+  // useEffect(() => {
+  //   const today = new Date().toISOString().split("T")[0];
+  //   const now = new Date();
+
+  //   const shiftsToday = mockShifts.filter(
+  //     (shift) => shift.date.toISOString().split("T")[0] === today
+  //   );
+
+  //   const current = shiftsToday.find(
+  //     (shift) =>
+  //       new Date(shift.startTime) <= now && new Date(shift.endTime) >= now
+  //   );
+
+  //   setTodaysShifts(shiftsToday);
+  //   setActiveShift(current ?? null);
+  //   if (current) setShiftEndTime(new Date(current.endTime));
+  // }, [currentTime]);
+
+  const handleClockInOut = async () => {
+    if (!activeShift) return;
+  
+    const employeeId = await getUserIdFromToken(); 
+          if (!employeeId) {
+            setError("Employee ID not found in token");
+            setLoading(false);
+            return;
+          }
+  
+    try {
+      if (!isClockedIn) {
+        // Clock In
+        const res = await clockIn({
+          employeeId,
+          shiftId: activeShift.id,
+          latitude: "0.0000", // todo: get actual location
+          longitude: "0.0000",
+          // isValid: insideGeoFence,
+          // timestamp: new Date(),
+          // status: "in",
+        });
+        if (!(res instanceof Error)) {
+          setShiftEndTime(new Date(activeShift.endTime));
+          setIsClockedIn(true);
+        }
+      } else {
+        // Clock Out
+        const res = await clockOut({
+          employeeId,
+          shiftId: activeShift.id,
+          latitude: "0.0000",
+          longitude: "0.0000",
+          // isValid: insideGeoFence,
+          // timestamp: new Date(),
+          // status: "out",
+        });
+        if (!(res instanceof Error)) {
+          setShiftEndTime(null);
+          setIsClockedIn(false);
+        }
+      }
+    } catch (err) {
+      console.error("Clock-in/out failed", err);
+    }
   };
+  
 
   const getCountdown = () => {
+    if (!isClockedIn) return "Not clocked in";
     if (!shiftEndTime) return "--:--:--";
+  
     const diff = shiftEndTime.getTime() - currentTime.getTime();
     if (diff <= 0) return "00:00:00";
+  
     const hrs = Math.floor(diff / (1000 * 60 * 60));
     const mins = Math.floor((diff / (1000 * 60)) % 60);
     const secs = Math.floor((diff / 1000) % 60);
+  
     return `${hrs.toString().padStart(2, "0")}:${mins
       .toString()
       .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
+  
 
   return (
     <View style={styles.container}>
@@ -84,26 +193,41 @@ const ClockInOutScreenPhone: React.FC = () => {
       </Text>
 
       <TouchableOpacity
-        style={[
-          styles.button,
-          isClockedIn ? styles.clockOut : styles.clockIn,
-          !activeShift && !isClockedIn ? { opacity: 0.5 } : {},
-        ]}
-        disabled={!activeShift && !isClockedIn}
-        onPress={handleClockInOut}
-      >
-        <Ionicons
-          name={isClockedIn ? "log-out-outline" : "log-in-outline"}
-          size={22}
-          color="#fff"
-          style={{ marginRight: 8 }}
-        />
-        <Text style={styles.buttonText}>
-          {isClockedIn ? "Clock Out" : "Clock In"}
-        </Text>
-      </TouchableOpacity>
+  style={[
+    styles.bigButton,
+    isClockedIn ? styles.finishWork : styles.startWork,
+    !activeShift && !isClockedIn ? { opacity: 0.5 } : {},
+  ]}
+  disabled={!activeShift && !isClockedIn}
+  onPress={handleClockInOut}
+>
+  <Ionicons
+    name={isClockedIn ? "stop" : "play"}
+    size={42}
+    color="#000"
+    style={styles.iconInside}
+  />
+  <Text style={styles.bigButtonText}>
+    {isClockedIn ? "FINISH WORK" : "START WORK"}
+  </Text>
+</TouchableOpacity>
 
-      {/* mock part - list all today's shifts */}
+
+      {!isClockedIn ? (
+  <Text style={styles.shiftMessage}>
+    {activeShift
+      ? `Your next shift starts in ${Math.round(
+          (new Date(activeShift.startTime).getTime() - currentTime.getTime()) /
+            (1000 * 60 * 60)
+        )}h`
+      : "No upcoming shifts"}
+  </Text>
+) : (
+  <Text style={styles.shiftMessage}>
+    You are currently working at --backend required.
+  </Text>
+)}
+
       {todaysShifts.length > 0 ? (
   <View style={styles.shiftList}>
     {todaysShifts.map((shift) => (
@@ -125,15 +249,15 @@ const ClockInOutScreenPhone: React.FC = () => {
         </View>
 
         {/* Office Row */}
-        <View style={styles.iconRow}>
+        {/* <View style={styles.iconRow}>
           <Ionicons name="location-outline" size={18} color={PrimaryColor} style={styles.icon} />
           <Text style={styles.shiftText}>Office ID: {shift.officeId}</Text>
-        </View>
+        </View> */}
 
         {/* Description Row */}
         <View style={styles.iconRow}>
           <Ionicons name="document-text-outline" size={18} color={PrimaryColor} style={styles.icon} />
-          <Text style={styles.shiftText}>{shift.description}</Text>
+          <Text style={styles.shiftText}>{shift.notes}</Text>
         </View>
       </View>
     ))}
@@ -141,7 +265,7 @@ const ClockInOutScreenPhone: React.FC = () => {
 ) : (
   <Text style={styles.statusText}>You have no shifts today.</Text>
 )}
-
+      {/* Info Card */}
 
       <View style={styles.infoCard}>
         <View style={styles.rowBetween}>
@@ -230,6 +354,14 @@ const styles = StyleSheet.create({
   shiftList: {
     width: "100%",
   },
+  shiftMessage: {
+    fontSize: 16,
+    textAlign: "center",
+    color: "#777",
+    marginBottom: 30,
+    paddingHorizontal: 10,
+  },
+  
   shiftCard: {
     backgroundColor: "#fff",
     padding: 14,
@@ -257,5 +389,40 @@ const styles = StyleSheet.create({
     color: TextColor,
     flexShrink: 1,
   },
+  //new
+  bigButton: {
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: "#f7f7f7",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 10,
+    marginBottom: 20,
+  },
+  
+  startWork: {
+    backgroundColor: "#f7f7f7",
+  },
+  
+  finishWork: {
+    backgroundColor: "#f7f7f7",
+  },
+  
+  bigButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#000",
+    marginTop: 8,
+  },
+  
+  iconInside: {
+    marginBottom: 8,
+  }
+  
   
 });

@@ -87,23 +87,35 @@ const SchedulesScreen: React.FC = () => {
       const res = await getShiftsByOffice(officeId);
       console.log("🔍 Raw shift response for office:", res); 
       if (!(res instanceof ApiError)) {
-        const mapped = res.data.map((shift) => ({
-          id: shift.id,
-          employee: shift.employeeName,
-          start: shift.startTime,
-          end: shift.endTime,
-          // location: shift.officeLocation.name,
-          notes: shift.notes || "",
-        }));
-  
+        const mapped = res.data.map((shift) => {
+          const fullName =
+            employeeNames.find((emp) => emp.id === shift.employeeId)?.name || "Unknown";
+        
+          return {
+            id: shift.id,
+            employeeId: shift.employeeId,
+            employeeName: fullName,
+            start: shift.startTime,
+            end: shift.endTime,
+            notes: shift.notes || "",
+          };
+        });
+        
+        console.log("📦 Mapped Shifts:", mapped);
         setSchedules(mapped);
       } else {
-        Toast.show({ type: "error", text1: "Failed to fetch shifts", text2: res.message });
+        Toast.show({
+          type: "error",
+          text1: "Failed to fetch shifts",
+          text2: res.message,
+        });
       }
     };
   
-    fetchShifts();
-  }, [officeId]);
+    if (employeeNames.length > 0) {
+      fetchShifts();
+    }
+  }, [officeId, employeeNames]);
   
 
   //todo (error: backend missing/incomplete)
@@ -123,12 +135,73 @@ const SchedulesScreen: React.FC = () => {
       });
       return;
     }
+    const employeeId = newSchedule.employeeId; // this will always be UUID
+const name =
+  employeeNames.find((e) => e.id === employeeId)?.name || "Unnamed Employee";
   
     const payload = {
       ...newSchedule,
+      employeeId,
       startTime: parsedStart.toISOString(),
       endTime: parsedEnd.toISOString(),
     };
+    const hasOverlap = schedules.some((shift) => {
+      if (isEditing && shift.id === shiftId) return false; // Skip the current shift being edited
+
+      const sameEmployee = shift.employeeId === employeeId;
+      const newStart = parsedStart.getTime();
+      const newEnd = parsedEnd.getTime();
+      const existingStart = new Date(shift.start).getTime();
+      const existingEnd = new Date(shift.end).getTime();
+      return (
+        sameEmployee &&
+        ((newStart >= existingStart && newStart < existingEnd) ||
+          (newEnd > existingStart && newEnd <= existingEnd) ||
+          (newStart <= existingStart && newEnd >= existingEnd))
+      );
+    }
+    );
+    if (hasOverlap) {
+      Toast.show({
+        type: "error",
+        text1: "Schedule Conflict",
+        text2: `Shift for ${name} overlaps with an existing shift.`,
+      });
+      return;
+    }
+    if (parsedStart >= parsedEnd) {
+      Toast.show({
+        type: "error",
+        text1: "Invalid Time Range",
+        text2: "Start time must be before end time.",
+      });
+      return;
+    }
+    if (parsedStart < new Date()) {
+      Toast.show({
+        type: "error",
+        text1: "Invalid Start Time",
+        text2: "Start time cannot be in the past.",
+      });
+      return;
+    }
+    if (parsedEnd < new Date()) {
+      Toast.show({
+        type: "error",
+        text1: "Invalid End Time",
+        text2: "End time cannot be in the past.",
+      });
+      return;
+    }
+    if (parsedStart.getTime() === parsedEnd.getTime()) {
+      Toast.show({
+        type: "error",
+        text1: "Invalid Time Range",
+        text2: "Start time and end time cannot be the same.",
+      });
+      return;
+    }
+   
   
     try {
       let res;
@@ -154,7 +227,7 @@ const SchedulesScreen: React.FC = () => {
         newSchedule.employeeId;
   
       const updatedShift = {
-        id: shiftId ?? Date.now(), // temporary ID for UI
+        id: shiftId ?? Date.now(), 
         employee: name,
         notes: newSchedule.notes,
         start: parsedStart.toISOString(),
@@ -283,7 +356,7 @@ const SchedulesScreen: React.FC = () => {
                   {new Date(item.end).toLocaleString()}
                 </Text>
                 <Text>{item.location}</Text>
-                <Text>{item.desc}</Text>
+                <Text>{item.notes}</Text>
 
                 <View style={styles.cardActions}>
                   <TouchableOpacity
