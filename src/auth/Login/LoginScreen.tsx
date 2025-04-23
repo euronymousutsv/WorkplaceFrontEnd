@@ -110,6 +110,7 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
 
       const decodedToken = JWT.decode(accessToken, null);
       const role = decodedToken.role;
+    
 
       // Platform-based login restriction
       if (Platform.OS === "web" && role === "employee") {

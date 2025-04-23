@@ -19,21 +19,23 @@ import { fetchAllUsers } from "../../../api/server/serverApi";
 import { EmployeeDetails } from "../../../api/server/server";
 import { ApiError } from "../../../api/utils/apiResponse";
 import Toast from "react-native-toast-message";
-import { createShift, getShiftsByOffice, ShiftPayload, updateShift } from "../../../api/auth/shiftApi";
+import {
+  createShift,
+  getShiftsByOffice,
+  ShiftPayload,
+  updateShift,
+} from "../../../api/auth/shiftApi";
 // import FilterControls from '../components/FilterControls';
 import { RouteProp, useRoute } from "@react-navigation/native";
 import { getShiftsByDateRangeForOffice } from "../../../api/auth/shiftApi";
 import { RootStackParamList } from "../../../types/navigationTypes";
 import { getAllEmployeeInOffice } from "../../../api/office/officeApi";
-
-
-
+import { getToken } from "../../../api/auth/token";
 
 const SchedulesScreen: React.FC = () => {
   const route = useRoute<RouteProp<RootStackParamList, "SchedulesScreen">>();
   const { officeId } = route.params;
- 
- 
+
   const [activeTab, setActiveTab] = useState<"calendar" | "list" | "auto">(
     "calendar"
   );
@@ -58,9 +60,9 @@ const SchedulesScreen: React.FC = () => {
         const joinedEmployeeIds = Array.isArray((joinedRes as any)?.data)
           ? (joinedRes as any).data.map((entry: any) => entry.id)
           : [];
-  
+
         const allUsersRes = await fetchAllUsers();
-  
+
         if (!(allUsersRes instanceof ApiError)) {
           const matchedEmployees = allUsersRes.data
             .map((empWrapper: any) => empWrapper.Employee)
@@ -69,42 +71,53 @@ const SchedulesScreen: React.FC = () => {
               id: emp.id,
               name: `${emp.firstName} ${emp.lastName}`,
             }));
-  
+
           setEmployeeNames(matchedEmployees);
         }
       } catch (err) {
         console.error("Failed to load employees for this office", err);
       }
     };
-  
+
     fetchOfficeEmployees();
   }, [officeId]);
-  
 
-  // Fetch shifts 
+  // Fetch shifts
   useEffect(() => {
     const fetchShifts = async () => {
       const res = await getShiftsByOffice(officeId);
-      console.log("🔍 Raw shift response for office:", res); 
+      console.log("🔍 Raw shift response for office:", res);
       if (!(res instanceof ApiError)) {
-        const mapped = res.data.map((shift) => ({
-          id: shift.id,
-          employee: shift.employeeName,
-          start: shift.startTime,
-          end: shift.endTime,
-          // location: shift.officeLocation.name,
-          notes: shift.notes || "",
-        }));
-  
+        const mapped = res.data.map((shift) => {
+          const fullName =
+            employeeNames.find((emp) => emp.id === shift.employeeId)?.name ||
+            "Unknown";
+
+          return {
+            id: shift.id,
+            employeeId: shift.employeeId,
+            employeeName: fullName,
+            start: shift.startTime,
+            end: shift.endTime,
+            notes: shift.notes || "",
+          };
+        });
+
+        console.log("📦 Mapped Shifts:", mapped);
         setSchedules(mapped);
       } else {
-        Toast.show({ type: "error", text1: "Failed to fetch shifts", text2: res.message });
+        Toast.show({
+          type: "error",
+          text1: "Failed to fetch shifts",
+          text2: res.message,
+        });
       }
     };
-  
-    fetchShifts();
-  }, [officeId]);
-  
+
+    if (employeeNames.length > 0) {
+      fetchShifts();
+    }
+  }, [officeId, employeeNames]);
 
   //todo (error: backend missing/incomplete)
   const handleSaveSchedule = async (
@@ -114,7 +127,7 @@ const SchedulesScreen: React.FC = () => {
   ) => {
     const parsedStart = new Date(newSchedule.startTime);
     const parsedEnd = new Date(newSchedule.endTime);
-  
+
     if (isNaN(parsedStart.getTime()) || isNaN(parsedEnd.getTime())) {
       Toast.show({
         type: "error",
@@ -123,16 +136,76 @@ const SchedulesScreen: React.FC = () => {
       });
       return;
     }
-  
+    const employeeId = newSchedule.employeeId; // this will always be UUID
+    const name =
+      employeeNames.find((e) => e.id === employeeId)?.name ||
+      "Unnamed Employee";
+
     const payload = {
       ...newSchedule,
+      employeeId,
       startTime: parsedStart.toISOString(),
       endTime: parsedEnd.toISOString(),
     };
-  
+    const hasOverlap = schedules.some((shift) => {
+      if (isEditing && shift.id === shiftId) return false; // Skip the current shift being edited
+
+      const sameEmployee = shift.employeeId === employeeId;
+      const newStart = parsedStart.getTime();
+      const newEnd = parsedEnd.getTime();
+      const existingStart = new Date(shift.start).getTime();
+      const existingEnd = new Date(shift.end).getTime();
+      return (
+        sameEmployee &&
+        ((newStart >= existingStart && newStart < existingEnd) ||
+          (newEnd > existingStart && newEnd <= existingEnd) ||
+          (newStart <= existingStart && newEnd >= existingEnd))
+      );
+    });
+    if (hasOverlap) {
+      Toast.show({
+        type: "error",
+        text1: "Schedule Conflict",
+        text2: `Shift for ${name} overlaps with an existing shift.`,
+      });
+      return;
+    }
+    if (parsedStart >= parsedEnd) {
+      Toast.show({
+        type: "error",
+        text1: "Invalid Time Range",
+        text2: "Start time must be before end time.",
+      });
+      return;
+    }
+    if (parsedStart < new Date()) {
+      Toast.show({
+        type: "error",
+        text1: "Invalid Start Time",
+        text2: "Start time cannot be in the past.",
+      });
+      return;
+    }
+    if (parsedEnd < new Date()) {
+      Toast.show({
+        type: "error",
+        text1: "Invalid End Time",
+        text2: "End time cannot be in the past.",
+      });
+      return;
+    }
+    if (parsedStart.getTime() === parsedEnd.getTime()) {
+      Toast.show({
+        type: "error",
+        text1: "Invalid Time Range",
+        text2: "Start time and end time cannot be the same.",
+      });
+      return;
+    }
+
     try {
       let res;
-  
+
       if (isEditing && shiftId) {
         res = await updateShift(shiftId, payload);
         Toast.show({
@@ -147,26 +220,25 @@ const SchedulesScreen: React.FC = () => {
           text2: "The shift has been added successfully.",
         });
       }
-  
+
       // Refresh schedule list
       const name =
         employeeNames.find((e) => e.id === newSchedule.employeeId)?.name ||
         newSchedule.employeeId;
-  
+
       const updatedShift = {
-        id: shiftId ?? Date.now(), // temporary ID for UI
+        id: shiftId ?? Date.now(),
         employee: name,
         notes: newSchedule.notes,
         start: parsedStart.toISOString(),
         end: parsedEnd.toISOString(),
       };
-  
+
       setSchedules((prev) =>
         isEditing
           ? prev.map((s) => (s.id === shiftId ? updatedShift : s))
           : [...prev, updatedShift]
       );
-  
     } catch (err) {
       console.error("Unexpected error while saving shift:", err);
       Toast.show({
@@ -175,13 +247,10 @@ const SchedulesScreen: React.FC = () => {
         text2: "Something went wrong while saving the shift.",
       });
     }
-  
+
     setModalVisible(false);
     setEditingShift(null);
   };
-  
-  
-  
 
   const handleDeleteSchedule = (id: number) => {
     setSchedules((prev) => prev.filter((shift) => shift.id !== id));
@@ -283,7 +352,7 @@ const SchedulesScreen: React.FC = () => {
                   {new Date(item.end).toLocaleString()}
                 </Text>
                 <Text>{item.location}</Text>
-                <Text>{item.desc}</Text>
+                <Text>{item.notes}</Text>
 
                 <View style={styles.cardActions}>
                   <TouchableOpacity
@@ -320,7 +389,8 @@ const SchedulesScreen: React.FC = () => {
             setEditingShift(null);
           }}
           onSave={(payload, isEditing, shiftId) =>
-            handleSaveSchedule(payload, isEditing, shiftId)}
+            handleSaveSchedule(payload, isEditing, shiftId)
+          }
           onDelete={() => {
             if (editingShift) {
               handleDeleteSchedule(editingShift.id);
@@ -345,7 +415,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
 
-    marginTop: 60
+    marginTop: 60,
   },
   tabBar: { flexDirection: "row", gap: 10, marginBottom: 20 },
   tabButton: {

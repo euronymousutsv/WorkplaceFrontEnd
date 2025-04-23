@@ -48,7 +48,8 @@ const WebScheduleModal: React.FC<Props> = ({
   useEffect(() => {
     if (visible) {
       if (editingShift) {
-        setEmployee(editingShift.employee);
+        const matched = employees.find(e => e.name === editingShift.employeeName);
+        setEmployee(matched?.id || "");
         setDesc(editingShift.notes);
         const formattedStart = dayjs(editingShift.start).format("YYYY-MM-DDTHH:mm");
       const formattedEnd = dayjs(editingShift.end).format("YYYY-MM-DDTHH:mm");
@@ -119,9 +120,6 @@ const WebScheduleModal: React.FC<Props> = ({
   
     const formattedStart = parsedStart.toISOString();
     const formattedEnd = parsedEnd.toISOString();
-  
-    console.log("🕓 Final Start:", formattedStart);
-    console.log("🕓 Final End:", formattedEnd);
   
     onSave({
       employeeId: employee,

@@ -21,6 +21,9 @@ import {
 } from "../../../utils/color";
 
 import SendAnnouncementCard from "../components/SendAnnouncementCard";
+import { getLoggedInUserServer } from "../../../api/server/serverApi";
+import { ApiError } from "../../../api/utils/apiResponse";
+import { saveToken } from "../../../api/auth/token";
 
 const AdminDashboard: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState("Dashboard");
@@ -31,6 +34,33 @@ const AdminDashboard: React.FC = () => {
 
   const screenWidth = Dimensions.get("window").width;
 
+  const handleGetServerDetail = async () => {
+    try {
+      const res = await getLoggedInUserServer();
+
+      if (res instanceof ApiError) {
+        console.log("Server fetch error:", res.message);
+      } else if ("statusCode" in res && "data" in res) {
+        const serverId = res.data.joinedServer.serverId;
+        const officeId = res.data?.searchedOffice?.officeId || "";
+        const serverName = res.data.joinedServer.name;
+
+        console.log("Server ID -----------------:", serverId);
+
+        await saveToken("serverId", serverId);
+        await saveToken("officeId", officeId);
+        await saveToken("serverName", serverName);
+      } else {
+        console.log("Unexpected response while fetching server.");
+      }
+    } catch (error) {
+      console.error("Error in handleGetServerDetail:", error);
+    }
+  };
+
+  useEffect(() => {
+    handleGetServerDetail();
+  }, []);
   useEffect(() => {
     if (screenWidth <= 768) {
       setIsMobile(true);
@@ -148,7 +178,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     paddingBottom: 20,
-    marginTop:60,
+    marginTop: 60,
   },
   scrollContainer: {
     paddingBottom: 100,

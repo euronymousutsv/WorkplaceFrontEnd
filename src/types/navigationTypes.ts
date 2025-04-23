@@ -19,6 +19,7 @@ export type RootStackParamList = {
   LeaveRequestScreen: undefined;
   EditUserDetailScreens: undefined;
   ClockInOutScreenPhone: undefined;
+  MessageThemeScreen: undefined
   ChatScreen: {
     channelName: string;
     channelId: string;

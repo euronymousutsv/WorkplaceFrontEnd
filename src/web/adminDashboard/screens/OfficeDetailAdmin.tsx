@@ -50,6 +50,7 @@ const OfficeDetailAdmin = () => {
   const fetchOfficeInfo = async () => {
     try {
       const serverId = await getToken("serverId");
+      console.log("Server ID:", serverId);
       if (!serverId) {
         Toast.show({ type: "error", text1: "Server ID is missing" });
         return;

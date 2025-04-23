@@ -6,11 +6,11 @@ import { Calendar } from 'react-native-big-calendar';
 
 interface Schedule {
   id: number;
-  employee: string;
+  employeeId: string;
+  employeeName: string;
   start: string;
   end: string;
-  location: string;
-  desc: string;
+  notes?: string;
 }
 
 interface GridCalendarViewProps {
@@ -28,7 +28,8 @@ const GridCalendarView: React.FC<GridCalendarViewProps> = ({
   const [dateCursor, setDateCursor] = useState(new Date());
 
   const mappedEvents = schedules.map((shift) => ({
-    title: `${shift.employee} @ ${shift.location}`,
+    title: `${shift.employeeName}: ${shift.notes || "No notes"}`,
+
     start: new Date(shift.start),
     end: new Date(shift.end),
     color: '#4A90E2',

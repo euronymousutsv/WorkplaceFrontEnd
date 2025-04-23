@@ -9,25 +9,11 @@ import {
   Platform,
 } from "react-native";
 import { useAuth } from "../../../context/AuthContext";
-import BottomNav from "../components/BottomNav";
 import { Ionicons } from "@expo/vector-icons";
-import Menu from "../components/Menu";
-import Notification from "../components/Notification";
-import ChatWindow from "../components/ChatWindow";
-import ShiftCard from "../components/ShiftCard";
-import SchedulesScreen from "./SchedulesScreen";
-import IncomeScreen from "./IncomeScreen";
-import LeaveScreen from "./LeaveScreen";
-import ProfileScreen from "./ProfileScreen";
-import { getLoggedInUserServer } from "../../../api/server/serverApi";
 import { ApiError, ApiResponse } from "../../../api/utils/apiResponse";
 import { getToken, Plat, saveToken } from "../../../api/auth/token";
-import { getAllChannelForCurrentServer } from "../../../api/server/channelApi";
-import { getShiftsForLoggedInUser, Shifts } from "../../../api/auth/shiftApi";
-import { mockShifts } from "../../../mockData/mockShifts"; //mock data
+import { getShiftsByEmployee, Shifts } from "../../../api/auth/shiftApi";
 import "react-native-gesture-handler";
-import AdminDashboard from "../../../web/adminDashboard/screens/AdminDashboard";
-
 import { useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "../../../types/navigationTypes";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -53,18 +39,21 @@ import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { registerForPushNotificationsAsync } from "../components/notifications";
 import { RosterAttributes } from "../../../types/RosterAttributes"; // mock data
+import { getUserIdFromToken } from "../../../utils/jwt";
+import { getCurrentUserDetails } from "../../../api/auth/profileApi";
 
 const EmployeeDashboard: React.FC = () => {
-  const { firstName, lastName } = useAuth();
+  const [name, setName] = useState({ firstName: "", lastName: "" });
+
+  const [loading, setLoading] = useState<boolean>(true);
+   const [error, setError] = useState<string>('');
   const [clockedIn, setClockedIn] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("home");
   const [contentTab, setContentTab] = useState<string>("dashboard");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-
-  // const [Shifts, setShifts] = useState<RosterAttributes[]>([]);
-
+  const [Shifts, setShifts] = useState<Shifts[]>([]);
   // Chat state
   const [activeChannelId, setActiveChannelId] = useState<string | null>(null); // Default channel
   const [activeChannelName, setActiveChannelName] = useState(""); // Default channel name
@@ -103,36 +92,17 @@ const EmployeeDashboard: React.FC = () => {
     };
   }, []);
 
-  // const handleTabChange = (tab: string) => {
-  //   setActiveTab(tab);
-  //   if (tab === "home") {
-  //     setContentTab("dashboard");
-  //     setIsChatView(false);
-  //     setActiveChannelId(null);
-  //     setActiveChannelName("");
-  //   } else if (tab === "chat") {
-  //     setIsChatView(true);
-  //   }
-  // };
-
-  // const handleContentTabChange = (tab: string) => {
-  //   setContentTab(tab);
-  //   setIsChatView(false);
-  // };
-
-  // const toggleMenu = () => {
-  //   setIsMenuOpen(!isMenuOpen);
-  // };
-
-  // const toggleNotification = () => {
-  //   setIsNotificationOpen(!isNotificationOpen);
-  // };
-
-  // const handleChannelSelect = (channelId: string, channelName: string) => {
-  //   setActiveChannelId(channelId);
-  //   setActiveChannelName(channelName);
-  //   setIsChatView(true);
-  // };
+  useEffect(() => {
+    const fetchName = async () => {
+      const res = await getCurrentUserDetails();
+      if (res && res.data) {
+        setName({ firstName: res.data.firstName, lastName: res.data.lastName });
+      }
+    };
+  
+    fetchName();
+  }, []);
+  
 
   // const handleGetServerDetail = async () => {
   //   const res = await getLoggedInUserServer(Plat.PHONE);
@@ -146,34 +116,35 @@ const EmployeeDashboard: React.FC = () => {
   //   }
   // };
 
-  //const [Shifts, setShifts] = useState<Shifts[]>([]); //todo: uncomment this to use real data
-  const [Shifts, setShifts] = useState<RosterAttributes[]>([]); //todo: remove mock data
-  // const handleGetCurrentUserRosterDetails = async () => {
-  //   const res = await getShiftsForLoggedInUser();
-  //   if (res instanceof ApiError) {
-  //     console.log(res.message);
-  //   } else if ("statusCode" in res && "data" in res) {
-  //     const data = res.data as Shifts[];
-  //     // setShifts(data);
-  //     setShifts((prevShifts) => [...prevShifts, ...data]);
-  //   } else {
-  //     console.log("Something went wrong");
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   handleGetCurrentUserRosterDetails();
-
-  //   handleGetServerDetail();
-  // }, []);
-
   useEffect(() => {
-    const today = new Date().toISOString().split("T")[0];
-    const filtered = mockShifts.filter(
-      (shift) => shift.date.toISOString().split("T")[0] === today
-    );
-    setShifts(filtered);
+    const fetchShifts = async () => {
+          setLoading(true);
+      
+          const employeeId = await getUserIdFromToken(); 
+          if (!employeeId) {
+            setError("Employee ID not found in token");
+            setLoading(false);
+            return;
+          }
+  
+      const res = await getShiftsByEmployee(employeeId);
+
+      if (res instanceof ApiError) {
+        console.log("Shift API Error:", res.message);
+      } else {
+        const today = new Date().toISOString().split("T")[0];
+  
+        const todayShifts = res.data.filter((shift) => {
+          return shift.startTime.split("T")[0] === today;
+        });
+  
+        setShifts(todayShifts);
+      }
+    };
+  
+    fetchShifts();
   }, []);
+
 
   return (
 
@@ -182,7 +153,7 @@ const EmployeeDashboard: React.FC = () => {
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* Welcome Header */}
         <View style={styles.welcomeContainer}>
-          <Text style={styles.welcomeText}>Hi {firstName} </Text>
+          <Text style={styles.welcomeText}>Hi {name.firstName} {name.lastName}</Text>
           <Text style={styles.welcomeSubtext}>
             Here’s what’s happening today
           </Text>
@@ -229,7 +200,7 @@ const EmployeeDashboard: React.FC = () => {
                     </View>
 
                     {/* Location */}
-                    <View style={styles.iconRow}>
+                    {/* <View style={styles.iconRow}>
                       <Ionicons
                         name="location-outline"
                         size={16}
@@ -239,7 +210,7 @@ const EmployeeDashboard: React.FC = () => {
                       <Text style={styles.shiftLineText}>
                         Office ID: {shift.officeId}
                       </Text>
-                    </View>
+                    </View> */}
 
                     {/* Description */}
                     <View style={styles.iconRow}>
@@ -250,7 +221,7 @@ const EmployeeDashboard: React.FC = () => {
                         style={styles.icon}
                       />
                       <Text style={styles.shiftLineText}>
-                        {shift.description}
+                        {shift.notes || "No description available"}
                       </Text>
                     </View>
                   </View>
