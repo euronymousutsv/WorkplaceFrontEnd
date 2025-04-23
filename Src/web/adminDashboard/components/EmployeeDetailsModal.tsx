@@ -12,7 +12,9 @@ import {
   Linking,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { fetchEmployeeDetails, updateEmployeeInfo, fetchEmployeeDocuments } from '../../../api/server/serverApi';
+import { fetchEmployeeDetails, updateEmployeeInfo } from '../../../api/server/serverApi';
+import { getEmployeeDocuments, verifyDocument } from '../../../api/document/documentApi';
+import DocumentViewerModal from './DocumentViewerModal';
 import Toast from 'react-native-toast-message';
 import { Picker } from '@react-native-picker/picker';
 
@@ -80,6 +82,8 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
   const [documents, setDocuments] = useState<Document[]>([]);
   const [documentsLoading, setDocumentsLoading] = useState(false);
   const [documentsError, setDocumentsError] = useState<string | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [isDocumentViewerVisible, setIsDocumentViewerVisible] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -108,16 +112,24 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
         setEmployee(employeeData);
         setEditedEmployee(employeeData);
 
-        // Fetch documents
-        const documentsResponse = await fetchEmployeeDocuments(employeeId);
+        // Fetch documents using the new API
+        console.log('Fetching documents for employee:', employeeId);
+        const documentsResponse = await getEmployeeDocuments({ employeeId });
+        console.log('Raw documents response:', documentsResponse);
         
         if (documentsResponse instanceof Error) {
+          console.error('Error fetching documents:', documentsResponse);
           setDocumentsError(documentsResponse.message || 'Failed to fetch documents');
           return;
         }
 
-        if (documentsResponse.data) {
-          setDocuments([documentsResponse.data]);
+        // The response data is already an array of documents
+        if (documentsResponse.data && Array.isArray(documentsResponse.data)) {
+          console.log('Setting documents:', documentsResponse.data);
+          setDocuments(documentsResponse.data);
+        } else {
+          console.log('No valid documents found in response');
+          setDocuments([]);
         }
       } catch (error) {
         console.error('Error in fetchData:', error);
@@ -219,29 +231,52 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
 
   const handleVerifyDocument = async (documentId: string) => {
     try {
-      // TODO: Implement document verification API call
+      setLoading(true);
+      const response = await verifyDocument(documentId);
+      
+      if (response instanceof Error) {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: response.message || 'Failed to verify document',
+        });
+        return;
+      }
+
+      // Update the document's verification status in the local state
+      setDocuments(prevDocuments => 
+        prevDocuments.map(doc => 
+          doc.id === documentId 
+            ? { ...doc, isVerified: true }
+            : doc
+        )
+      );
+
       Toast.show({
         type: 'success',
         text1: 'Success',
         text2: 'Document verified successfully',
       });
     } catch (error) {
+      console.error('Error verifying document:', error);
       Toast.show({
         type: 'error',
         text1: 'Error',
         text2: 'Failed to verify document',
       });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleViewDocument = (url: string) => {
-    Linking.openURL(url).catch(err => {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Could not open document',
-      });
-    });
+  const handleViewDocument = (document: Document) => {
+    setSelectedDocument(document);
+    setIsDocumentViewerVisible(true);
+  };
+
+  const handleCloseDocumentViewer = () => {
+    setIsDocumentViewerVisible(false);
+    setSelectedDocument(null);
   };
 
   const renderField = (
@@ -360,7 +395,7 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
             <View style={styles.documentActions}>
               <TouchableOpacity
                 style={styles.viewButton}
-                onPress={() => handleViewDocument(doc.docsURL)}
+                onPress={() => handleViewDocument(doc)}
               >
                 <MaterialIcons name="visibility" size={20} color="#4A90E2" />
                 <Text style={styles.viewButtonText}>View Document</Text>
@@ -466,53 +501,62 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
   };
 
   return (
-    <Modal
-      visible={isVisible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Employee Details</Text>
-            <View style={styles.headerButtons}>
-              {isEditing ? (
-                <>
-                  <TouchableOpacity 
-                    onPress={handleSave} 
-                    style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
-                    disabled={isSaving}
-                  >
-                    <Text style={styles.saveButtonText}>
-                      {isSaving ? 'Saving...' : 'Save'}
-                    </Text>
+    <>
+      <Modal
+        visible={isVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={onClose}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Employee Details</Text>
+              <View style={styles.headerButtons}>
+                {isEditing ? (
+                  <>
+                    <TouchableOpacity 
+                      onPress={handleSave} 
+                      style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
+                      disabled={isSaving}
+                    >
+                      <Text style={styles.saveButtonText}>
+                        {isSaving ? 'Saving...' : 'Save'}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      onPress={() => {
+                        setIsEditing(false);
+                        setEditedEmployee(employee);
+                      }} 
+                      style={styles.cancelButton}
+                      disabled={isSaving}
+                    >
+                      <Text style={styles.cancelButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <TouchableOpacity onPress={() => setIsEditing(true)} style={styles.editButton}>
+                    <MaterialIcons name="edit" size={24} color="#4A90E2" />
                   </TouchableOpacity>
-                  <TouchableOpacity 
-                    onPress={() => {
-                      setIsEditing(false);
-                      setEditedEmployee(employee);
-                    }} 
-                    style={styles.cancelButton}
-                    disabled={isSaving}
-                  >
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <TouchableOpacity onPress={() => setIsEditing(true)} style={styles.editButton}>
-                  <MaterialIcons name="edit" size={24} color="#4A90E2" />
+                )}
+                <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                  <MaterialIcons name="close" size={24} color="#666" />
                 </TouchableOpacity>
-              )}
-              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <MaterialIcons name="close" size={24} color="#666" />
-              </TouchableOpacity>
+              </View>
             </View>
+            {renderContent()}
           </View>
-          {renderContent()}
         </View>
-      </View>
-    </Modal>
+      </Modal>
+
+      <DocumentViewerModal
+        isVisible={isDocumentViewerVisible}
+        onClose={handleCloseDocumentViewer}
+        documentUrl={selectedDocument?.docsURL || ''}
+        documentType={selectedDocument?.documentType === 'License' ? 'image' : 'pdf'}
+      />
+    </>
   );
 };
 
