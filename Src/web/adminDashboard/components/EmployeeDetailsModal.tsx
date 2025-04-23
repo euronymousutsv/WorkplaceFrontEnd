@@ -9,11 +9,23 @@ import {
   ScrollView,
   ActivityIndicator,
   TextInput,
+  Linking,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { fetchEmployeeDetails, updateEmployeeInfo } from '../../../api/server/serverApi';
+import { fetchEmployeeDetails, updateEmployeeInfo, fetchEmployeeDocuments } from '../../../api/server/serverApi';
 import Toast from 'react-native-toast-message';
 import { Picker } from '@react-native-picker/picker';
+
+interface Document {
+  id: string;
+  employeeId: string;
+  documentType: 'License' | 'National ID';
+  documentid: string;
+  expiryDate: string;
+  issueDate: string;
+  docsURL: string;
+  isVerified: boolean;
+}
 
 interface EmployeeData {
   id: string;
@@ -38,6 +50,7 @@ interface EmployeeData {
     updatedAt: string;
     deletedAt: string | null;
   };
+  documents?: Document[];
 }
 
 interface ApiResponse<T> {
@@ -64,49 +77,66 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [documentsLoading, setDocumentsLoading] = useState(false);
+  const [documentsError, setDocumentsError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchEmployee = async () => {
+    const fetchData = async () => {
       if (!employeeId) return;
       
       setLoading(true);
       setError(null);
+      setDocumentsLoading(true);
+      setDocumentsError(null);
+
       try {
-        const response = await fetchEmployeeDetails(employeeId);
+        // Fetch employee details
+        const employeeResponse = await fetchEmployeeDetails(employeeId);
         
-        if (response instanceof Error) {
-          setError(response.message || 'Failed to fetch employee details');
-          Toast.show({
-            type: 'error',
-            text1: 'Error',
-            text2: response.message || 'Failed to fetch employee details',
-          });
+        if (employeeResponse instanceof Error) {
+          setError(employeeResponse.message || 'Failed to fetch employee details');
           return;
         }
 
-        if (!response.data) {
+        if (!employeeResponse.data) {
           setError('Invalid response from server');
           return;
         }
 
-        const employeeData = response.data as EmployeeData;
+        const employeeData = employeeResponse.data as EmployeeData;
         setEmployee(employeeData);
         setEditedEmployee(employeeData);
+
+        // Fetch documents
+        const documentsResponse = await fetchEmployeeDocuments(employeeId);
+        
+        if (documentsResponse instanceof Error) {
+          setDocumentsError(documentsResponse.message || 'Failed to fetch documents');
+          return;
+        }
+
+        if (documentsResponse.data) {
+          setDocuments([documentsResponse.data]);
+        }
       } catch (error) {
-        console.error('Error in fetchEmployee:', error);
+        console.error('Error in fetchData:', error);
         setError('An unexpected error occurred');
       } finally {
         setLoading(false);
+        setDocumentsLoading(false);
       }
     };
 
     if (isVisible && employeeId) {
-      fetchEmployee();
+      fetchData();
     } else {
       setEmployee(null);
       setEditedEmployee(null);
       setError(null);
       setIsEditing(false);
+      setDocuments([]);
+      setDocumentsError(null);
     }
   }, [isVisible, employeeId]);
 
@@ -187,6 +217,33 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
     }
   };
 
+  const handleVerifyDocument = async (documentId: string) => {
+    try {
+      // TODO: Implement document verification API call
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Document verified successfully',
+      });
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to verify document',
+      });
+    }
+  };
+
+  const handleViewDocument = (url: string) => {
+    Linking.openURL(url).catch(err => {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Could not open document',
+      });
+    });
+  };
+
   const renderField = (
     label: string, 
     field: string, 
@@ -222,6 +279,105 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
         ) : (
           <Text style={styles.fieldValue}>{value}</Text>
         )}
+      </View>
+    );
+  };
+
+  const renderDocumentSection = () => {
+    if (documentsLoading) {
+      return (
+        <View style={styles.documentSection}>
+          <Text style={styles.sectionTitle}>Documents</Text>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color="#4A90E2" />
+            <Text style={styles.loadingText}>Loading documents...</Text>
+          </View>
+        </View>
+      );
+    }
+
+    if (documentsError) {
+      return (
+        <View style={styles.documentSection}>
+          <Text style={styles.sectionTitle}>Documents</Text>
+          <View style={styles.errorContainer}>
+            <MaterialIcons name="error-outline" size={24} color="#ff6b6b" />
+            <Text style={styles.errorText}>{documentsError}</Text>
+          </View>
+        </View>
+      );
+    }
+
+    if (!documents || documents.length === 0) {
+      return (
+        <View style={styles.documentSection}>
+          <Text style={styles.sectionTitle}>Documents</Text>
+          <Text style={styles.noDocumentsText}>No documents available</Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.documentSection}>
+        <Text style={styles.sectionTitle}>Documents</Text>
+        {documents.map((doc) => (
+          <View key={doc.id} style={styles.documentCard}>
+            <View style={styles.documentHeader}>
+              <Text style={styles.documentType}>{doc.documentType}</Text>
+              <View style={styles.documentStatus}>
+                <View style={[
+                  styles.statusDot,
+                  { backgroundColor: doc.isVerified ? '#4CAF50' : '#FFC107' }
+                ]} />
+                <Text style={styles.statusText}>
+                  {doc.isVerified ? 'Verified' : 'Pending Verification'}
+                </Text>
+              </View>
+            </View>
+            
+            <View style={styles.documentInfo}>
+              <Text style={styles.documentLabel}>Document ID:</Text>
+              <Text style={styles.documentValue}>{doc.documentid}</Text>
+            </View>
+            
+            <View style={styles.documentInfo}>
+              <Text style={styles.documentLabel}>Issue Date:</Text>
+              <Text style={styles.documentValue}>
+                {new Date(doc.issueDate).toLocaleDateString()}
+              </Text>
+            </View>
+            
+            <View style={styles.documentInfo}>
+              <Text style={styles.documentLabel}>Expiry Date:</Text>
+              <Text style={[
+                styles.documentValue,
+                new Date(doc.expiryDate) < new Date() && styles.expiredText
+              ]}>
+                {new Date(doc.expiryDate).toLocaleDateString()}
+              </Text>
+            </View>
+
+            <View style={styles.documentActions}>
+              <TouchableOpacity
+                style={styles.viewButton}
+                onPress={() => handleViewDocument(doc.docsURL)}
+              >
+                <MaterialIcons name="visibility" size={20} color="#4A90E2" />
+                <Text style={styles.viewButtonText}>View Document</Text>
+              </TouchableOpacity>
+
+              {!doc.isVerified && (
+                <TouchableOpacity
+                  style={styles.verifyButton}
+                  onPress={() => handleVerifyDocument(doc.id)}
+                >
+                  <MaterialIcons name="verified" size={20} color="#4CAF50" />
+                  <Text style={styles.verifyButtonText}>Verify</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        ))}
       </View>
     );
   };
@@ -303,6 +459,8 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
             <Text style={styles.timestampText}>Updated: {new Date(editedEmployee.detailsEmployee.updatedAt).toLocaleDateString()}</Text>
           </View>
         </View>
+        
+        {renderDocumentSection()}
       </ScrollView>
     );
   };
@@ -535,6 +693,101 @@ const styles = StyleSheet.create({
   },
   saveButtonDisabled: {
     opacity: 0.6,
+  },
+  documentSection: {
+    marginTop: 20,
+    padding: 16,
+    backgroundColor: '#f8f8f8',
+    borderRadius: 8,
+  },
+  documentCard: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  documentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  documentType: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  documentStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  statusText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  documentInfo: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  documentLabel: {
+    flex: 1,
+    fontSize: 14,
+    color: '#666',
+  },
+  documentValue: {
+    flex: 2,
+    fontSize: 14,
+    color: '#333',
+  },
+  expiredText: {
+    color: '#FF5252',
+  },
+  documentActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 12,
+    gap: 12,
+  },
+  viewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    borderRadius: 4,
+    backgroundColor: '#E3F2FD',
+  },
+  viewButtonText: {
+    marginLeft: 4,
+    color: '#4A90E2',
+    fontSize: 14,
+  },
+  verifyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    borderRadius: 4,
+    backgroundColor: '#E8F5E9',
+  },
+  verifyButtonText: {
+    marginLeft: 4,
+    color: '#4CAF50',
+    fontSize: 14,
+  },
+  noDocumentsText: {
+    textAlign: 'center',
+    color: '#666',
+    fontSize: 14,
+    marginTop: 8,
   },
 });
 

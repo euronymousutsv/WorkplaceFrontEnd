@@ -415,6 +415,45 @@ const updateEmployeeInfo = async (employeeData: EmployeeInfoUpdate) => {
   }
 };
 
+interface EmployeeDocument {
+  id: string;
+  employeeId: string;
+  documentType: 'License' | 'National ID';
+  documentid: string;
+  issueDate: string;
+  expiryDate: string;
+  docsURL: string;
+  isVerified: boolean;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt: string | null;
+}
+
+const fetchEmployeeDocuments = async (employeeId: string) => {
+  try {
+    const accessToken = await getToken("accessToken", Plat.WEB);
+    const response = await API.get<ApiResponse<EmployeeDocument>>(
+      `document/employee/${employeeId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("API error in fetchEmployeeDocuments:", error);
+
+    if (error instanceof AxiosError) {
+      const err = error.response?.data as ApiError<{}>;
+      return new ApiError(err.statusCode || 500, {}, err.message || 'Failed to fetch employee documents');
+    } else {
+      return new ApiError(500, {}, "An unexpected error occurred");
+    }
+  }
+};
+
 export {
   updateRole,
   kickEmployee,
@@ -430,4 +469,5 @@ export {
   updateEmployeeDetails,
   fetchEmployeeDetails,
   updateEmployeeInfo,
+  fetchEmployeeDocuments,
 };
