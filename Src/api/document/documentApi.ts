@@ -86,7 +86,7 @@ export const getEmployeeDocuments = async (reqData: GetEmployeeDocumentsRequest)
 
 export const verifyDocument = async (documentId: string) => {
   try {
-    const accessToken = await getToken("accessToken", Plat.WEB);
+    const accessToken = await getToken("accessToken");
     const response = await API.put<ApiResponse<Document>>(
       `update/${documentId}`,
       { isVerified: true },
@@ -110,7 +110,7 @@ export const verifyDocument = async (documentId: string) => {
 
 export const deleteDocument = async (documentId: string) => {
   try {
-    const accessToken = await getToken("accessToken", Plat.WEB);
+    const accessToken = await getToken("accessToken");
     const response = await API.delete<ApiResponse<{}>>(`deleteDocument/${documentId}`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
