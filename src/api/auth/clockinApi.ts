@@ -1,5 +1,4 @@
-// src/api/auth/clockinApi.ts
-
+import { ApiError, ApiResponse } from "../utils/apiResponse";
 import { getToken } from "./token";
 import axios, { AxiosError } from "axios";
 
@@ -12,74 +11,173 @@ const API = axios.create({
   },
 });
 
-export type ClockInPayload = {
-  employeeId: string;
-  shiftId?: string;
-  latitude?: string;
-  longitude?: string;
-};
-
-export type ClockStatus = "in" | "out" | "break-start" | "break-end";
-
-export type ClockInOutResponse = {
-  message: string;
-  clockInEvent?: any;
-  clockOutEvent?: any;
-  breakStartEvent?: any;
-  breakEndEvent?: any;
-};
-
-export const clockIn = async (payload: ClockInPayload): Promise<ClockInOutResponse | string> => {
-  try {
-    const token = await getToken("accessToken");
-    const response = await API.post("/api/clock/clockIn", payload, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return response.data;
-  } catch (error) {
-    return handleClockError(error);
+// Enums
+export enum ClockStatus {
+    ON_TIME = "on_time",
+    LATE = "late",
+    EARLY = "early",
+    NO_SHIFT = "no_shift",
   }
-};
-
-export const clockOut = async (payload: ClockInPayload): Promise<ClockInOutResponse | string> => {
-  try {
-    const token = await getToken("accessToken");
-    const response = await API.put("/api/clock/clockOut", payload, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return response.data;
-  } catch (error) {
-    return handleClockError(error);
+  
+  // Payloads
+  export interface ClockInPayload {
+    clockInTime: Date;
+    long: number;
+    lat: number;
   }
-};
-
-export const startBreak = async (payload: ClockInPayload): Promise<ClockInOutResponse | string> => {
-  try {
-    const token = await getToken("accessToken");
-    const response = await API.post("/api/clock/startBreak", payload, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return response.data;
-  } catch (error) {
-    return handleClockError(error);
+  
+  export interface ClockOutPayload {
+    timeLogId: string;
+    clockOutTime: Date;
+    long: number;
+    lat: number;
   }
-};
-
-export const endBreak = async (payload: ClockInPayload): Promise<ClockInOutResponse | string> => {
-  try {
-    const token = await getToken("accessToken");
-    const response = await API.post("/api/clock/endBreak", payload, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return response.data;
-  } catch (error) {
-    return handleClockError(error);
+  
+  export interface BreakPayload {
+    timeLogId: string;
+    breakStartTime?: Date;
+    breakEndTime?: Date;
   }
-};
-
-const handleClockError = (error: unknown): string => {
-  if (error instanceof AxiosError && error.response) {
-    return error.response.data?.error || "Unexpected error occurred.";
+  
+  export interface TimeLogUpdatePayload {
+    timeLogId: string;
+    clockIn?: Date;
+    clockOut?: Date;
+    breakStart?: Date;
+    breakEnd?: Date;
+    hasShift?: boolean;
+    clockInStatus?: ClockStatus;
+    clockOutStatus?: ClockStatus;
+    clockInDiffInMin?: number;
+    clockOutDiffInMin?: number;
   }
-  return "Server error or network issue.";
-};
+  
+  export interface TimeLog {
+    id: string;
+    employeeId: string;
+    clockIn: Date;
+    clockOut?: Date;
+    breakStart?: Date;
+    breakEnd?: Date;
+    hasShift?: boolean;
+    clockInStatus?: ClockStatus;
+    clockOutStatus?: ClockStatus;
+    clockInDiffInMin?: number;
+    clockOutDiffInMin?: number;
+    officeId?: string;
+  }
+
+  const handleError = (error: unknown) => {
+    if (error instanceof AxiosError) {
+      const err = error.response?.data as ApiError<unknown>;
+      return new ApiError(err.statusCode, {}, err.message);
+    }
+    return new ApiError(400, {}, "Something went wrong");
+  };
+  
+
+// 1. Clock In
+export const clockIn = async (payload: ClockInPayload): Promise<ApiResponse<TimeLog> | ApiError<unknown>> => {
+    try {
+      const token = await getToken("accessToken");
+      const res = await API.post("/api/v1/timeLog/clock-in", payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data;
+    } catch (err) {
+      return handleError(err);
+    }
+  };
+  
+  // 2. Clock Out
+  export const clockOut = async (payload: ClockOutPayload): Promise<ApiResponse<TimeLog> | ApiError<unknown>> => {
+    try {
+      const token = await getToken("accessToken");
+      const res = await API.post("/api/v1/timeLog/clock-out", payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data;
+    } catch (err) {
+      return handleError(err);
+    }
+  };
+  
+  // 3. Start Break
+  export const startBreak = async (payload: { timeLogId: string; breakStartTime: Date }) => {
+    try {
+      const token = await getToken("accessToken");
+      const res = await API.post("/api/v1/timeLog/start-break", payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data;
+    } catch (err) {
+      return handleError(err);
+    }
+  };
+  
+  // 4. End Break
+  export const endBreak = async (payload: { timeLogId: string; breakEndTime: Date }) => {
+    try {
+      const token = await getToken("accessToken");
+      const res = await API.post("/api/v1/timeLog/end-break", payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data;
+    } catch (err) {
+      return handleError(err);
+    }
+  };
+  
+  // 5. Update Time Log (admin use)
+  export const updateTimeLog = async (payload: TimeLogUpdatePayload) => {
+    try {
+      const token = await getToken("accessToken");
+      const res = await API.patch("/api/v1/timeLog/update", payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data;
+    } catch (err) {
+      return handleError(err);
+    }
+  };
+  
+  // 6. Get Time Logs for Office by Date Range
+  export const getTimeLogByDateRange = async (startDate: string, endDate: string, officeId: string) => {
+    try {
+      const token = await getToken("accessToken");
+      const res = await API.get("/api/v1/timeLog/date-range", {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { startDate, endDate, officeId },
+      });
+      return res.data;
+    } catch (err) {
+      return handleError(err);
+    }
+  };
+  
+  // 7. Get Time Logs for Employee by Date Range
+  export const getTimeLogByDateRangeForEmployee = async (startDate: string, endDate: string, employeeId: string) => {
+    try {
+      const token = await getToken("accessToken");
+      const res = await API.get("/api/v1/timeLog/date-range-logged-in-user", {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { startDate, endDate, employeeId },
+      });
+      return res.data;
+    } catch (err) {
+      return handleError(err);
+    }
+  };
+  
+  // 8. Get Today’s Time Log (for logged-in employee)
+  export const getTodaysTimeLog = async () => {
+    try {
+      const token = await getToken("accessToken");
+      const res = await API.get("/api/v1/timeLog/today", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data;
+    } catch (err) {
+      return handleError(err);
+    }
+  };

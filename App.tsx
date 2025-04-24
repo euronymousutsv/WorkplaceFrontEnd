@@ -36,6 +36,7 @@ import OfficeDetailAdmin from "./src/web/adminDashboard/screens/OfficeDetailAdmi
 import MessageThemeScreen from "./src/mobile/employeeDashboard/screens/MessageThemeScreen";
 import { getToken } from "./src/api/auth/token";
 import LeaveDetail from "./src/mobile/employeeDashboard/screens/LeaveDetail";
+import DocumentUpload from "./src/mobile/employeeDashboard/screens/DocumentUpload";
 
 // Create a stack navigator
 const Stack = createStackNavigator();
@@ -172,6 +173,15 @@ const AppNavigator = () => {
       <Stack.Screen
         name="ClockInOutScreenPhone"
         component={ClockInOutScreenPhone}
+        options={{
+          headerShown: true,
+          title: "Clock In/Out",
+          headerShadowVisible: false,
+        }}
+      />
+      <Stack.Screen
+        name="Document"
+        component={DocumentUpload}
         options={{
           headerShown: true,
           title: "Clock In/Out",

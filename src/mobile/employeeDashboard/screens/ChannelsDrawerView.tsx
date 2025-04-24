@@ -46,7 +46,7 @@ const CustomDrawerContent = (props: any) => {
   const handleGetServerDetail = async () => {
     try {
       const platformType = Plat.PHONE;
-      const res = await getLoggedInUserServer(platformType);
+      const res = await getLoggedInUserServer();
 
       if (res instanceof ApiError) {
         console.log("Server fetch error:", res.message);
