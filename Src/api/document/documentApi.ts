@@ -2,7 +2,7 @@ import axios, { AxiosError } from "axios";
 import { getToken, Plat } from "../auth/token";
 import { ApiError, ApiResponse } from "../utils/apiResponse";
 
-const baseUrl = "http://192.168.1.222:3000";
+const baseUrl = "http://192.168.1.222:3000"; //replace with baseUrl
 const API = axios.create({
   baseURL: baseUrl,
   timeout: 10000,
