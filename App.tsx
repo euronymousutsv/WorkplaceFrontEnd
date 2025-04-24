@@ -35,6 +35,7 @@ import NoOfficeScreen from "./src/mobile/employeeDashboard/screens/NoOfficeScree
 import OfficeDetailAdmin from "./src/web/adminDashboard/screens/OfficeDetailAdmin";
 import MessageThemeScreen from "./src/mobile/employeeDashboard/screens/MessageThemeScreen";
 import { getToken } from "./src/api/auth/token";
+import LeaveDetail from "./src/mobile/employeeDashboard/screens/LeaveDetail";
 
 // Create a stack navigator
 const Stack = createStackNavigator();
@@ -108,6 +109,15 @@ const AppNavigator = () => {
         options={{
           headerShown: true,
           title: "Password",
+          headerShadowVisible: false,
+        }}
+      />
+      <Stack.Screen
+        name="LeaveDetail"
+        component={LeaveDetail}
+        options={{
+          headerShown: true,
+          title: "Leave Detail",
           headerShadowVisible: false,
         }}
       />

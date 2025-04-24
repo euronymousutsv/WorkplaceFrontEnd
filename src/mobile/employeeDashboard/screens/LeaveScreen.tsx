@@ -7,9 +7,23 @@ import {
   ScrollView,
   StyleSheet,
   SafeAreaView,
+  Modal,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-// import DateTimePicker from "@react-native-community/datetimepicker";
+import Toast from "react-native-toast-message";
+import {
+  createALeaveRequest,
+  deleteLeaveRequest,
+  fetchLeaveRequestForLoggedInEmployee,
+} from "../../../api/leave/leaveApi";
+import { LeaveTypeAttributes } from "../../../api/leave/leaveResponse";
+import { Picker } from "@react-native-picker/picker";
+import { Leave } from "../../../api/leave/leaveRequest";
+import { ApiError } from "../../../api/utils/apiResponse";
+import { Swipeable } from "react-native-gesture-handler";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { useNavigation } from "@react-navigation/native";
 
 // Mock data (Replace with backend integration later)
 const mockLeaveHistory = [
@@ -28,79 +42,208 @@ const mockLeaveHistory = [
     status: "Pending",
   },
 ];
+const SCREEN_WIDTH = Dimensions.get("window").width;
 
 // const LeaveScreen: React.FC<{ toggleMenu: () => void; toggleNotification: () => void }> = ({ toggleMenu, toggleNotification }) => {
 const LeaveScreen = () => {
-  const [leaveType, setLeaveType] = useState("");
+  const navigation = useNavigation();
+  const [leaveType, setLeaveType] = useState<LeaveTypeAttributes>(
+    LeaveTypeAttributes.PAID_LEAVE
+  );
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
   const [reason, setReason] = useState("");
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
-  const [leaveRequests, setLeaveRequests] = useState(mockLeaveHistory);
+  const [openPicker, setOpenPicker] = useState(false);
+  const [previousLeaves, setPreviousLeaves] = useState<Leave[] | null>(null);
 
-  const handleApplyLeave = () => {
-    if (!leaveType || !reason) {
-      alert("Please fill in all fields");
-      return;
+  const handleApplyLeave = async () => {
+    try {
+      if (!startDate || !endDate || !leaveType || !reason) {
+        Toast.show({
+          type: "error",
+          text1: "Please fill in all fields",
+          position: "bottom",
+        });
+        return;
+      }
+
+      const res = await createALeaveRequest({
+        startDate: startDate.toISOString().split("T")[0],
+        endDate: endDate.toISOString().split("T")[0],
+        reason,
+        leaveType,
+      });
+
+      if (res instanceof ApiError) {
+        Toast.show({
+          type: "error",
+          text1: res.message,
+          position: "bottom",
+        });
+      } else {
+        Toast.show({
+          type: "success",
+          text1: "Leave request submitted successfully",
+          position: "bottom",
+        });
+        setLeaveType(LeaveTypeAttributes.PAID_LEAVE);
+        setStartDate(new Date());
+        setEndDate(new Date());
+        setReason("");
+      }
+
+      fetchAllLeaveRequests();
+    } catch (error) {
+      if (error instanceof ApiError) {
+        Toast.show({
+          type: "error",
+          text1: error.message,
+          position: "bottom",
+        });
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "An unexpected error occurred",
+          position: "bottom",
+        });
+      }
     }
-    const newLeave = {
-      id: Date.now().toString(),
-      type: leaveType,
-      startDate: startDate.toISOString().split("T")[0],
-      endDate: endDate.toISOString().split("T")[0],
-      status: "Pending",
-    };
-    setLeaveRequests([...leaveRequests, newLeave]);
-    setLeaveType("");
-    setReason("");
   };
+
+  const fetchAllLeaveRequests = async () => {
+    try {
+      const res = await fetchLeaveRequestForLoggedInEmployee();
+      if (res instanceof ApiError) {
+        Toast.show({
+          type: "error",
+          text1: res.message,
+          position: "bottom",
+        });
+      } else {
+        setPreviousLeaves(res);
+      }
+    } catch (error) {
+      console.error("Error fetching leave requests:", error);
+    }
+  };
+
+  const handleDeleteLeaveRequest = async (id: string) => {
+    try {
+      const res = await deleteLeaveRequest(id);
+      if (res.statusCode === 200) {
+        Toast.show({
+          type: "success",
+          text1: "Leave request deleted successfully",
+          position: "bottom",
+        });
+        fetchAllLeaveRequests();
+      } else {
+        Toast.show({
+          type: "error",
+          text1: res.message,
+          position: "bottom",
+        });
+      }
+    } catch (error) {
+      if (error instanceof ApiError) {
+        Toast.show({
+          type: "error",
+          text1: error.message,
+          position: "bottom",
+        });
+      }
+    }
+  };
+
+  React.useEffect(() => {
+    fetchAllLeaveRequests();
+  }, []);
 
   return (
     <ScrollView style={styles.contentContainer}>
+      {openPicker && (
+        <Modal
+          visible={openPicker}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setOpenPicker(false)}
+        >
+          <View style={styles.overlay}>
+            <View style={styles.modalContent}>
+              <TouchableOpacity
+                onPress={() => setOpenPicker(false)}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+
+              <Text style={styles.modalTitle}>Select Leave Type</Text>
+
+              <Picker
+                selectedValue={leaveType}
+                onValueChange={(itemValue) => setLeaveType(itemValue)}
+                style={styles.picker}
+              >
+                <Picker.Item
+                  label="Paid Leave"
+                  value={LeaveTypeAttributes.PAID_LEAVE}
+                />
+                <Picker.Item
+                  label="Sick Leave"
+                  value={LeaveTypeAttributes.SICK_LEAVE}
+                />
+                <Picker.Item
+                  label="Vacation"
+                  value={LeaveTypeAttributes.VACATION_LEAVE}
+                />
+                <Picker.Item
+                  label="Unpaid Leave"
+                  value={LeaveTypeAttributes.UNPAID_LEAVE}
+                />
+                <Picker.Item
+                  label="Parental Leave"
+                  value={LeaveTypeAttributes.PARANTIAL_LEAVE}
+                />
+              </Picker>
+            </View>
+          </View>
+        </Modal>
+      )}
+
       <SafeAreaView>
         <Text style={styles.sectionTitle}>Apply for Leave</Text>
 
-        {/* Leave Type Input */}
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Leave Type (e.g., Sick Leave, Vacation)"
-          value={leaveType}
-          onChangeText={setLeaveType}
-        />
+        <TouchableOpacity>
+          <Text style={styles.input} onPress={() => setOpenPicker(true)}>
+            {leaveType}
+          </Text>
+          <Ionicons
+            name="chevron-down-outline"
+            size={20}
+            color="#4A90E2"
+            style={{ position: "absolute", right: 10, top: 15 }}
+          />
+        </TouchableOpacity>
 
         {/* Date Pickers */}
-        <TouchableOpacity
-          onPress={() => setShowStartDatePicker(true)}
-          style={styles.datePicker}
-        >
-          <Ionicons name="calendar-outline" size={20} color="#4A90E2" />
-          <Text style={styles.dateText}>
-            Start Date: {startDate.toDateString()}
-          </Text>
-        </TouchableOpacity>
-        {/* {showStartDatePicker && (
-          // <DateTimePicker
-          //   value={startDate}
-          //   mode="date"
-          //   display="default"
-          //   onChange={(event, selectedDate) => {
-          //     setShowStartDatePicker(false);
-          //     if (selectedDate) setStartDate(selectedDate);
-          //   }}
-          // />
-        )} */}
 
-        <TouchableOpacity
-          onPress={() => setShowEndDatePicker(true)}
-          style={styles.datePicker}
-        >
-          <Ionicons name="calendar-outline" size={20} color="#4A90E2" />
-          <Text style={styles.dateText}>
-            End Date: {endDate.toDateString()}
-          </Text>
-        </TouchableOpacity>
-        {/* {showEndDatePicker && (
+        <View style={styles.datePicker}>
+          <Text>Start Date</Text>
+          <DateTimePicker
+            value={startDate}
+            mode="date"
+            display="default"
+            style={{ width: "100%" }} // Full width
+            onChange={(event, selectedDate) => {
+              setShowStartDatePicker(false);
+              if (selectedDate) setStartDate(selectedDate);
+            }}
+          />
+        </View>
+        <View style={styles.datePicker}>
+          <Text>End Date</Text>
           <DateTimePicker
             value={endDate}
             mode="date"
@@ -110,7 +253,7 @@ const LeaveScreen = () => {
               if (selectedDate) setEndDate(selectedDate);
             }}
           />
-        )} */}
+        </View>
 
         {/* Reason Input */}
         <TextInput
@@ -128,24 +271,61 @@ const LeaveScreen = () => {
 
         {/* ✅ Leave History Section */}
         <Text style={styles.sectionTitle}>Leave History</Text>
-        {leaveRequests.length > 0 ? (
-          leaveRequests.map((leave) => (
-            <View key={leave.id} style={styles.leaveCard}>
-              <Text style={styles.leaveType}>{leave.type}</Text>
-              <Text style={styles.leaveDate}>
-                {leave.startDate} - {leave.endDate}
-              </Text>
-              <Text
-                style={[
-                  styles.status,
-                  leave.status === "Approved"
-                    ? styles.approved
-                    : styles.pending,
-                ]}
+
+        {previousLeaves && previousLeaves.length > 0 ? (
+          previousLeaves.map((leave) => (
+            <TouchableOpacity
+              onPress={() => {
+                navigation.navigate("LeaveDetail");
+              }}
+              style={{ marginBottom: 10 }}
+              key={leave.id}
+            >
+              <Swipeable
+                key={leave.id}
+                renderRightActions={() => (
+                  <TouchableOpacity
+                    onPress={() => handleDeleteLeaveRequest(leave.id!)}
+                    style={{
+                      backgroundColor: "#E74C3C",
+                      width: 100,
+                      height: "100%", // Ensure it stretches to full height of the row
+                      justifyContent: "center",
+                      alignItems: "center",
+                      borderRadius: 10,
+                    }}
+                  >
+                    <Text
+                      style={{ color: "white", padding: 5, fontWeight: "bold" }}
+                    >
+                      Delete
+                    </Text>
+                  </TouchableOpacity>
+                )}
               >
-                {leave.status}
-              </Text>
-            </View>
+                <View style={styles.leaveCard}>
+                  <Text style={styles.leaveType}>{leave.leaveType}</Text>
+                  <Text style={styles.leaveDate}>Start: {leave.startDate}</Text>
+                  <Text style={styles.leaveDate}>End: {leave.endDate}</Text>
+                  <Text
+                    style={[
+                      styles.status,
+                      leave.isApproved === true
+                        ? styles.approved
+                        : leave.isApproved === false
+                        ? styles.rejected
+                        : styles.pending,
+                    ]}
+                  >
+                    {leave.isApproved === true
+                      ? "Approved"
+                      : leave.isApproved === false
+                      ? "Rejected"
+                      : "Pending"}
+                  </Text>
+                </View>
+              </Swipeable>
+            </TouchableOpacity>
           ))
         ) : (
           <Text style={styles.noLeaveText}>No leave history available.</Text>
@@ -200,7 +380,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E0E0E0",
     borderRadius: 10,
-    padding: 10,
+    padding: 15,
     fontSize: 16,
     marginBottom: 10,
   },
@@ -208,19 +388,16 @@ const styles = StyleSheet.create({
     height: 80,
   },
   datePicker: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    padding: 10,
-    borderRadius: 10,
+    width: "100%",
+    backgroundColor: "#fff",
+    height: 50,
     marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-  },
-  dateText: {
-    fontSize: 16,
-    marginLeft: 10,
-    color: "#393D3F",
+    justifyContent: "space-between",
+    paddingHorizontal: 10,
+    borderRadius: 10,
   },
   applyButton: {
     backgroundColor: "#2ECC71",
@@ -238,7 +415,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F7F7F7",
     padding: 15,
     borderRadius: 10,
-    marginBottom: 10,
   },
   leaveType: {
     fontSize: 16,
@@ -260,11 +436,46 @@ const styles = StyleSheet.create({
   pending: {
     color: "#F39C12",
   },
+  rejected: {
+    color: "#D32F2F",
+  },
   noLeaveText: {
     textAlign: "center",
     fontSize: 16,
     color: "#8E9196",
     marginTop: 20,
+  },
+
+  overlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  modalContent: {
+    backgroundColor: "#000",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+    height: 300,
+  },
+  closeButton: {
+    position: "absolute",
+    right: 16,
+    top: 16,
+    zIndex: 1,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  picker: {
+    width: SCREEN_WIDTH - 32,
+    alignSelf: "center",
+    height: 200, // controlled height
   },
 });
 
