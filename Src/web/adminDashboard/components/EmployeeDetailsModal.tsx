@@ -22,7 +22,7 @@ interface Document {
   id: string;
   employeeId: string;
   documentType: 'License' | 'National ID';
-  documentid: string;
+  documentid: number;
   expiryDate: string;
   issueDate: string;
   docsURL: string;

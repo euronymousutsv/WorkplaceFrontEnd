@@ -1,4 +1,17 @@
 import React from "react";
+import { View } from "react-native";
+import DocumentUpload from "./src/mobile/employeeDashboard/screens/DocumentUpload";
+
+export default function App() {
+  return (
+    <View style={{ flex: 1 }}>
+      <DocumentUpload />
+    </View>
+  );
+}
+
+// Commented out all other code
+/*
 import AdminDashboard from "./src/web/adminDashboard/screens/AdminDashboard";
 import ManagerDashboard from "./src/web/managerDashboard/screens/ManagerDashboard";
 import { NavigationContainer } from "@react-navigation/native";
@@ -33,7 +46,7 @@ import ChatScreenPhone from "./src/mobile/employeeDashboard/screens/ChatScreen";
 import ClockInOutScreenPhone from "./src/mobile/employeeDashboard/screens/ClockInOutScreenPhone";
 import NoOfficeScreen from "./src/mobile/employeeDashboard/screens/NoOfficeScreen";
 import OfficeDetailAdmin from "./src/web/adminDashboard/screens/OfficeDetailAdmin";
-// Create a stack navigator
+
 const Stack = createStackNavigator();
 
 const App = () => {
@@ -49,9 +62,8 @@ const App = () => {
   );
 };
 
-// Centralized AppNavigator for role-based navigation
 const AppNavigator = () => {
-  const { userRole, isAuthenticated } = useAuth(); // Access userRole and isAuthenticated from context
+  const { userRole, isAuthenticated } = useAuth();
 
   return (
     <Stack.Navigator>
@@ -153,7 +165,6 @@ const AppNavigator = () => {
           headerShadowVisible: false,
         }}
       />
-      {/* All Signup Screens */}
       <Stack.Screen
         name="Signup1"
         component={SignupFirstScreen}
@@ -194,12 +205,6 @@ const AppNavigator = () => {
         component={MyTabs}
         options={{ headerShown: false }}
       />
-      {/* <Stack.Screen
-        name="AdminDashboard"
-        component={AdminDashboard}
-        options={{ headerShown: false }}
-      /> */}
-      {/* // With drawer remove this comment */}
       <Stack.Screen
         name="AdminDashboard"
         component={WebNavigatorDrawer}
@@ -219,7 +224,7 @@ const AppNavigator = () => {
       />
       <Stack.Screen
         name="ManagerDashboard"
-        component={AdminDashboard} //change it
+        component={AdminDashboard}
         options={{ headerShown: false }}
       />
       <Stack.Screen
@@ -235,5 +240,4 @@ const AppNavigator = () => {
     </Stack.Navigator>
   );
 };
-
-export default App;
+*/
