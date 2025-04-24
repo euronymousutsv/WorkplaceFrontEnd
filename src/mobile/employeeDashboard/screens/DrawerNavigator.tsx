@@ -11,7 +11,7 @@ import CustomDrawerContent from "./ChannelsDrawerView";
 import { Dimensions, View } from "react-native";
 import NotificationScreen from "./NotificationScreen";
 import EmployeeManagementScreen from "../../../web/adminDashboard/screens/EmployeeManagementScreen";
-import ClockInOutScreen from "../../../web/adminDashboard/screens/ClockInOutScreen";
+// import ClockInOutScreen from "../../../web/adminDashboard/screens/ClockInOutScreen";
 import LeaveRequestScreen from "../../../web/adminDashboard/screens/LeaveRequestScreen";
 import GrossPaymentScreen from "../../../web/adminDashboard/screens/GrossPaymentScreen";
 import SettingsScreen from "../../../web/adminDashboard/screens/SettingsScreen";

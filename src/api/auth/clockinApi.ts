@@ -150,23 +150,54 @@ export const clockIn = async (payload: ClockInPayload): Promise<ApiResponse<Time
     try {
       const token = await getToken("accessToken");
   
-      const res = await API.post(
-        "/api/v1/timeLog/date-range",
-        {
-          startDate,
-          endDate,
-          officeId,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const today = new Date();
+      const fallbackStart = new Date();
+      fallbackStart.setDate(today.getDate() - 6); // last 6 days
   
-      return res.data;
-    } catch (err) {
+      // LOG INPUTS
+      console.log("🪵 startDate input:", startDate);
+      console.log("🪵 endDate input:", endDate);
+  
+      // Defensive parsing
+      let parsedStart: Date;
+      let parsedEnd: Date;
+  
+      try {
+        parsedStart = new Date(startDate);
+        if (isNaN(parsedStart.getTime())) throw new Error("Invalid start date");
+      } catch {
+        parsedStart = fallbackStart;
+      }
+  
+      try {
+        parsedEnd = new Date(endDate + "T23:59:59");
+        if (isNaN(parsedEnd.getTime())) throw new Error("Invalid end date");
+      } catch {
+        parsedEnd = today;
+      }
+  
+      const payload = {
+        startDate: parsedStart.toISOString(),
+        endDate: parsedEnd.toISOString(),
+        officeId,
+      };
+  
+      console.log("📤 Sending TimeLog Range Request:", payload);
+  
+      const res = await API.post("/api/v1/timeLog/date-range", payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+  
+      console.log("✅ Clock In/Out API Response:", res.data);
+  
+      return res.data.data;
+    } catch (err: any) {
+      console.error("❌ API Error:", err?.response?.data || err.message || err);
       return handleError(err);
     }
   };
+  
+  
   
   
   // 7. Get Time Logs for Employee by Date Range

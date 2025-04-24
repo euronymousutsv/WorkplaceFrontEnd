@@ -11,8 +11,9 @@ import {
   Linking,
 } from "react-native";
 import { useRoute } from "@react-navigation/native";
-import { getTimeLogByDateRange } from "../../../api/auth/clockinApi";
+import { getTimeLogByDateRange, updateTimeLog } from "../../../api/auth/clockinApi";
 import { ApiError } from "../../../api/utils/apiResponse";
+import { Feather } from "@expo/vector-icons";
 
 const ClockInOutScreen = () => {
   const route = useRoute();
@@ -20,12 +21,23 @@ const ClockInOutScreen = () => {
 
   const [screenWidth, setScreenWidth] = useState(Dimensions.get("window").width);
   const [searchEmployee, setSearchEmployee] = useState("");
-  const [searchDate, setSearchDate] = useState("");
-  const [dateError, setDateError] = useState("");
   const [clockData, setClockData] = useState<any[]>([]);
+  const [editedLogs, setEditedLogs] = useState<{ [id: string]: any }>({});
 
   const isMobile = screenWidth <= 768;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Date();
+  const startDate = new Date(today);
+  startDate.setDate(startDate.getDate() - 6);
+
+  const formatISODate = (date: Date) => date.toISOString().split("T")[0];
+  const formatDate = (iso: string) => (iso ? new Date(iso).toISOString().split("T")[0] : "—");
+  const formatTime = (iso: string) =>
+    iso ? new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—";
+
+  const openMap = (lat: number, lng: number) => {
+    const url = `https://www.google.com/maps?q=${lat},${lng}`;
+    Linking.openURL(url);
+  };
 
   useEffect(() => {
     const updateWidth = () => setScreenWidth(Dimensions.get("window").width);
@@ -35,46 +47,51 @@ const ClockInOutScreen = () => {
 
   useEffect(() => {
     const fetchLogs = async () => {
-      const startDate = searchDate || today;
-      const endDate = searchDate || today;
-
-      const res = await getTimeLogByDateRange(startDate, endDate, officeId);
-
-      if (!(res instanceof ApiError)) {
-        setClockData(res.data || []);
-      }
+      const from = `${formatISODate(startDate)}T00:00:00Z`;
+      const to = `${formatISODate(today)}T23:59:59Z`;
+      const res = await getTimeLogByDateRange(from, to, officeId);
+      if (!(res instanceof ApiError)) setClockData(res);
     };
-
     fetchLogs();
-  }, [officeId, searchDate]);
+  }, [officeId]);
 
-  const formatTime = (iso: string) =>
-    iso
-      ? new Date(iso).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : "—";
-
-  const formatDate = (iso: string) =>
-    iso ? new Date(iso).toISOString().slice(0, 10) : "—";
-
-  const openMap = (lat: number, lng: number) => {
-    const url = `https://www.google.com/maps?q=${lat},${lng}`;
-    Linking.openURL(url);
+  const handleEditChange = (id: string, field: string, value: string) => {
+    setEditedLogs((prev) => ({
+      ...prev,
+      [id]: {
+        ...prev[id],
+        [field]: value,
+      },
+    }));
   };
 
-  const isValidDate = (date: string) => /^\d{4}-\d{2}-\d{2}$/.test(date);
+  const handleSave = async (id: string) => {
+    const log = editedLogs[id];
+    if (!log) return;
+    const payload = {
+      timeLogId: id,
+      clockIn: log.clockIn ? new Date(log.clockIn) : undefined,
+      clockOut: log.clockOut ? new Date(log.clockOut) : undefined,
+      hasShift: log.hasShift === "Yes",
+      clockInStatus: log.clockInStatus,
+      clockOutStatus: log.clockOutStatus,
+      clockInDiffInMin: parseInt(log.clockInDiffInMin),
+      clockOutDiffInMin: parseInt(log.clockOutDiffInMin),
+    };
 
-  const handleDateChange = (text: string) => {
-    setSearchDate(text);
-    setDateError(
-      isValidDate(text) || text === "" ? "" : "Invalid format. Use YYYY-MM-DD"
-    );
+    const res = await updateTimeLog(payload);
+    if (!(res instanceof ApiError)) {
+      alert("Saved!");
+      setEditedLogs((prev) => {
+        const updated = { ...prev };
+        delete updated[id];
+        return updated;
+      });
+    }
   };
 
   const filteredData = clockData.filter((entry) => {
-    const matchesEmployee = `${entry.Employee?.firstName ?? ""} ${entry.Employee?.lastName ?? ""}`
+    const matchesEmployee = `${entry.Employee?.firstName} ${entry.Employee?.lastName}`
       .toLowerCase()
       .includes(searchEmployee.toLowerCase());
     return matchesEmployee;
@@ -83,7 +100,7 @@ const ClockInOutScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.mainContent}>
-        <Text style={styles.title}>Clock In/Out Records</Text>
+        <Text style={styles.title}>Clock In/Out Records (Past 7 Days)</Text>
 
         <TextInput
           style={styles.searchInput}
@@ -92,50 +109,77 @@ const ClockInOutScreen = () => {
           onChangeText={setSearchEmployee}
         />
 
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Filter by date (YYYY-MM-DD)"
-          value={searchDate}
-          onChangeText={handleDateChange}
-        />
-        {dateError !== "" && <Text style={styles.errorText}>{dateError}</Text>}
-
         <ScrollView horizontal={!isMobile}>
           <View style={[styles.table, isMobile && styles.mobileTable]}>
             <View style={styles.tableHeader}>
-              <Text style={styles.headerCell}>Date</Text>
-              <Text style={styles.headerCell}>Employee</Text>
-              <Text style={styles.headerCell}>Clock In</Text>
-              <Text style={styles.headerCell}>Clock Out</Text>
-              <Text style={styles.headerCell}>Status</Text>
-              <Text style={styles.headerCell}>Map</Text>
+              {[
+                "Date", "Name", "Clock In", "Clock Out",
+                "ClockIn Status", "ClockOut Status", "Diff In/Out", "Has Shift",
+                "Role", "Status", "Actions"
+              ].map((header) => (
+                <Text key={header} style={styles.headerCell}>{header}</Text>
+              ))}
             </View>
 
             {filteredData.map((entry, index) => {
-              const isToday = formatDate(entry.clockIn) === today;
-              const status = entry.clockOut
-                ? "✅ Clocked Out"
-                : "🟢 Working";
-
+              const id = entry.id;
+              const isToday =
+                entry.clockIn &&
+                new Date(entry.clockIn).toISOString().split("T")[0] ===
+                  today.toISOString().split("T")[0];
+              const changes = editedLogs[id] || {};
               return (
-                <View
-                  key={index}
-                  style={[styles.row, isToday && styles.todayRow]}
-                >
+                <View key={id} style={[styles.row, isToday && styles.todayRow]}>
                   <Text style={styles.cell}>{formatDate(entry.clockIn)}</Text>
                   <Text style={styles.cell}>
                     {entry.Employee?.firstName} {entry.Employee?.lastName}
                   </Text>
-                  <Text style={styles.cell}>{formatTime(entry.clockIn)}</Text>
-                  <Text style={styles.cell}>{formatTime(entry.clockOut)}</Text>
-                  <Text style={styles.cell}>{status}</Text>
-                  <TouchableOpacity
-                    onPress={() =>
-                      openMap(entry.latitude ?? 0, entry.longitude ?? 0)
-                    }
-                  >
-                    <Text style={[styles.cell, styles.mapLink]}>🗺️ View</Text>
-                  </TouchableOpacity>
+                  <TextInput
+                    style={styles.cellInput}
+                    defaultValue={entry.clockIn}
+                    onChangeText={(text) => handleEditChange(id, "clockIn", text)}
+                  />
+                  <TextInput
+                    style={styles.cellInput}
+                    defaultValue={entry.clockOut}
+                    onChangeText={(text) => handleEditChange(id, "clockOut", text)}
+                  />
+                  <TextInput
+                    style={styles.cellInput}
+                    defaultValue={entry.clockInStatus}
+                    onChangeText={(text) => handleEditChange(id, "clockInStatus", text)}
+                  />
+                  <TextInput
+                    style={styles.cellInput}
+                    defaultValue={entry.clockOutStatus}
+                    onChangeText={(text) => handleEditChange(id, "clockOutStatus", text)}
+                  />
+                  <TextInput
+                    style={styles.cellInput}
+                    defaultValue={`${entry.clockInDiffInMin}`}
+                    onChangeText={(text) => handleEditChange(id, "clockInDiffInMin", text)}
+                  />
+                  <TextInput
+                    style={styles.cellInput}
+                    defaultValue={`${entry.clockOutDiffInMin}`}
+                    onChangeText={(text) => handleEditChange(id, "clockOutDiffInMin", text)}
+                  />
+                  <TextInput
+                    style={styles.cellInput}
+                    defaultValue={entry.hasShift ? "Yes" : "No"}
+                    onChangeText={(text) => handleEditChange(id, "hasShift", text)}
+                  />
+                  <Text style={styles.cell}>{entry.Employee?.role}</Text>
+                  <Text style={styles.cell}>{entry.Employee?.employmentStatus}</Text>
+                  <View style={styles.actionCell}>
+                    <TouchableOpacity onPress={() => handleSave(id)}>
+                      <Text style={styles.saveBtn}><Feather name="save" size={20} color="#4A90E2" />Save</Text>
+                    </TouchableOpacity>
+                    <View style={styles.approveRow}>
+                      <Text style={styles.approveBtn}><Feather name="check" size={20} color="green" /></Text>
+                      <Text style={styles.rejectBtn}><Feather name="x" size={20} color="red" /></Text>
+                    </View>
+                  </View>
                 </View>
               );
             })}
@@ -147,45 +191,41 @@ const ClockInOutScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, flexDirection: "row" },
-  mainContent: {
-    flex: 1,
-    padding: 20,
-  },
+  container: { flex: 1 },
+  mainContent: { flex: 1, padding: 20 },
   title: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
   searchInput: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 6,
-    padding: 10,
-    marginBottom: 12,
+    borderWidth: 1, borderColor: "#ccc", borderRadius: 6,
+    padding: 10, marginBottom: 12,
   },
-  errorText: {
-    color: "#D9534F",
-    marginBottom: 10,
-    fontWeight: "bold",
-  },
-  table: { minWidth: 800 },
+  table: { minWidth: 1000 },
   mobileTable: { width: "100%" },
   tableHeader: {
-    flexDirection: "row",
-    backgroundColor: "#eee",
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderColor: "#ccc",
+    flexDirection: "row", backgroundColor: "#eee",
+    paddingVertical: 10, borderBottomWidth: 1, borderColor: "#ccc",
   },
   row: {
-    flexDirection: "row",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderColor: "#f0f0f0",
+    flexDirection: "row", paddingVertical: 12,
+    borderBottomWidth: 1, borderColor: "#f0f0f0",
   },
+  headerCell: { flex: 1, fontWeight: "bold", paddingHorizontal: 6 },
+  cell: { flex: 1, paddingHorizontal: 6 },
+  cellInput: {
+    flex: 1, paddingHorizontal: 6,
+    borderWidth: 1, borderColor: "#ccc", borderRadius: 4,
+    fontSize: 12,
+  },
+  actionCell: {
+    flex: 1, paddingHorizontal: 6,
+    alignItems: "center", justifyContent: "center",
+  },
+  saveBtn: { color: "#4A90E2", fontWeight: "bold", marginBottom: 6 },
+  approveRow: { flexDirection: "row", gap: 10 },
+  approveBtn: { color: "green", fontWeight: "bold" },
+  rejectBtn: { color: "red", fontWeight: "bold" },
   todayRow: {
     backgroundColor: "#e9f6ff",
   },
-  headerCell: { flex: 1, fontWeight: "bold", paddingHorizontal: 8 },
-  cell: { flex: 1, paddingHorizontal: 8 },
-  mapLink: { color: "#4A90E2", textDecorationLine: "underline" },
 });
 
 export default ClockInOutScreen;
