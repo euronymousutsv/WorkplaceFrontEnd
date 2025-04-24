@@ -1,5 +1,5 @@
 // LeaveRequestScreen.tsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,14 @@ import {
   Alert,
   Modal,
 } from "react-native";
+import {
+  fetchAllLeaveRequestInAnOffice,
+  updateLeaveRequestDetails,
+} from "../../../api/leave/leaveApi";
+import { ApiError } from "../../../api/utils/apiResponse";
+import Toast from "react-native-toast-message";
+import { Leave } from "../../../api/leave/leaveRequest";
+import { all } from "axios";
 // import Header from "../components/Header";
 // import Sidebar from "../components/Sidebar";
 
@@ -29,350 +37,220 @@ interface LeaveRequest {
   adminComment?: string;
 }
 
-const initialRequests: LeaveRequest[] = [
-  {
-    id: "LEAVE001",
-    employeeId: "EMP001",
-    employeeName: "Sabin",
-    leaveType: "Annual Leave",
-    startDate: "2024-04-10",
-    endDate: "2024-04-15",
-    reason: "Family trip",
-    status: "Pending",
-    balance: 10,
-    totalDays: 5,
-    history: [],
-    adminComment: "",
-  },
-  {
-    id: "LEAVE002",
-    employeeId: "EMP002",
-    employeeName: "Pranish",
-    leaveType: "Sick Leave",
-    startDate: "2024-04-05",
-    endDate: "2024-04-06",
-    reason: "Fever",
-    status: "Approved",
-    balance: 6,
-    totalDays: 2,
-    history: [],
-    adminComment: "",
-  },
-];
-
 const LeaveRequestScreen = () => {
+  const officeId = "51ffaeb3-e550-4659-b1dd-708f2d9a84f9";
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [selectedTab, setSelectedTab] = useState("LeaveRequestScreen");
-  const [requests, setRequests] = useState<LeaveRequest[]>(initialRequests);
+  const [allRequest, setAllRequest] = useState<Leave[] | null>(null);
   const [search, setSearch] = useState("");
   const [commentModalVisible, setCommentModalVisible] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
     null
   );
+  const [loading, setLoading] = useState(true);
   const [adminComment, setAdminComment] = useState("");
   const [selectedAction, setSelectedAction] = useState<
     "Approved" | "Rejected" | null
   >(null);
-  const [historyModalVisible, setHistoryModalVisible] = useState(false);
-  const [selectedHistory, setSelectedHistory] = useState<LeaveRequest[] | null>(
-    null
-  );
 
-  const handleUpdateStatus = (id: string, action: "Approved" | "Rejected") => {
-    setSelectedRequestId(id);
-    setSelectedAction(action);
-    setCommentModalVisible(true);
-  };
-
-  const confirmStatusUpdate = () => {
-    if (!selectedRequestId || !selectedAction) return;
-
-    setRequests((prev) =>
-      prev.map((r) => {
-        if (r.id === selectedRequestId) {
-          const historyEntry = { ...r };
-          return {
-            ...r,
-            status: selectedAction,
-            adminComment,
-            history: [...(r.history || []), historyEntry],
-          };
-        }
-        return r;
-      })
-    );
-
-    setCommentModalVisible(false);
-    setAdminComment("");
-    setSelectedRequestId(null);
-    setSelectedAction(null);
-  };
-
-  const filtered = requests.filter(
-    (r) =>
-      r.employeeName.toLowerCase().includes(search.toLowerCase()) ||
-      r.id.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const openHistory = (history: LeaveRequest[] | undefined) => {
-    if (history && history.length > 0) {
-      setSelectedHistory(history);
-      setHistoryModalVisible(true);
-    } else {
-      Alert.alert("No history found for this request.");
+  const handleFetchGetAllSchedulesForOffice = async () => {
+    try {
+      const res = await fetchAllLeaveRequestInAnOffice({ officeId });
+      if (res instanceof ApiError) {
+        Toast.show({
+          type: "error",
+          text1: res.message,
+          position: "bottom",
+        });
+      } else {
+        setAllRequest(res.data);
+      }
+    } catch (error) {
+      console.error("Error fetching leave requests:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleAcceptOrReject = async (
+    id: string,
+    action: "Approved" | "Rejected"
+  ) => {
+    try {
+      const res = await updateLeaveRequestDetails({
+        officeId,
+        id,
+        isApproved: action === "Approved",
+      });
+      if (res instanceof ApiError) {
+        Toast.show({
+          type: "error",
+          text1: res.message,
+          position: "bottom",
+        });
+      } else {
+        if (res.statusCode === 200) {
+          Toast.show({
+            type: "success",
+            text1: `Leave request ${action} successfully`,
+            position: "bottom",
+          });
+          handleFetchGetAllSchedulesForOffice();
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching leave requests:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    handleFetchGetAllSchedulesForOffice();
+  }, []);
+
+  const filtered = allRequest?.filter(
+    (r) =>
+      r.Employee?.firstName.toLowerCase().includes(search.toLowerCase()) ||
+      r.Employee?.id.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <SafeAreaView style={styles.container}>
-      {/* <Header
-        isSidebarOpen={isSidebarOpen}
-        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-      />
-      <Sidebar
-        isOpen={isSidebarOpen}
-        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        selectedTab={selectedTab}
-        handleTabChange={setSelectedTab}
-      /> */}
-      <View
-        style={[
-          styles.mainContent,
-          // { marginLeft: isSidebarOpen ? 250 : 0 }
-        ]}
-      >
-        <Text style={styles.title}>Leave Requests</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Search by Employee Name or Request ID"
-          value={search}
-          onChangeText={setSearch}
-        />
-        <ScrollView horizontal>
-          <View style={styles.table}>
-            <View style={styles.tableHeader}>
-              {[
-                "ID",
-                "Name",
-                "Leave Type",
-                "Dates",
-                "Days",
-                "Reason",
-                "Balance",
-                "Status",
-                "Admin Comment",
-                "Actions",
-              ].map((h) => (
-                <Text style={styles.headerCell} key={h}>
-                  {h}
-                </Text>
-              ))}
-            </View>
-            {filtered.map((r) => (
-              <View key={r.id} style={styles.row}>
-                <Text style={styles.cell}>{r.id}</Text>
-                <Text style={styles.cell}>{r.employeeName}</Text>
-                <Text style={styles.cell}>{r.leaveType}</Text>
-                <Text
-                  style={styles.cell}
-                >{`${r.startDate} - ${r.endDate}`}</Text>
-                <Text style={styles.cell}>{r.totalDays}</Text>
-                <Text style={styles.cell}>{r.reason}</Text>
-                <Text style={styles.cell}>{r.balance}</Text>
-                <Text
-                  style={[styles.cell, (styles as any)[r.status.toLowerCase()]]}
-                >
-                  {r.status}
-                </Text>
-                <Text style={styles.cell}>{r.adminComment || "-"}</Text>
-                <View style={styles.cell}>
-                  {r.status === "Pending" ? (
-                    <>
-                      <TouchableOpacity
-                        onPress={() => handleUpdateStatus(r.id, "Approved")}
-                      >
-                        <Text style={{ color: "green" }}>Approve</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() => handleUpdateStatus(r.id, "Rejected")}
-                      >
-                        <Text style={{ color: "red" }}>Reject</Text>
-                      </TouchableOpacity>
-                    </>
-                  ) : (
-                    <TouchableOpacity onPress={() => openHistory(r.history)}>
-                      <Text style={{ color: "#4A90E2" }}>View History</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </View>
-            ))}
-          </View>
-        </ScrollView>
-      </View>
+    <View style={styles.container}>
+      <View style={styles.tableContainer}>
+        <View style={[styles.row, styles.headerRow]}>
+          <Text style={[styles.cell, styles.colName]}>Employee</Text>
+          <Text style={[styles.cell, styles.colType]}>Type</Text>
+          <Text style={[styles.cell, styles.colRange]}>Date Range</Text>
+          <Text style={[styles.cell, styles.colDays]}>Days</Text>
+          <Text style={[styles.cell, styles.colReason]}>Reason</Text>
 
-      <Modal visible={commentModalVisible} transparent animationType="slide">
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: "#000000aa",
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: "#fff",
-              padding: 20,
-              borderRadius: 8,
-              width: "90%",
-            }}
-          >
-            <Text
-              style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}
-            >
-              Add Admin Comment
-            </Text>
-            <TextInput
-              placeholder="Enter comment..."
-              value={adminComment}
-              onChangeText={setAdminComment}
-              style={{
-                borderWidth: 1,
-                borderColor: "#ccc",
-                borderRadius: 6,
-                padding: 10,
-                height: 80,
-                marginBottom: 10,
-              }}
-              multiline
-            />
-            <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
-              <TouchableOpacity
-                onPress={() => setCommentModalVisible(false)}
-                style={{ marginRight: 10 }}
+          <Text style={[styles.cell, styles.colStatus]}>Status</Text>
+          <Text style={[styles.cell, styles.colActions]}>Actions</Text>
+        </View>
+
+        {filtered &&
+          filtered.map((r) => (
+            <View key={r.id} style={styles.row}>
+              <Text style={[styles.cell, styles.colName]} numberOfLines={1}>
+                {r.Employee?.firstName ?? "N/A"} {r.Employee?.lastName ?? ""}
+              </Text>
+              <Text style={[styles.cell, styles.colType]}>
+                {r.leaveType ?? "N/A"}
+              </Text>
+              <Text style={[styles.cell, styles.colRange]}>
+                {r.startDate ?? "N/A"} - {r.endDate ?? "N/A"}
+              </Text>
+              <Text style={[styles.cell, styles.colDays]}>1</Text>
+              <Text style={[styles.cell, styles.colReason]}>
+                {r.reason ?? "N/A"}
+              </Text>
+              <Text
+                style={[
+                  styles.cell,
+                  styles.colStatus,
+                  styles.status,
+                  r.isApproved === true
+                    ? styles.approved
+                    : r.isApproved === false
+                    ? styles.rejected
+                    : styles.pending,
+                ]}
               >
-                <Text style={{ color: "red" }}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={confirmStatusUpdate}>
-                <Text style={{ color: "green" }}>Submit</Text>
-              </TouchableOpacity>
+                {r.isApproved === true
+                  ? "Approved"
+                  : r.isApproved === false
+                  ? "Rejected"
+                  : "Pending"}
+              </Text>
+              <View style={[styles.cell, styles.colActions]}>
+                <TouchableOpacity
+                  onPress={() => handleAcceptOrReject(r.id!, "Approved")}
+                  style={[styles.button, styles.approveBtn]}
+                >
+                  <Text style={styles.buttonText}>Approve</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => handleAcceptOrReject(r.id!, "Rejected")}
+                  style={[styles.button, styles.rejectBtn]}
+                >
+                  <Text style={styles.buttonText}>Reject</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal visible={historyModalVisible} transparent animationType="slide">
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: "#000000aa",
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: "#fff",
-              padding: 20,
-              borderRadius: 8,
-              width: "90%",
-              maxHeight: "80%",
-            }}
-          >
-            <Text
-              style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}
-            >
-              Leave History
-            </Text>
-            <ScrollView>
-              {selectedHistory?.map((h, index) => (
-                <View key={index} style={{ marginBottom: 10 }}>
-                  <Text>
-                    <Text style={{ fontWeight: "bold" }}>Type:</Text>{" "}
-                    {h.leaveType}
-                  </Text>
-                  <Text>
-                    <Text style={{ fontWeight: "bold" }}>Dates:</Text>{" "}
-                    {h.startDate} - {h.endDate}
-                  </Text>
-                  <Text>
-                    <Text style={{ fontWeight: "bold" }}>Days:</Text>{" "}
-                    {h.totalDays}
-                  </Text>
-                  <Text>
-                    <Text style={{ fontWeight: "bold" }}>Status:</Text>{" "}
-                    {h.status}
-                  </Text>
-                  <Text>
-                    <Text style={{ fontWeight: "bold" }}>Comment:</Text>{" "}
-                    {h.adminComment || "-"}
-                  </Text>
-                </View>
-              )) || <Text>No history available.</Text>}
-            </ScrollView>
-            <TouchableOpacity
-              onPress={() => setHistoryModalVisible(false)}
-              style={{ marginTop: 10 }}
-            >
-              <Text style={{ color: "red", textAlign: "right" }}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-    </SafeAreaView>
+          ))}
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, flexDirection: "row" },
-  mainContent: {
+  container: {
     flex: 1,
-    padding: 20,
-
-    // marginTop: 60
+    justifyContent: "center",
+    alignItems: "center",
   },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 10 },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 10,
-    borderRadius: 6,
-    marginBottom: 10,
-  },
-  table: { minWidth: 1200 },
-  tableHeader: {
-    flexDirection: "row",
-    backgroundColor: "#eee",
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderColor: "#ccc",
+  tableContainer: {
+    flex: 1,
+    marginTop: 20,
+    marginBottom: 20,
+    padding: 16,
+    backgroundColor: "#f5f5f5",
   },
   row: {
     flexDirection: "row",
-    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderColor: "#eee",
+    borderBottomColor: "#ddd",
+    alignItems: "center",
+    minHeight: 40,
   },
-  headerCell: { flex: 1, fontWeight: "bold", textAlign: "center" },
-  cell: { flex: 1, textAlign: "center" },
-  pending: {
-    backgroundColor: "#f39c12",
-    color: "white",
-    padding: 4,
+  headerRow: {
+    backgroundColor: "#eaeaea",
+  },
+  cell: {
+    paddingHorizontal: 6,
+    paddingVertical: 8,
+    fontSize: 14,
+    color: "#333",
+    overflow: "hidden",
+  },
+
+  colName: { width: 250 },
+  colType: { width: 120 },
+  colRange: { width: 150 },
+  colDays: { width: 60 },
+  colReason: { width: 250 },
+
+  colStatus: { width: 80 },
+  colActions: {
+    width: 160,
+    flexDirection: "row",
+
+    gap: 6,
+  },
+
+  status: {
+    fontWeight: "bold",
+  },
+  approved: { color: "green" },
+  rejected: { color: "red" },
+  pending: { color: "orange" },
+
+  button: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
     borderRadius: 4,
   },
-  approved: {
-    backgroundColor: "#2ecc71",
-    color: "white",
-    padding: 4,
-    borderRadius: 4,
+  approveBtn: {
+    backgroundColor: "#2ECC71",
   },
-  rejected: {
-    backgroundColor: "#e74c3c",
-    color: "white",
-    padding: 4,
-    borderRadius: 4,
+  rejectBtn: {
+    backgroundColor: "#E74C3C",
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "600",
   },
 });
 

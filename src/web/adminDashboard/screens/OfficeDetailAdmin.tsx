@@ -306,6 +306,13 @@ const OfficeDetailAdmin = () => {
         </Text>
       </TouchableOpacity>
 
+      <TouchableOpacity
+        style={styles.scheduleButton}
+        onPress={() => navigation.navigate("LeaveRequestScreen")}
+      >
+        <Text style={styles.scheduleButtonText}>Leave Requests</Text>
+      </TouchableOpacity>
+
       <Text style={styles.employeeHeader}>Employees ({employees.length})</Text>
 
       {employees.length === 0 ? (
@@ -588,7 +595,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     marginTop: 10,
-    marginBottom: 20,
+    marginBottom: 10,
   },
 
   scheduleButtonText: {

@@ -101,7 +101,7 @@ const AppNavigator = () => {
       <Stack.Screen
         name="LeaveRequestScreen"
         component={LeaveRequestScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: true }}
       />
       <Stack.Screen
         name="EditUserDetailScreens"
