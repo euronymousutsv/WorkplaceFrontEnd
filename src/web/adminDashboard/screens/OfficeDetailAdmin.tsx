@@ -308,10 +308,18 @@ const OfficeDetailAdmin = () => {
 
       <TouchableOpacity
         style={styles.scheduleButton}
-        onPress={() => navigation.navigate("LeaveRequestScreen")}
+        onPress={() => navigation.navigate("LeaveRequestScreen", {officeId})}
       >
         <Text style={styles.scheduleButtonText}>Leave Requests</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity
+  style={styles.scheduleButton}
+  onPress={() => navigation.navigate("ClockInOutScreen", { officeId })}
+>
+  <Text style={styles.scheduleButtonText}>View Clock In/Out Logs</Text>
+</TouchableOpacity>
+
 
       <Text style={styles.employeeHeader}>Employees ({employees.length})</Text>
 

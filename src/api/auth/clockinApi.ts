@@ -142,18 +142,32 @@ export const clockIn = async (payload: ClockInPayload): Promise<ApiResponse<Time
   };
   
   // 6. Get Time Logs for Office by Date Range
-  export const getTimeLogByDateRange = async (startDate: string, endDate: string, officeId: string) => {
+  export const getTimeLogByDateRange = async (
+    startDate: string,
+    endDate: string,
+    officeId: string
+  ) => {
     try {
       const token = await getToken("accessToken");
-      const res = await API.get("/api/v1/timeLog/date-range", {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { startDate, endDate, officeId },
-      });
+  
+      const res = await API.post(
+        "/api/v1/timeLog/date-range",
+        {
+          startDate,
+          endDate,
+          officeId,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+  
       return res.data;
     } catch (err) {
       return handleError(err);
     }
   };
+  
   
   // 7. Get Time Logs for Employee by Date Range
   export const getTimeLogByDateRangeForEmployee = async (startDate: string, endDate: string, employeeId: string) => {

@@ -12,11 +12,11 @@ export type RootStackParamList = {
   EmployeeDashboard: undefined;
   LeaveScreen: undefined;
   SchedulesScreen: {officeId:string};
-  ClockInOutScreen: undefined;
+  ClockInOutScreen: {officeId:string};
   EmployeeManagementScreen: undefined;
   SettingsScreen: undefined;
   GrossPaymentScreen: undefined;
-  LeaveRequestScreen: undefined;
+  LeaveRequestScreen: {officeId:string};
   EditUserDetailScreens: undefined;
   ClockInOutScreenPhone: undefined;
   MessageThemeScreen: undefined

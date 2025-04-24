@@ -164,32 +164,33 @@ const EmployeeManagementScreen = () => {
     }
   };
 
-  // const fetchServerId = async () => {
-  //   const token = await getToken("accessToken", Plat.WEB);
+  const fetchServerId = async () => {
+    const token = await getToken("accessToken");
 
-  //   console.log("Acess token:", token);
-  //   console.log("--------------------------------------------------:", token);
-  //   try {
-  //     const res = await getLoggedInUserServer(Plat.WEB);
-  //     console.log("🧪 getLoggedInUserServer response:", res);
+    console.log("Acess token:", token);
+    console.log("--------------------------------------------------:", token);
+    try {
+      const res = await getLoggedInUserServer();
+      console.log("getLoggedInUserServer response:", res);
 
-  //     if (res instanceof ApiError) {
-  //       Toast.show({
-  //         type: "error",
-  //         text1: "Server ID Error",
-  //         text2: res.message,
-  //       });
-  //     } else if ("statusCode" in res && "data" in res && res.data.serverId) {
-  //       console.log("✅ Server ID found:", res.data.serverId);
-  //       setServerId(res.data.serverId);
-  //       saveToken("serverId", res.data.serverId, Plat.WEB);
-  //     } else {
-  //       console.warn("⚠️ Server ID not found in response data");
-  //     }
-  //   } catch (err) {
-  //     console.error("❌ Unexpected error in fetchServerId:", err);
-  //   }
-  // };
+      if (res instanceof ApiError) {
+        Toast.show({
+          type: "error",
+          text1: "Server ID Error",
+          text2: res.message,
+        });
+      } else if ("statusCode" in res && "data" in res && res.data.joinedServer.serverId) {
+        console.log("Server ID found:", res.data.joinedServer.serverId);
+      
+        setServerId(res.data.joinedServer.serverId);
+        saveToken("serverId", res.data.joinedServer.serverId);
+      } else {
+        console.warn("Server ID not found in response data");
+      }
+    } catch (err) {
+      console.error("Unexpected error in fetchServerId:", err);
+    }
+  };
 
   useEffect(() => {
     handleFetchUsers();
@@ -202,7 +203,7 @@ const EmployeeManagementScreen = () => {
   }, []);
 
   useEffect(() => {
-    // fetchServerId();
+     fetchServerId();
   }, []);
 
   const handleSort = (field: keyof Employee) => {
@@ -296,11 +297,11 @@ const EmployeeManagementScreen = () => {
     });
     if (formData.role === "" || formData.role === "Choose Role")
       newErrors.role = "Role is required";
-    if (
-      formData.status === "" ||
-      formData.status === "Choose Employment Status"
-    )
-      newErrors.status = "Employment status is required";
+    // if (
+    //   formData.status === "" ||
+    //   formData.status === "Choose Employment Status"
+    // )
+    //   newErrors.status = "Employment status is required";
     if (!validateEmail(formData.email))
       newErrors.email = "Invalid email format";
     if (!validatePhone(formData.phone))

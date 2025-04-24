@@ -82,7 +82,7 @@ const AppNavigator = () => {
       <Stack.Screen
         name="ClockInOutScreen"
         component={ClockInOutScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: true }}
       />
       <Stack.Screen
         name="EmployeeManagementScreen"

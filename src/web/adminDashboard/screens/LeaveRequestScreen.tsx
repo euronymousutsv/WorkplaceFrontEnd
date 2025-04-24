@@ -19,6 +19,8 @@ import { ApiError } from "../../../api/utils/apiResponse";
 import Toast from "react-native-toast-message";
 import { Leave } from "../../../api/leave/leaveRequest";
 import { all } from "axios";
+import { RouteProp, useRoute } from "@react-navigation/native";
+import { RootStackParamList } from "../../../types/navigationTypes";
 // import Header from "../components/Header";
 // import Sidebar from "../components/Sidebar";
 
@@ -38,7 +40,9 @@ interface LeaveRequest {
 }
 
 const LeaveRequestScreen = () => {
-  const officeId = "51ffaeb3-e550-4659-b1dd-708f2d9a84f9";
+  const route = useRoute<RouteProp<RootStackParamList, "SchedulesScreen">>();
+    const { officeId } = route.params;
+  //const officeId = "51ffaeb3-e550-4659-b1dd-708f2d9a84f9";
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [selectedTab, setSelectedTab] = useState("LeaveRequestScreen");
   const [allRequest, setAllRequest] = useState<Leave[] | null>(null);

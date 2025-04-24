@@ -194,7 +194,7 @@ export const WebNavigatorDrawer = () => {
           }}
         />
 
-        <Drawer.Screen
+        {/* <Drawer.Screen
           name="Leave Request"
           component={LeaveRequestScreen}
           options={{
@@ -202,9 +202,9 @@ export const WebNavigatorDrawer = () => {
               <Ionicons name="airplane" size={size} color={color} />
             ),
           }}
-        />
+        /> */}
 
-        <Drawer.Screen
+        {/* <Drawer.Screen
           name="Clock In/Out"
           component={ClockInOutScreen}
           options={{
@@ -212,7 +212,7 @@ export const WebNavigatorDrawer = () => {
               <Ionicons name="time" size={size} color={color} />
             ),
           }}
-        />
+        /> */}
 
         <Drawer.Screen
           name="Employee Management"
