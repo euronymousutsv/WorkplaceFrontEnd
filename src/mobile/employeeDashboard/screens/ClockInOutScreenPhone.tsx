@@ -29,6 +29,8 @@ const ClockInOutScreenPhone: React.FC = () => {
   const [insideGeoFence, setInsideGeoFence] = useState(true);
   const [todaysShifts, setTodaysShifts] = useState<any[]>([]);
   const [activeShift, setActiveShift] = useState<any | null>(null);
+  const [clockInTime, setClockInTime] = useState<Date | null>(null);
+
   const [workDuration, setWorkDuration] = useState<number>(0); 
 const [totalShiftDuration, setTotalShiftDuration] = useState<number>(1); 
 
@@ -70,8 +72,13 @@ const [loading, setLoading] = useState<boolean>(true);
   
       const filteredShifts = res.data.filter((shift) => {
         const shiftStart = new Date(shift.startTime);
-        return new Date(shift.endTime) >= now && new Date(shift.startTime) <= new Date(now.getTime() + 15 * 60 * 1000);
-
+        const shiftEnd = new Date(shift.endTime);
+        const nowTime = now.getTime();
+      
+        return (
+          shiftEnd.getTime() >= nowTime && // still ongoing or future
+          shiftStart.getTime() <= nowTime + 2 * 60 * 60 * 1000 // starts within 2 hours
+        );
       });
   
       setTodaysShifts(filteredShifts);
@@ -81,8 +88,10 @@ const [loading, setLoading] = useState<boolean>(true);
           const end = new Date(s.endTime).getTime();
           const nowTime = now.getTime();
         
-          return nowTime >= start - 15 * 60 * 1000 && nowTime <= end;
+          // Allow clock in from 2 hours before shift start until shift end
+          return nowTime >= start - 2 * 60 * 60 * 1000 && nowTime <= end;
         });
+        
         
         setActiveShift(current ?? null);
         if (current) {setShiftEndTime(new Date(current.endTime));
@@ -93,10 +102,24 @@ const [loading, setLoading] = useState<boolean>(true);
       setActiveShift(null);
       setShiftEndTime(null);
     }
-      }
-    
-  
+      };
+      const checkClockedInStatus = async () => {
+        const res = await getTodaysTimeLog();
+        if (!(res instanceof ApiError) && res.data?.length > 0) {
+          const log = res.data[0];
+          if (log.clockIn && !log.clockOut) {
+            setIsClockedIn(true);
+            setClockInTime(new Date(log.clockIn)); // store clock-in time
+            if (log.clockOut) {
+              setShiftEndTime(new Date(log.clockOut));
+            }
+          }
+          
+        }
+      };
+      checkClockedInStatus();
     fetchRelevantShifts();
+    
   }, []);
   
 
@@ -119,6 +142,8 @@ const [loading, setLoading] = useState<boolean>(true);
   // }, [currentTime]);
 
   const handleClockInOut = async () => {
+    console.log("✅ handleClockInOut was called");
+
     if (!activeShift) return;
     const employeeId = await getUserIdFromToken();
     if (!employeeId) {
@@ -151,6 +176,7 @@ const [loading, setLoading] = useState<boolean>(true);
           long: parseFloat(longitude),
   
         });
+        console.log("Clock-in response:", res);
 
         if (res instanceof ApiError) {
           console.log("Clock-in Error:", res.message);
@@ -171,10 +197,18 @@ const [loading, setLoading] = useState<boolean>(true);
         }
   
         if (!(res instanceof ApiError)) {
-          setShiftEndTime(new Date(activeShift.endTime));
-          setIsClockedIn(true);
-          setCurrentTime(new Date());
+          const timeLogRes = await getTodaysTimeLog();
+          if (!(timeLogRes instanceof ApiError) && timeLogRes.data.length > 0) {
+            const log = timeLogRes.data[0];
+            if (log.clockIn && !log.clockOut) {
+              setIsClockedIn(true);
+              setClockInTime(new Date(log.clockIn)); //  set clockInTime
+              setShiftEndTime(new Date(activeShift.endTime));
+            }
+          }
         }
+        
+        
       } else {
         //  First, you need the timeLog ID to clock out
         const todayRes = await getTodaysTimeLog();
@@ -183,7 +217,7 @@ const [loading, setLoading] = useState<boolean>(true);
           return;
         }
   
-        const latestTimeLog = todayRes.data[0]; // Assuming latest is first
+        const latestTimeLog = todayRes.data[0]; 
         const timeLogId = latestTimeLog.id;
   
         const res = await clockOut({
@@ -203,8 +237,6 @@ const [loading, setLoading] = useState<boolean>(true);
       console.error("Clock-in/out failed", err);
     }
   };
-  
-  
 
   const getCountdown = () => {
     if (!isClockedIn) return "Not clocked in";
@@ -258,18 +290,39 @@ const [loading, setLoading] = useState<boolean>(true);
 </TouchableOpacity>
 
 
-      {!isClockedIn ? (
+{!isClockedIn ? (
   <Text style={styles.shiftMessage}>
     {activeShift
-      ? `Your next shift starts in ${Math.round(
-          (new Date(activeShift.startTime).getTime() - currentTime.getTime()) /
-            (1000 * 60 * 60)
-        )}h`
+      ? (() => {
+          const diffMs =
+            new Date(activeShift.startTime).getTime() - currentTime.getTime();
+          if (diffMs <= 0) {
+            return clockInTime
+              ? `⏱️ You clocked in at ${clockInTime.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}`
+              : "You are currently working!";
+          }
+
+          const diffMinutes = Math.floor(diffMs / (1000 * 60));
+          const hours = Math.floor(diffMinutes / 60);
+          const minutes = diffMinutes % 60;
+
+          return `Your next shift starts in ${hours}h ${minutes}m`;
+        })()
       : "No upcoming shifts"}
   </Text>
 ) : (
   <Text style={styles.shiftMessage}>
-    You are currently working!!
+    {activeShift
+      ? `Your shift ends at ${new Date(
+          activeShift.endTime
+        ).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })}`
+      : "No active shift"}
   </Text>
 )}
 
@@ -313,24 +366,43 @@ const [loading, setLoading] = useState<boolean>(true);
       {/* Info Card */}
 
       <View style={styles.infoCard}>
-        <View style={styles.rowBetween}>
-          <Text style={styles.infoText}>Location Status:</Text>
-          <Text style={styles.infoText}>
-            {insideGeoFence ? "Inside Zone" : "Outside Zone"}
-          </Text>
-        </View>
-        <View style={styles.rowBetween}>
-          <Text style={styles.infoText}>Shift ends in:</Text>
-          <Text style={styles.infoText}>{getCountdown()}</Text>
-        </View>
-        <View style={styles.rowBetween}>
-          <Text style={styles.infoText}>Mock Geofence Toggle:</Text>
-          <Switch
-            value={insideGeoFence}
-            onValueChange={() => setInsideGeoFence((prev) => !prev)}
-          />
-        </View>
-      </View>
+  <Text style={styles.cardTitle}>Shift Summary</Text>
+
+  {/* <View style={styles.rowBetween}>
+    <Text style={styles.infoLabel}>📍 Office:</Text>
+    <Text style={styles.infoValue}>
+      {activeShift?.officeName ?? "N/A"}
+    </Text>
+  </View> */}
+
+  <View style={styles.rowBetween}>
+    <Text style={styles.infoLabel}>Shift Time:</Text>
+    <Text style={styles.infoValue}>
+      {activeShift
+        ? `${new Date(activeShift.startTime).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })} - ${new Date(activeShift.endTime).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}`
+        : "N/A"}
+    </Text>
+  </View>
+
+  <View style={styles.rowBetween}>
+    <Text style={styles.infoLabel}>Status:</Text>
+    <Text style={styles.infoValue}>
+      {isClockedIn ? "Clocked In" : "Not Clocked In"}
+    </Text>
+  </View>
+
+  <View style={styles.rowBetween}>
+    <Text style={styles.infoLabel}>Time Left:</Text>
+    <Text style={styles.infoValue}>{getCountdown()}</Text>
+  </View>
+</View>
+
     </View>
   );
 };
@@ -467,7 +539,25 @@ const styles = StyleSheet.create({
   
   iconInside: {
     marginBottom: 8,
-  }
+  },
+
+  //info card
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: PrimaryColor,
+    marginBottom: 10,
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: "#555",
+  },
+  infoValue: {
+    fontSize: 14,
+    color: "#000",
+    fontWeight: "500",
+  },
+  
   
   
 });
