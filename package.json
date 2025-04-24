@@ -65,7 +65,8 @@
     "react-native-web": "~0.19.13",
     "react-pro-sidebar": "^1.1.0",
     "react-router-dom": "^7.4.0",
-    "socket.io-client": "^4.8.1"
+    "socket.io-client": "^4.8.1",
+    "expo-location": "~18.0.10"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

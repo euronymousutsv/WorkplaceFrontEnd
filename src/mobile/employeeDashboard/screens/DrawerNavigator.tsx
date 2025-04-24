@@ -20,6 +20,7 @@ import { useEffect, useState } from "react";
 import AdminDashboard from "../../../web/adminDashboard/screens/AdminDashboard";
 import Header from "../../../web/adminDashboard/components/Header";
 import { SafeAreaView } from "react-native-web";
+import DocumentUpload from "./DocumentUpload";
 
 const Drawer = createDrawerNavigator();
 
@@ -135,6 +136,15 @@ const AppNavigatorDrawer = () => {
           drawerIcon: ({ color, size }) => (
             <Ionicons name="airplane-outline" size={size} color={color} />
           ),
+        }}
+      />
+      <Drawer.Screen
+        name="Document"
+        component={DocumentUpload}
+        options={{
+          drawerIcon: ({ color, size }) => (
+             <Ionicons name="document-outline" size={size} color={color} />
+           ),
         }}
       />
     </Drawer.Navigator>

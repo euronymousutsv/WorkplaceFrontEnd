@@ -6,14 +6,15 @@ import {
   TouchableOpacity,
   Platform,
   Switch,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { getToken } from "../../../api/auth/token";
 import { getShiftsByEmployee } from "../../../api/auth/shiftApi";
 import { ApiError } from "../../../api/utils/apiResponse";
 import { getUserIdFromToken } from "../../../utils/jwt";
-import { clockIn, clockOut } from "../../../api/auth/clockinApi";
-import { AnimatedCircularProgress } from "react-native-circular-progress";
+import { clockIn, clockOut, getTodaysTimeLog } from "../../../api/auth/clockinApi";
+import * as Location from "expo-location";
 
 
 const PrimaryColor = "#4A90E2";
@@ -69,16 +70,20 @@ const [loading, setLoading] = useState<boolean>(true);
   
       const filteredShifts = res.data.filter((shift) => {
         const shiftStart = new Date(shift.startTime);
-        const timeDiff = Math.abs(now.getTime() - shiftStart.getTime());
-        return timeDiff <= oneHour;
+        return new Date(shift.endTime) >= now && new Date(shift.startTime) <= new Date(now.getTime() + 15 * 60 * 1000);
+
       });
   
       setTodaysShifts(filteredShifts);
       if (filteredShifts.length > 0) {
-        const current = filteredShifts.find(
-          (s) =>
-            new Date(s.startTime) <= now && new Date(s.endTime) >= now
-        );
+        const current = filteredShifts.find((s) => {
+          const start = new Date(s.startTime).getTime();
+          const end = new Date(s.endTime).getTime();
+          const nowTime = now.getTime();
+        
+          return nowTime >= start - 15 * 60 * 1000 && nowTime <= end;
+        });
+        
         setActiveShift(current ?? null);
         if (current) {setShiftEndTime(new Date(current.endTime));
       }else{
@@ -115,42 +120,81 @@ const [loading, setLoading] = useState<boolean>(true);
 
   const handleClockInOut = async () => {
     if (!activeShift) return;
-  
-    const employeeId = await getUserIdFromToken(); 
-          if (!employeeId) {
-            setError("Employee ID not found in token");
-            setLoading(false);
-            return;
-          }
+    const employeeId = await getUserIdFromToken();
+    if (!employeeId) {
+      setError("Employee ID not found in token");
+      setLoading(false);
+      return;
+    }
   
     try {
+
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        setError("Permission to access location was denied");
+        return;
+      }
+  
+
+      const location = await Location.getCurrentPositionAsync({});
+      const latitude = location.coords.latitude.toString();
+      const longitude = location.coords.longitude.toString();
+  
+  
+   
       if (!isClockedIn) {
-        // Clock In
+
         const res = await clockIn({
-          employeeId,
-          shiftId: activeShift.id,
-          latitude: "0.0000", // todo: get actual location
-          longitude: "0.0000",
-          // isValid: insideGeoFence,
-          // timestamp: new Date(),
-          // status: "in",
+
+          clockInTime: new Date(),
+          lat: parseFloat(latitude),
+          long: parseFloat(longitude),
+  
         });
-        if (!(res instanceof Error)) {
+
+        if (res instanceof ApiError) {
+          console.log("Clock-in Error:", res.message);
+        
+          let alertMessage = res.message;
+          if (res.message === "Please clock in within the office area.") {
+            alertMessage = "You are outside the allowed office zone. Please move closer and try again.";
+          }
+        
+          Alert.alert("Clock-In Failed", alertMessage, [
+            {
+              text: "OK",
+              onPress: () => console.log("OK Pressed"),
+            },
+          ]);
+        
+          return;
+        }
+  
+        if (!(res instanceof ApiError)) {
           setShiftEndTime(new Date(activeShift.endTime));
           setIsClockedIn(true);
+          setCurrentTime(new Date());
         }
       } else {
-        // Clock Out
+        //  First, you need the timeLog ID to clock out
+        const todayRes = await getTodaysTimeLog();
+        if (todayRes instanceof ApiError || !todayRes.data || todayRes.data.length === 0) {
+          console.warn("No active time log found for clock out.");
+          return;
+        }
+  
+        const latestTimeLog = todayRes.data[0]; // Assuming latest is first
+        const timeLogId = latestTimeLog.id;
+  
         const res = await clockOut({
-          employeeId,
-          shiftId: activeShift.id,
-          latitude: "0.0000",
-          longitude: "0.0000",
-          // isValid: insideGeoFence,
-          // timestamp: new Date(),
-          // status: "out",
+          timeLogId,
+          clockOutTime: new Date(),
+          lat: parseFloat(latitude),
+          long: parseFloat(longitude),
+  
         });
-        if (!(res instanceof Error)) {
+  
+        if (!(res instanceof ApiError)) {
           setShiftEndTime(null);
           setIsClockedIn(false);
         }
@@ -159,6 +203,7 @@ const [loading, setLoading] = useState<boolean>(true);
       console.error("Clock-in/out failed", err);
     }
   };
+  
   
 
   const getCountdown = () => {
@@ -198,7 +243,7 @@ const [loading, setLoading] = useState<boolean>(true);
     isClockedIn ? styles.finishWork : styles.startWork,
     !activeShift && !isClockedIn ? { opacity: 0.5 } : {},
   ]}
-  disabled={!activeShift && !isClockedIn}
+  disabled={!activeShift}
   onPress={handleClockInOut}
 >
   <Ionicons
@@ -224,7 +269,7 @@ const [loading, setLoading] = useState<boolean>(true);
   </Text>
 ) : (
   <Text style={styles.shiftMessage}>
-    You are currently working at --backend required.
+    You are currently working!!
   </Text>
 )}
 
@@ -269,13 +314,13 @@ const [loading, setLoading] = useState<boolean>(true);
 
       <View style={styles.infoCard}>
         <View style={styles.rowBetween}>
-          <Text style={styles.infoText}>📍 Location Status:</Text>
+          <Text style={styles.infoText}>Location Status:</Text>
           <Text style={styles.infoText}>
             {insideGeoFence ? "Inside Zone" : "Outside Zone"}
           </Text>
         </View>
         <View style={styles.rowBetween}>
-          <Text style={styles.infoText}>⏳ Shift ends in:</Text>
+          <Text style={styles.infoText}>Shift ends in:</Text>
           <Text style={styles.infoText}>{getCountdown()}</Text>
         </View>
         <View style={styles.rowBetween}>
