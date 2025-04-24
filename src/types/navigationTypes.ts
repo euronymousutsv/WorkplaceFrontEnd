@@ -15,7 +15,7 @@ export type RootStackParamList = {
   ClockInOutScreen: {officeId:string};
   EmployeeManagementScreen: undefined;
   SettingsScreen: undefined;
-  GrossPaymentScreen: undefined;
+  GrossPaymentScreen:{officeId:string};
   LeaveRequestScreen: {officeId:string};
   EditUserDetailScreens: undefined;
   ClockInOutScreenPhone: undefined;

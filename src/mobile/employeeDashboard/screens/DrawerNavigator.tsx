@@ -223,7 +223,7 @@ export const WebNavigatorDrawer = () => {
             ),
           }}
         />
-        <Drawer.Screen
+        {/* <Drawer.Screen
           name="Gross Payment"
           component={GrossPaymentScreen}
           options={{
@@ -231,7 +231,7 @@ export const WebNavigatorDrawer = () => {
               <Ionicons name="cash" size={size} color={color} />
             ),
           }}
-        />
+        /> */}
 
         <Drawer.Screen
           name="Settings"

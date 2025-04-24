@@ -23,7 +23,7 @@ import { Plat, getToken } from "../../../api/auth/token";
 import { ApiError } from "../../../api/utils/apiResponse";
 import Toast from "react-native-toast-message";
 import axios, { AxiosError } from "axios";
-import { Feather } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../../../types/navigationTypes";
 type NavigationProp = StackNavigationProp<
@@ -297,7 +297,7 @@ const OfficeDetailAdmin = () => {
         <Text style={styles.staticText}>{officeDetail.radius}</Text>
       </View>
 
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={styles.scheduleButton}
         onPress={() => navigation.navigate("SchedulesScreen", { officeId })}
       >
@@ -318,7 +318,53 @@ const OfficeDetailAdmin = () => {
   onPress={() => navigation.navigate("ClockInOutScreen", { officeId })}
 >
   <Text style={styles.scheduleButtonText}>View Clock In/Out Logs</Text>
-</TouchableOpacity>
+</TouchableOpacity> */}
+
+<View style={styles.buttonCard}>
+  <View style={styles.buttonRow}>
+    <TouchableOpacity
+      style={styles.navButton}
+      onPress={() => navigation.navigate("SchedulesScreen", { officeId })}
+    >
+<View style={{ flexDirection: "row", alignItems: "center" }}>
+  <Feather name="calendar" size={20} color="black" style={{ marginRight: 8 }} />
+  <Text style={styles.navButtonText}>Schedules</Text>
+</View>
+    </TouchableOpacity>
+
+    <TouchableOpacity
+      style={styles.navButton}
+      onPress={() => navigation.navigate("LeaveRequestScreen", { officeId })}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+  <Ionicons name="airplane" size={20} color="black" style={{ marginRight: 8 }} />
+  <Text style={styles.navButtonText}>Leave Requests</Text>
+</View>
+    </TouchableOpacity>
+
+    <TouchableOpacity
+      style={styles.navButton}
+      onPress={() => navigation.navigate("ClockInOutScreen", { officeId })}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+  <Feather name="clock" size={20} color="black" style={{ marginRight: 8 }} />
+  <Text style={styles.navButtonText}>Clock logs</Text>
+</View>
+    </TouchableOpacity>
+
+    <TouchableOpacity
+      style={styles.navButton}
+      onPress={() => navigation.navigate("GrossPaymentScreen", { officeId })}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+  <Feather name="dollar-sign" size={20} color="black" style={{ marginRight: 8 }} />
+  <Text style={styles.navButtonText}>Payment</Text>
+</View>
+    </TouchableOpacity>
+  </View>
+</View>
+
+
 
 
       <Text style={styles.employeeHeader}>Employees ({employees.length})</Text>
@@ -606,11 +652,55 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 
-  scheduleButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 16,
+  // scheduleButtonText: {
+  //   color: "#fff",
+  //   fontWeight: "600",
+  //   fontSize: 16,
+  // },
+  buttonCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    width: "100%",
   },
+  
+  buttonRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  
+  navButton: {
+    flexGrow: 1,
+    flexBasis: "30%",
+    minWidth: 100,
+    backgroundColor: "#4A90E2",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  
+  navButtonText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  
 });
 
 export default OfficeDetailAdmin;

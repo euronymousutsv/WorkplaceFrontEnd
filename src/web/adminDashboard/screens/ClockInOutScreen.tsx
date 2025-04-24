@@ -14,6 +14,8 @@ import { useRoute } from "@react-navigation/native";
 import { getTimeLogByDateRange, updateTimeLog } from "../../../api/auth/clockinApi";
 import { ApiError } from "../../../api/utils/apiResponse";
 import { Feather } from "@expo/vector-icons";
+import { approveHours } from "../../../api/payroll/payrollApi";
+import Toast from "react-native-toast-message";
 
 const ClockInOutScreen = () => {
   const route = useRoute();
@@ -27,17 +29,12 @@ const ClockInOutScreen = () => {
   const isMobile = screenWidth <= 768;
   const today = new Date();
   const startDate = new Date(today);
-  startDate.setDate(startDate.getDate() - 6);
+  startDate.setDate(startDate.getDate() - 14);
 
   const formatISODate = (date: Date) => date.toISOString().split("T")[0];
   const formatDate = (iso: string) => (iso ? new Date(iso).toISOString().split("T")[0] : "—");
   const formatTime = (iso: string) =>
     iso ? new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—";
-
-  const openMap = (lat: number, lng: number) => {
-    const url = `https://www.google.com/maps?q=${lat},${lng}`;
-    Linking.openURL(url);
-  };
 
   useEffect(() => {
     const updateWidth = () => setScreenWidth(Dimensions.get("window").width);
@@ -45,15 +42,38 @@ const ClockInOutScreen = () => {
     return () => subscription.remove();
   }, []);
 
-  useEffect(() => {
+  // useEffect(() => {
     const fetchLogs = async () => {
       const from = `${formatISODate(startDate)}T00:00:00Z`;
       const to = `${formatISODate(today)}T23:59:59Z`;
       const res = await getTimeLogByDateRange(from, to, officeId);
       if (!(res instanceof ApiError)) setClockData(res);
     };
+  //   fetchLogs();
+  // }, [officeId]);
+  useEffect(() => {
     fetchLogs();
   }, [officeId]);
+
+
+  const handleApprove = async (id: string) => {
+    const res = await approveHours(id);
+    if (!(res instanceof ApiError)) {
+      Toast.show({
+        type: "success",
+        text1: "Approved!",
+        text2: "Hours have been approved successfully ",
+      });
+      await fetchLogs();
+    } else {
+      Toast.show({
+        type: "error",
+        text1: "Approval Failed",
+        text2: res.message || "Something went wrong.",
+      });
+    }
+  };
+  
 
   const handleEditChange = (id: string, field: string, value: string) => {
     setEditedLogs((prev) => ({
@@ -68,6 +88,7 @@ const ClockInOutScreen = () => {
   const handleSave = async (id: string) => {
     const log = editedLogs[id];
     if (!log) return;
+  
     const payload = {
       timeLogId: id,
       clockIn: log.clockIn ? new Date(log.clockIn) : undefined,
@@ -78,18 +99,28 @@ const ClockInOutScreen = () => {
       clockInDiffInMin: parseInt(log.clockInDiffInMin),
       clockOutDiffInMin: parseInt(log.clockOutDiffInMin),
     };
-
+  
     const res = await updateTimeLog(payload);
     if (!(res instanceof ApiError)) {
-      alert("Saved!");
+      Toast.show({
+        type: "success",
+        text1: "Saved Successfully",
+        text2: "Time log has been updated ",
+      });
       setEditedLogs((prev) => {
         const updated = { ...prev };
         delete updated[id];
         return updated;
       });
+    } else {
+      Toast.show({
+        type: "error",
+        text1: "Save Failed",
+        text2: res.message || "Something went wrong",
+      });
     }
   };
-
+  console.log("Sample time log:", clockData[0]);
   const filteredData = clockData.filter((entry) => {
     const matchesEmployee = `${entry.Employee?.firstName} ${entry.Employee?.lastName}`
       .toLowerCase()
@@ -100,7 +131,7 @@ const ClockInOutScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.mainContent}>
-        <Text style={styles.title}>Clock In/Out Records (Past 7 Days)</Text>
+        <Text style={styles.title}>Clock In/Out Records (Past 14 Days)</Text>
 
         <TextInput
           style={styles.searchInput}
@@ -172,12 +203,19 @@ const ClockInOutScreen = () => {
                   <Text style={styles.cell}>{entry.Employee?.role}</Text>
                   <Text style={styles.cell}>{entry.Employee?.employmentStatus}</Text>
                   <View style={styles.actionCell}>
-                    <TouchableOpacity onPress={() => handleSave(id)}>
-                      <Text style={styles.saveBtn}><Feather name="save" size={20} color="#4A90E2" />Save</Text>
+                  <TouchableOpacity onPress={() => handleSave(id)} style={styles.saveButton}>
+                      <Feather name="save" size={16} color="#fff" />
+                      <Text style={styles.saveButtonText}>Save</Text>
                     </TouchableOpacity>
                     <View style={styles.approveRow}>
-                      <Text style={styles.approveBtn}><Feather name="check" size={20} color="green" /></Text>
-                      <Text style={styles.rejectBtn}><Feather name="x" size={20} color="red" /></Text>
+                      {entry.approved ? (
+                        <Text style={styles.approvedLabel}> Approved</Text>
+                      ) : (
+                        <TouchableOpacity onPress={() => handleApprove(id)} style={styles.approveButton}>
+                          <Feather name="check" size={16} color="#fff" />
+                          <Text style={styles.approveButtonText}>Approve</Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
                   </View>
                 </View>
@@ -208,8 +246,8 @@ const styles = StyleSheet.create({
     flexDirection: "row", paddingVertical: 12,
     borderBottomWidth: 1, borderColor: "#f0f0f0",
   },
-  headerCell: { flex: 1, fontWeight: "bold", paddingHorizontal: 6 },
-  cell: { flex: 1, paddingHorizontal: 6 },
+  headerCell: { flex: 1, fontWeight: "bold", paddingHorizontal: 0, minWidth: 150 },
+  cell: { flex: 1, paddingHorizontal: 6, minWidth: 100 },
   cellInput: {
     flex: 1, paddingHorizontal: 6,
     borderWidth: 1, borderColor: "#ccc", borderRadius: 4,
@@ -226,6 +264,51 @@ const styles = StyleSheet.create({
   todayRow: {
     backgroundColor: "#e9f6ff",
   },
+  //approve button styles
+  approveButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "green",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    gap: 6,
+  },
+  
+  approveButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  approvedLabel: {
+    color: "green",
+    fontWeight: "600",
+    fontSize: 14,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: "#e6f5e9",
+  },
+  
+  //save button styles
+  saveButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#4A90E2", // primary blue
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    gap: 6,
+    marginBottom: 8,
+  },
+  
+  saveButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  
+  
 });
 
 export default ClockInOutScreen;
