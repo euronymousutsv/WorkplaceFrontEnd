@@ -7,6 +7,7 @@ export type RootStackParamList = {
   Welcome: undefined;
   Login: undefined;
   SignUp: undefined;
+  NoOffice: undefined;
   AdminDashboard: undefined;
   ManagerDashboard: undefined;
   EmployeeDashboard: undefined;

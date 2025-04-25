@@ -19,6 +19,7 @@ import { ApiError, ApiResponse } from "../../api/utils/apiResponse";
 import { loginUser } from "../../api/auth/authApi";
 import { validateEmail } from "../Signup/SignupSecond";
 import Toast from "react-native-toast-message";
+import { getLoggedInUserServer } from "../../api/server/serverApi";
 
 const LoginScreen = ({ navigation }: { navigation: any }) => {
   const { setUserRole, setIsAuthenticated } = useAuth(); // Get AuthContext functions
@@ -108,7 +109,25 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
       }
 
       const decodedToken = JWT.decode(accessToken, null);
+      console.log("Decoded Token:", decodedToken);
       const role = decodedToken.role;
+      
+      const res = await getLoggedInUserServer();
+
+let officeId: string | undefined = undefined;
+
+if ("data" in res) {
+  officeId = res.data?.searchedOffice?.officeId;
+} else {
+  // You might also want to handle error case here
+  Toast.show({
+    type: "error",
+    text1: "Error",
+    text2: res.message || "Failed to get server data",
+  });
+  setLoading(false);
+  return;
+}
 
       // Platform-based login restriction
       if (Platform.OS === "web" && role === "employee") {
@@ -157,12 +176,21 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
         navigation.replace("ManagerDashboard");
       } else if (role === "employee") {
         console.log("Redirecting to mobile");
-
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "EmployeeDashboard" }],
-        });
-      }
+        if (!officeId) {
+          console.log("officeId :", officeId);
+          console.log("Employee has no office ID. Redirecting to NoOffice screen");
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "NoOffice" }],
+          });
+        } else {
+          await saveToken("officeId", officeId);
+          console.log("Employee has office ID. Redirecting to Dashboard");
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "EmployeeDashboard" }],
+          });
+        }}
 
       setLoading(false);
     } catch (err: any) {
