@@ -2,6 +2,9 @@ import { Platform } from "react-native";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
+import axios from "axios";
+import { registerDevice } from "../../../api/server/notification";
+import { ApiError } from "../../../api/utils/apiResponse";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -72,6 +75,23 @@ export async function registerForPushNotificationsAsync() {
           projectId,
         })
       ).data;
+
+      try {
+        const res = await registerDevice(pushTokenString);
+        console.log(res);
+
+        if (res.statusCode === 200) {
+          console.log("Device registered successfully");
+        }
+      } catch (error) {
+        if (error instanceof ApiError) {
+          console.error(
+            "API Error occurred during device registration:",
+            error.message
+          );
+        }
+      }
+
       console.log(pushTokenString);
       return pushTokenString;
     } catch (e: unknown) {

@@ -38,6 +38,7 @@ import MessageThemeScreen from "./src/mobile/employeeDashboard/screens/MessageTh
 import { getToken } from "./src/api/auth/token";
 import LeaveDetail from "./src/mobile/employeeDashboard/screens/LeaveDetail";
 import DocumentUpload from "./src/mobile/employeeDashboard/screens/DocumentUpload";
+import CreateServerScreen from "./src/web/adminDashboard/CreateServerScreen";
 
 // Create a stack navigator
 const Stack = createStackNavigator();
@@ -268,6 +269,7 @@ const AppNavigator = () => {
         component={OfficeDetailAdmin}
         options={{ headerShown: true }}
       />
+      <Stack.Screen name="CreateServerScreen" component={CreateServerScreen} />
     </Stack.Navigator>
   );
 };

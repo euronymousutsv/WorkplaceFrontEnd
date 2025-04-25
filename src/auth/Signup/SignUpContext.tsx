@@ -10,7 +10,8 @@ interface FormData {
   email: string;
   password: string;
   phoneNumber: string;
-  inviteLink: string;
+  inviteLink?: string;
+  serverName?: string;
 }
 
 interface SignupContextType {
@@ -26,6 +27,7 @@ const defaultFormData: FormData = {
   password: "",
   phoneNumber: "",
   inviteLink: "",
+  serverName: "",
 };
 
 // Create the context with the default value and types
@@ -47,6 +49,10 @@ export const SignupProvider = ({ children }: SignupProviderProps) => {
 
   const updateFormData = (key: keyof FormData, value: string) => {
     setFormData((prevData) => ({ ...prevData, [key]: value }));
+  };
+
+  const getData = (key: keyof FormData, value: string) => {
+    return (formData[key] = value);
   };
 
   return (

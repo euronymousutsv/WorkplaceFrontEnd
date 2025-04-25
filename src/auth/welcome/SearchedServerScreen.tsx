@@ -9,12 +9,21 @@ import {
   Button,
   Image,
 } from "react-native";
+import { useSignup } from "../Signup/SignUpContext";
+import { useEffect } from "react";
+import { u } from "react-native-big-calendar";
 
 interface SearchedServerScreenProps {
   searchedServer: SearchServerResponse;
 }
 
 export const SearchedServerScreen = ({ navigation }: { navigation: any }) => {
+  const { updateFormData, formData } = useSignup();
+  const { inviteLink, serverName } = formData;
+  useEffect(() => {
+    console.log(formData);
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.centeredView}>
@@ -24,8 +33,17 @@ export const SearchedServerScreen = ({ navigation }: { navigation: any }) => {
             style={styles.image}
           />
         </View>
-        <Text style={styles.serverTitle}>Fairy Tail</Text>
-        <Text style={styles.inviteLink}>#11111111</Text>
+
+        <Text style={styles.serverTitle}>Join Now</Text>
+
+        {inviteLink ? (
+          <Text style={styles.inviteLink}># {inviteLink}</Text>
+        ) : (
+          <Text style={styles.inviteLink}>
+            You have been invited to create a new server. Click the button below
+            to create an account.
+          </Text>
+        )}
       </View>
       <View style={styles.buttonContainer}>
         <TouchableOpacity
@@ -64,6 +82,9 @@ const styles = StyleSheet.create({
   inviteLink: {
     fontSize: 20,
     color: "#808080",
+    textAlign: "center",
+    marginTop: 10,
+    paddingHorizontal: 20,
   },
   imgContainer: {
     flex: 0.5,

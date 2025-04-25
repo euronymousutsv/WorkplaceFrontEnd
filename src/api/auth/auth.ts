@@ -20,6 +20,7 @@ export interface RegisterRequest {
   phoneNumber: string;
   password: string;
   inviteLink: string;
+  serverName: string;
 }
 
 export interface SendOTPRequest {

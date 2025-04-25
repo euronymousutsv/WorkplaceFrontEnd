@@ -7,6 +7,7 @@ import {
   StyleSheet,
 } from "react-native";
 import {
+  clearAllNotifications,
   fetchAllNotificationsPhone,
   NotificationsResponsePayload,
 } from "../../../api/server/notification";
@@ -14,6 +15,7 @@ import { ApiError, ApiResponse } from "../../../api/utils/apiResponse";
 import Toast from "react-native-toast-message";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import { RefreshControl } from "react-native";
 
 dayjs.extend(relativeTime);
 const NotificationScreen = () => {
@@ -21,10 +23,41 @@ const NotificationScreen = () => {
     NotificationsResponsePayload[]
   >([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await notificationHandler(); // reuse your existing function
+    setRefreshing(false);
+  };
   async function notificationHandler() {
     try {
       const res = await fetchAllNotificationsPhone();
+      if ("data" in res || res instanceof ApiResponse) {
+        const notificationsLift = res.data;
+        setNotifications(notificationsLift);
+      } else if (res instanceof ApiError) {
+        Toast.show({
+          text1: res.message,
+          position: "bottom",
+          type: "error",
+        });
+      }
+    } catch (error) {
+      Toast.show({
+        text1: "Something went wrong.",
+        position: "bottom",
+        type: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function notificationClearHandler() {
+    try {
+      setLoading(true);
+      const res = await clearAllNotifications();
       if ("data" in res || res instanceof ApiResponse) {
         const notificationsLift = res.data;
         setNotifications(notificationsLift);
@@ -51,12 +84,47 @@ const NotificationScreen = () => {
   }, []);
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 10 }}>
+    <ScrollView
+      contentContainerStyle={{ padding: 10 }}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       {loading ? (
         <ActivityIndicator size="small" />
       ) : notifications.length === 0 ? (
-        <Text>No notifications available.</Text>
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "600",
+              textAlign: "center",
+              marginTop: 20,
+            }}
+          >
+            No notifications available.
+          </Text>
+        </View>
       ) : (
+        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+          <Text style={{ fontSize: 16, fontWeight: "600" }}>
+            Notifications ({notifications.length ? notifications.length : 0})
+          </Text>
+          <Text
+            onPress={notificationClearHandler}
+            style={{
+              color: "#4A90E2",
+              fontSize: 14,
+              fontWeight: "500",
+            }}
+          >
+            Clear All
+          </Text>
+        </View>
+      )}
+      {notifications.length > 0 &&
         notifications.map((notification, index) => (
           <View key={index} style={styles.card}>
             <View style={styles.header}>
@@ -68,8 +136,7 @@ const NotificationScreen = () => {
 
             <Text style={styles.body}>{notification.body}</Text>
           </View>
-        ))
-      )}
+        ))}
     </ScrollView>
   );
 };

@@ -41,3 +41,48 @@ export const fetchAllNotificationsPhone = async () => {
     }
   }
 };
+
+export const registerDevice = async (token: string) => {
+  try {
+    const accessToken = await getToken("accessToken");
+    const response = await API.post<ApiResponse<{}>>(
+      "registerDevice",
+      { deviceToken: token },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    if (error instanceof AxiosError) {
+      const err = error.response?.data as ApiError<{}>;
+      return new ApiError(err.statusCode, {}, err.message);
+    } else {
+      return new ApiError(400, {}, "Something went wrong");
+    }
+  }
+};
+
+export const clearAllNotifications = async () => {
+  try {
+    const accessToken = await getToken("accessToken");
+    const response = await API.delete<ApiResponse<{}>>(
+      "clearAllNotifications",
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    if (error instanceof AxiosError) {
+      const err = error.response?.data as ApiError<{}>;
+      return new ApiError(err.statusCode, {}, err.message);
+    } else {
+      return new ApiError(400, {}, "Something went wrong");
+    }
+  }
+};

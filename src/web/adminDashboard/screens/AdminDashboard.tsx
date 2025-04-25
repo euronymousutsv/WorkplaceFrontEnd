@@ -9,6 +9,7 @@ import {
   ScrollView,
   Dimensions,
   Platform,
+  TouchableOpacity,
 } from "react-native";
 // import Sidebar from '../components/Sidebar';
 // import Header from '../components/Header';
@@ -22,8 +23,15 @@ import {
 
 import SendAnnouncementCard from "../components/SendAnnouncementCard";
 import { getLoggedInUserServer } from "../../../api/server/serverApi";
-import { ApiError } from "../../../api/utils/apiResponse";
+import { ApiError, ApiResponse } from "../../../api/utils/apiResponse";
 import { saveToken } from "../../../api/auth/token";
+import {
+  clearAllNotifications,
+  fetchAllNotificationsPhone,
+  NotificationsResponsePayload,
+} from "../../../api/server/notification";
+import Toast from "react-native-toast-message";
+import dayjs from "dayjs";
 
 const AdminDashboard: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState("Dashboard");
@@ -31,6 +39,72 @@ const AdminDashboard: React.FC = () => {
   const sidebarWidth = new Animated.Value(250);
   const mainContentPadding = new Animated.Value(250);
   const [isMobile, setIsMobile] = useState(false);
+
+  const [notifications, setNotifications] = useState<
+    NotificationsResponsePayload[] | null
+  >(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await notificationHandler(); // reuse your existing function
+    setRefreshing(false);
+  };
+  async function notificationHandler() {
+    try {
+      const res = await fetchAllNotificationsPhone();
+      if ("data" in res || res instanceof ApiResponse) {
+        const notificationsLift = res.data;
+        setNotifications(notificationsLift);
+      } else if (res instanceof ApiError) {
+        Toast.show({
+          text1: res.message,
+          position: "bottom",
+          type: "error",
+        });
+      }
+    } catch (error) {
+      Toast.show({
+        text1: "Something went wrong.",
+        position: "bottom",
+        type: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function notificationClearHandler() {
+    try {
+      const res = await clearAllNotifications();
+
+      if (res instanceof ApiResponse) {
+        const notificationsLift = res.data;
+        setNotifications(null);
+        fetchAllNotificationsPhone();
+      } else if (res instanceof ApiError) {
+        Toast.show({
+          text1: res.message,
+          position: "bottom",
+          type: "error",
+        });
+      } else {
+        // Fallback for unexpected response types
+        Toast.show({
+          text1: "Unexpected response from server.",
+          position: "bottom",
+          type: "error",
+        });
+      }
+    } catch (error) {
+      Toast.show({
+        text1: "Something went wrong.",
+        position: "bottom",
+        type: "error",
+      });
+    }
+  }
 
   const screenWidth = Dimensions.get("window").width;
 
@@ -60,6 +134,7 @@ const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     handleGetServerDetail();
+    notificationHandler();
   }, []);
   useEffect(() => {
     if (screenWidth <= 768) {
@@ -71,41 +146,9 @@ const AdminDashboard: React.FC = () => {
     }
   }, [screenWidth]);
 
-  // useEffect(() => {
-  //   Animated.timing(sidebarWidth, {
-  //     toValue: isSidebarOpen ? 250 : 0,
-  //     duration: 300,
-  //     useNativeDriver: false,
-  //   }).start();
-
-  //   Animated.timing(mainContentPadding, {
-  //     toValue: isSidebarOpen ? 250 : 0,
-  //     duration: 300,
-  //     useNativeDriver: false,
-  //   }).start();
-  // }, [isSidebarOpen]);
-
   const handleTabChange = (tab: string) => {
     setSelectedTab(tab);
   };
-
-  const alerts = [
-    {
-      text: "Pranish was supposed to start working at 10. He has not clocked in yet.",
-      time: "60 mins ago",
-      type: "alert",
-    },
-    {
-      text: "Pranish has requested for a leave this Saturday",
-      time: "10 min ago",
-      type: "notification",
-    },
-    {
-      text: "Sabin mentioned you in #Channel1",
-      time: "10 min ago",
-      type: "notification",
-    },
-  ];
 
   const toDos = [{ task: "Place an order for tomorrow", due: "Due today" }];
 
@@ -113,50 +156,45 @@ const AdminDashboard: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.contentWrapper}>
         {/* Main Content */}
+
         <Animated.View style={[styles.mainContent]}>
+          {/* Send Announcement Card */}
+
+          {/* Welcome Banner */}
+          <View style={styles.welcomeBanner}>
+            <Text style={styles.welcomeTitle}>Welcome, Admin 👋</Text>
+            <Text style={styles.welcomeSubtitle}>
+              Here's an overview of what’s happening today.
+            </Text>
+          </View>
+          <SendAnnouncementCard />
           <ScrollView contentContainerStyle={styles.scrollContainer}>
-            {/* Welcome Banner */}
-            <View style={styles.welcomeBanner}>
-              <Text style={styles.welcomeTitle}>Welcome, Admin 👋</Text>
-              <Text style={styles.welcomeSubtitle}>
-                Here's an overview of what’s happening today.
-              </Text>
-            </View>
-
-            {/* Alert */}
-            <View style={[styles.card, styles.alertCard]}>
-              <Text style={styles.cardTitle}>Alert</Text>
-              <Text style={styles.alertText}>{alerts[0].text}</Text>
-              <Text style={styles.timestamp}>{alerts[0].time}</Text>
-            </View>
-
             {/* Notifications */}
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Notifications</Text>
-              {alerts.slice(1).map((alert, index) => (
-                <View key={index} style={styles.notificationItem}>
-                  <Text style={styles.notificationText}>{alert.text}</Text>
-                  <Text style={styles.timestamp}>{alert.time}</Text>
-                </View>
-              ))}
-            </View>
+              <View>
+                <Text style={styles.cardTitle}>Notifications</Text>
+                <TouchableOpacity
+                  onPress={notificationClearHandler}
+                  style={styles.notificationItem}
+                >
+                  <Text style={styles.alertText}>Clear All</Text>
+                </TouchableOpacity>
+              </View>
 
-            {/* To-do’s */}
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>To-do’s</Text>
-              <FlatList
-                data={toDos}
-                renderItem={({ item }) => (
-                  <View style={styles.todoItem}>
-                    <Text style={styles.todoText}>{item.task}</Text>
-                    <Text style={styles.timestamp}>{item.due}</Text>
+              {notifications?.length === 0 || !notifications ? (
+                <View>No Notifications</View>
+              ) : (
+                notifications.map((alert) => (
+                  <View key={alert.id} style={styles.alertCard}>
+                    <Text style={styles.notificationText}>{alert.title}</Text>
+                    <Text style={styles.notificationText}>{alert.body}</Text>
+                    <Text style={styles.timestamp}>
+                      {dayjs(alert.createdAt).fromNow()}
+                    </Text>
                   </View>
-                )}
-                keyExtractor={(_, index) => index.toString()}
-              />
+                ))
+              )}
             </View>
-            {/* Send Announcement Card */}
-            <SendAnnouncementCard />
           </ScrollView>
         </Animated.View>
       </View>
@@ -209,8 +247,10 @@ const styles = StyleSheet.create({
   },
   alertCard: {
     borderLeftWidth: 5,
+    padding: 10,
     borderLeftColor: ButtonRed,
-    backgroundColor: "#FFEBEB",
+    backgroundColor: "#f8f8f8",
+    marginBottom: 10,
   },
   cardTitle: {
     fontSize: 20,

@@ -55,7 +55,7 @@ export const SignupFirstScreen = ({ navigation }: { navigation: any }) => {
         >
           {/* Left Side: Create Account Text */}
           <View style={styles.leftSide}>
-            <Text style={styles.serverName}>Fairy Tail</Text>
+            <Text style={styles.serverName}>WorkHive</Text>
 
             <Text style={styles.subTitle}>
               Sign up to create your account and start your journey!

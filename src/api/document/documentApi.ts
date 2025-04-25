@@ -2,7 +2,7 @@ import axios, { AxiosError } from "axios";
 import { getToken, Plat } from "../auth/token";
 import { ApiError, ApiResponse } from "../utils/apiResponse";
 
-const baseUrl = "http://192.168.1.222:3000"; //replace with baseUrl
+const baseUrl = process.env.BASE_URL || "";
 const API = axios.create({
   baseURL: baseUrl,
   timeout: 10000,
@@ -15,7 +15,7 @@ const API = axios.create({
 export interface Document {
   id: string;
   employeeId: string;
-  documentType: 'License' | 'National ID';
+  documentType: "License" | "National ID";
   documentid: number;
   expiryDate: string;
   issueDate: string;
@@ -26,7 +26,7 @@ export interface Document {
 // Request Types
 export interface UploadDocumentRequest {
   employeeId: string;
-  documentType: 'License' | 'National ID';
+  documentType: "License" | "National ID";
   documentid: number;
   issueDate: string;
   expiryDate: string;
@@ -43,26 +43,30 @@ export interface GetEmployeeDocumentsResponse {
 }
 
 // API Functions
-export const uploadEmployeeDocument = async (reqData: UploadDocumentRequest) => {
+export const uploadEmployeeDocument = async (
+  reqData: UploadDocumentRequest
+) => {
   try {
     const response = await axios.post(
       `${baseUrl}/api/document/addDocument`,
       reqData,
       {
         headers: {
-          "Content-Type": "application/json"
-        }
+          "Content-Type": "application/json",
+        },
       }
     );
 
     return response.data;
   } catch (error) {
-    console.error('API Error:', error);
+    console.error("API Error:", error);
     throw error;
   }
 };
 
-export const getEmployeeDocuments = async (reqData: GetEmployeeDocumentsRequest) => {
+export const getEmployeeDocuments = async (
+  reqData: GetEmployeeDocumentsRequest
+) => {
   try {
     console.log(reqData.employeeId);
     const response = await API.get<ApiResponse<Document[]>>(
@@ -111,11 +115,14 @@ export const verifyDocument = async (documentId: string) => {
 export const deleteDocument = async (documentId: string) => {
   try {
     const accessToken = await getToken("accessToken");
-    const response = await API.delete<ApiResponse<{}>>(`deleteDocument/${documentId}`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    const response = await API.delete<ApiResponse<{}>>(
+      `deleteDocument/${documentId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
 
     return response.data;
   } catch (error) {
@@ -126,4 +133,4 @@ export const deleteDocument = async (documentId: string) => {
       return new ApiError(400, {}, "Something went wrong");
     }
   }
-}; 
+};
