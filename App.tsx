@@ -26,6 +26,7 @@ import PartialRegesterScreen from "./src/mobile/employeeDashboard/screens/Parita
 import ParitalRegestrationPasswordScreen from "./src/mobile/employeeDashboard/screens/PartialRegisterPasswordScreen";
 import ChatScreen from "./src/web/adminDashboard/screens/ChatScreen";
 import {
+  ManagerNavigatorDrawer,
   MyTabs,
   WebNavigatorDrawer,
 } from "./src/mobile/employeeDashboard/screens/DrawerNavigator";
@@ -254,7 +255,7 @@ const AppNavigator = () => {
       />
       <Stack.Screen
         name="ManagerDashboard"
-        component={AdminDashboard} //change it
+        component={ManagerNavigatorDrawer} //change it
         options={{ headerShown: false }}
       />
       <Stack.Screen

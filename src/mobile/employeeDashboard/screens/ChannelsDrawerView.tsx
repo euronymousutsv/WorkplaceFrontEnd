@@ -24,6 +24,8 @@ const CustomDrawerContent = (props: any) => {
   const [loading, setLoading] = useState(true);
   const [channels, setChannels] = useState<ChannelResponse[]>([]);
   const [activeChannelId, setActiveChannelId] = useState<string | null>(null);
+  const isManager = props.userRole === "manager";
+
 
   useEffect(() => {
     if (Platform.OS === "web") {
@@ -120,9 +122,16 @@ const CustomDrawerContent = (props: any) => {
         <Text style={styles.sectionTitle}>Channels</Text>
       )}
 
-      {Platform.OS === "web" ? (
-        <ChatChannelList />
-      ) : loading ? (
+      
+
+{Platform.OS === "web" && isManager ? (
+  <View>
+    <Text style={styles.sectionTitle}>My Office</Text>
+    <ChatChannelList onlyMyOffice userRole="manager" />
+  </View>
+) : Platform.OS === "web" ? (
+  <ChatChannelList userRole="admin" />
+) : loading ? (
         <ActivityIndicator size="small" style={{ marginTop: 10 }} />
       ) : channels.length > 0 ? (
         channels.map((channel) => (

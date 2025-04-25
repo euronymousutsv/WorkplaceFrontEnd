@@ -21,6 +21,8 @@ import AdminDashboard from "../../../web/adminDashboard/screens/AdminDashboard";
 import Header from "../../../web/adminDashboard/components/Header";
 import { SafeAreaView } from "react-native-web";
 import DocumentUpload from "./DocumentUpload";
+import ManagerDashboard from "../../../web/managerDashboard/screens/ManagerDashboard";
+import ManagerEmployeeScreen from "../../../web/managerDashboard/screens/ManagerEmployeeScreen";
 
 const Drawer = createDrawerNavigator();
 
@@ -246,5 +248,82 @@ export const WebNavigatorDrawer = () => {
     </SafeAreaView>
   );
 };
+export const ManagerNavigatorDrawer = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const screenWidth = Dimensions.get("window").width;
+  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
+
+  return (
+    <SafeAreaView style={{ flex: 1, flexDirection: "row" }}>
+      <Header isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+      <Drawer.Navigator
+        initialRouteName="Dashboard"
+        drawerContent={(props) => (
+          <CustomDrawerContent {...props} isSidebarOpen={isSidebarOpen} userRole="manager" />
+        )}
+        screenOptions={{
+          drawerType: "permanent",
+          drawerStyle: {
+            width: isSidebarOpen ? 260 : 0,
+          },
+          headerShown: false,
+          drawerActiveBackgroundColor: "#e6f0ff",
+          drawerActiveTintColor: "#1e90ff",
+          drawerInactiveTintColor: "#333",
+          drawerItemStyle: {
+            borderRadius: 12,
+            marginHorizontal: 10,
+            marginVertical: 4,
+          },
+          drawerLabelStyle: {
+            fontSize: 16,
+          },
+        }}
+      >
+        <Drawer.Screen
+          name="Dashboard"
+          component={ManagerDashboard}
+          options={{
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="home" size={size} color={color} />
+            ),
+          }}
+        />
+
+        <Drawer.Screen
+          name="Employee Management"
+          component={ManagerEmployeeScreen}
+          options={{
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="people" size={size} color={color} />
+            ),
+          }}
+        />
+
+        {/* <Drawer.Screen
+          name="Office"
+          component={ManagerOfficeScreen}
+          options={{
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="business" size={size} color={color} />
+            ),
+          }}
+        /> */}
+
+        <Drawer.Screen
+          name="Settings"
+          component={SettingsScreen}
+          options={{
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="settings" size={size} color={color} />
+            ),
+          }}
+        />
+      </Drawer.Navigator>
+    </SafeAreaView>
+  );
+};
+
+
 
 export default AppNavigatorDrawer;

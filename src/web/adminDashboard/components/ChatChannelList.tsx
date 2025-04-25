@@ -39,8 +39,12 @@ interface OfficeWithChannels {
   officeName: string;
   channels: Channel[];
 }
+interface ChatChannelListProps {
+  onlyMyOffice?: boolean;
+  userRole?: "admin" | "manager" | "employee";
+}
 
-const ChatChannelList: React.FC = () => {
+const ChatChannelList: React.FC<ChatChannelListProps> = ({onlyMyOffice, userRole}) => {
   if (Platform.OS !== "web") return null;
   const [groupedChannels, setGroupedChannels] = useState<OfficeWithChannels[]>([]);
   const [expandedOfficeIds, setExpandedOfficeIds] = useState<string[]>([]);
@@ -59,24 +63,19 @@ const ChatChannelList: React.FC = () => {
 
   const fetchGroupedChannels = async () => {
     try {
-      const serverRes = await getLoggedInUserServer(Plat.WEB);
-      if (serverRes instanceof ApiError || !serverRes.data?.joinedServer?.serverId) {
-        return;
-      }
-
+      const serverRes = await getLoggedInUserServer();
+      if (serverRes instanceof ApiError || !serverRes.data?.joinedServer?.serverId) return;
+  
       const serverId = serverRes.data.joinedServer.serverId;
       setServerId(serverId);
+  
+      if (onlyMyOffice) {
+        const officeId = serverRes.data?.searchedOffice?.officeId;
+        const officeName = (serverRes.data?.searchedOffice as { officeId: string; officeName: string })?.officeName ?? "My Office";
 
-      const officeRes = await getAllOffices({ serverId });
-      if (officeRes instanceof ApiError || !Array.isArray(officeRes.data)) {
-        return;
-      }
-
-      const grouped: OfficeWithChannels[] = [];
-
-      for (const office of officeRes.data) {
-        const channelRes = await getAllChannelForCurrentOffice(office.id, Plat.WEB);
-
+        if (!officeId) return;
+  
+        const channelRes = await getAllChannelForCurrentOffice(officeId, Plat.WEB);
         let channels: Channel[] = [];
         if (!(channelRes instanceof ApiError) && Array.isArray(channelRes.data)) {
           channels = channelRes.data.map((channel) => ({
@@ -85,23 +84,55 @@ const ChatChannelList: React.FC = () => {
             newMessages: 0,
             isPrivate: false,
             highestRoleToAccessChannel: ["admin", "manager", "employee"].includes(channel.highestRoleToAccessChannel)
-    ? (channel.highestRoleToAccessChannel as "admin" | "manager" | "employee")
-    : undefined,
+              ? (channel.highestRoleToAccessChannel as "admin" | "manager" | "employee")
+              : undefined,
           }));
         }
-
-        grouped.push({
-          officeId: office.id,
-          officeName: office.name,
-          channels,
-        });
+  
+        setGroupedChannels([
+          {
+            officeId,
+            officeName,
+            channels,
+          },
+        ]);
+      } else {
+        // original full fetch logic here (for admin)
+        const officeRes = await getAllOffices({ serverId });
+        if (officeRes instanceof ApiError || !Array.isArray(officeRes.data)) return;
+  
+        const grouped: OfficeWithChannels[] = [];
+  
+        for (const office of officeRes.data) {
+          const channelRes = await getAllChannelForCurrentOffice(office.id, Plat.WEB);
+  
+          let channels: Channel[] = [];
+          if (!(channelRes instanceof ApiError) && Array.isArray(channelRes.data)) {
+            channels = channelRes.data.map((channel) => ({
+              id: channel.id,
+              name: channel.name,
+              newMessages: 0,
+              isPrivate: false,
+              highestRoleToAccessChannel: ["admin", "manager", "employee"].includes(channel.highestRoleToAccessChannel)
+                ? (channel.highestRoleToAccessChannel as "admin" | "manager" | "employee")
+                : undefined,
+            }));
+          }
+  
+          grouped.push({
+            officeId: office.id,
+            officeName: office.name,
+            channels,
+          });
+        }
+  
+        setGroupedChannels(grouped);
       }
-
-      setGroupedChannels(grouped);
     } catch (err) {
       console.error("Error fetching grouped channels:", err);
     }
   };
+  
 
   useEffect(() => {
     fetchGroupedChannels();
@@ -129,7 +160,7 @@ const ChatChannelList: React.FC = () => {
   const handleCreateChannel = async () => {
     if (!newChannelName.trim() || !selectedOfficeId || !serverId) return; //not important
     try {
-      const createRes = await createNewChannel({ channelName: newChannelName, officeId: selectedOfficeId });
+      const createRes = await createNewChannel({ channelName: newChannelName, officeId: selectedOfficeId });//officeId: selectedOfficeId
       if (createRes instanceof ApiError || !createRes.data?.id) throw createRes;
 
       await addAccessToChannel({
@@ -234,12 +265,16 @@ const ChatChannelList: React.FC = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.chatSection}>
+      {userRole === "admin" && (
       <View style={styles.chatHeader}>
-        <Text style={styles.chatTitle}>Offices</Text>
-        <TouchableOpacity onPress={() => setCreateOfficeModalVisible(true)}>
-          <Feather name="plus" size={18} color="black" />
-        </TouchableOpacity>
-      </View>
+  <Text style={styles.chatTitle}>Offices</Text>
+  
+    <TouchableOpacity onPress={() => setCreateOfficeModalVisible(true)}>
+      <Feather name="plus" size={18} color="black" />
+    </TouchableOpacity>
+ 
+</View>
+ )}
 
       {groupedChannels.map((group) => (
         <View key={group.officeId}>
@@ -359,6 +394,7 @@ const ChatChannelList: React.FC = () => {
       </Modal>
 
      {/* Create Office Modal */}
+     {userRole === "admin" && (
      <Modal visible={createOfficeModalVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
@@ -393,6 +429,7 @@ const ChatChannelList: React.FC = () => {
           </View>
         </View>
       </Modal>
+     )}
     </ScrollView>
   );
 };

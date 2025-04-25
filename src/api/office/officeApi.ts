@@ -45,9 +45,9 @@ export const getAllOffices = async (reqData: { serverId: string }) => {
       const statusCode = error.response?.status ?? 500;
       const message =
         error.response?.data?.message || "An unexpected error occurred";
-      return new ApiError(statusCode, {}, message);
+      return new ApiError<{}>(statusCode, {}, message);
     } else {
-      return new ApiError(400, {}, "Something went wrong");
+      return new ApiError<{}>(400, {}, "Something went wrong");
     }
   }
 };
@@ -73,9 +73,9 @@ export const createOffice = async (reqData: CreateOfficeRequest) => {
       const statusCode = error.response?.status ?? 500;
       const message =
         error.response?.data?.message || "An unexpected error occurred";
-      return new ApiError(statusCode, {}, message);
+      return new ApiError<{}>(statusCode, {}, message);
     } else {
-      return new ApiError(400, {}, "Something went wrong");
+      return new ApiError<{}>(400, {}, "Something went wrong");
     }
   }
 };
@@ -104,9 +104,9 @@ export const joinEmployeeToOffice = async (reqData: JoinOfficeRequest) => {
       const statusCode = error.response?.status ?? 500;
       const message =
         error.response?.data?.message || "An unexpected error occurred";
-      return new ApiError(statusCode, {}, message);
+      return new ApiError<{}>(statusCode, {}, message);
     } else {
-      return new ApiError(400, {}, "Something went wrong");
+      return new ApiError<{}>(400, {}, "Something went wrong");
     }
   }
 };
@@ -141,17 +141,19 @@ export const updateOffice = async (reqData: {
       const statusCode = error.response?.status ?? 500;
       const message =
         error.response?.data?.message || "An unexpected error occurred";
-      return new ApiError(statusCode, {}, message);
+      return new ApiError<{}>(statusCode, {}, message);
     } else {
-      return new ApiError(400, {}, "Something went wrong");
+      return new ApiError<{}>(400, {}, "Something went wrong");
     }
   }
 };
 // this function gets all employees in an office
-export const getAllEmployeeInOffice = async (reqData: { officeId: string }) => {
+export const getAllEmployeeInOffice = async (
+  reqData: { officeId: string }
+): Promise<ApiResponse<EmployeesInOfficeResponse[]> | ApiError<{}>> => {
   try {
     const accessToken = await getToken("accessToken");
-    const response = await API.get<EmployeesInOfficeResponse[]>(
+    const response = await API.get<ApiResponse<EmployeesInOfficeResponse[]>>(
       "getAllEmployeeInOffice",
       {
         headers: {
@@ -168,9 +170,11 @@ export const getAllEmployeeInOffice = async (reqData: { officeId: string }) => {
       const statusCode = error.response?.status ?? 500;
       const message =
         error.response?.data?.message || "An unexpected error occurred";
-      return new ApiError(statusCode, {}, message);
+      return new ApiError<{}>(statusCode, {}, message);
     } else {
-      return new ApiError(400, {}, "Something went wrong");
+      return new ApiError<{}>(400, {}, "Something went wrong");
+
     }
   }
 };
+

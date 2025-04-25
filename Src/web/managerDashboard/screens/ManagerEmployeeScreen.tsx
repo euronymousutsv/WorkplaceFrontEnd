@@ -27,7 +27,10 @@ import {
 import { getLoggedInUserServer } from "../../../api/server/serverApi";
 import { Role, EmployeeStatus } from "../../../api/server/server";
 import { getToken, Plat, saveToken } from "../../../api/auth/token";
-import EmployeeDetailsModal from '../components/EmployeeDetailsModal';
+import EmployeeDetailsModal from "../../adminDashboard/components/EmployeeDetailsModal";
+import { getUserIdFromToken } from "../../../utils/jwt";
+import { getAllEmployeeInOffice } from "../../../api/office/officeApi";
+
 
 interface Employee {
   id: string;
@@ -77,6 +80,8 @@ const EmployeeManagementScreen = () => {
   const [search, setSearch] = useState("");
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
+  const [loggedInUserId, setLoggedInUserId] = useState<string | null>(null);
+
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [formData, setFormData] = useState<Employee>({
     id: "",
@@ -98,63 +103,124 @@ const EmployeeManagementScreen = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
+  const [employeeIdsInOffice, setEmployeeIdsInOffice] = useState<string[]>([]);
+
+
+  useEffect(() => {
+    const fetchLoggedInUserId = async () => {
+      const id = await getUserIdFromToken();
+      setLoggedInUserId(id);
+    };
+    fetchLoggedInUserId();
+  }, []);
+  
 
   const handleFetchUsers = async () => {
     try {
-      const res = await fetchAllUsers();
+      // 🔥 Always fetch fresh office context from server
+      const loggedInUserId = await getUserIdFromToken();
+      const serverRes = await getLoggedInUserServer();
+  
+      if (serverRes instanceof ApiError) {
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: serverRes.message,
+        });
+        return;
+      }
+  
+      const officeId = serverRes.data?.searchedOffice?.officeId;
+  
+      if (!officeId) {
+        Toast.show({
+          text1: "Error",
+          text2: "Office ID not found for this manager.",
+          type: "error",
+          position: "bottom",
+        });
+        return;
+      }
+  
+  
+      const officeRes = await getAllEmployeeInOffice({ officeId });
+  console.log("Office response:", officeRes);
+      if (officeRes instanceof ApiError) {
+        Toast.show({
+          text1: "Error",
+          text2: officeRes.message,
+          type: "error",
+          position: "bottom",
+        });
+        return;
+      }
+  
+      const ids = Array.isArray(officeRes.data)
+      ? officeRes.data.map((emp:any) => emp.id)
+      : [];
+    
 
+if (ids.length === 0) {
+  Toast.show({
+    text1: "No employees found for this office.",
+    type: "info",
+    position: "bottom",
+  });
+}
+
+      setEmployeeIdsInOffice(ids);
+  
+      const res = await fetchAllUsers();
       if (res instanceof ApiError || res instanceof AxiosError) {
-        console.log(res.message);
         Toast.show({
           text1: "Error",
           text2: res.message,
           type: "error",
           position: "bottom",
         });
-      } else {
-        const employeeList: Employee[] = res.data.map(
-          (emp: EmployeeDetails) => {
-            return {
-              id: emp.Employee.id,
-              //   firstNamename: `${emp.Employee.firstName} ${emp.Employee.lastName}`,
-              firstName: emp.Employee.firstName,
-              lastName: emp.Employee.lastName,
-              email: emp.Employee.email,
-              phone: emp.Employee.phoneNumber,
-              role:
-                emp.Employee.role.charAt(0).toUpperCase() +
-                emp.Employee.role.slice(1),
-
-              status:
-                typeof emp.Employee.employmentStatus === "string"
-                  ? emp.Employee.employmentStatus
-                  : Object.keys(emp.Employee.employmentStatus)[0],
-              profileImage: emp.Employee.profileImage ?? undefined,
-              joinedDate: emp.createdAt
-                ? new Date(emp.createdAt).toLocaleDateString()
-                : "Unknown",
-              updatedDate: emp.updatedAt
-                ? new Date(emp.updatedAt).toLocaleDateString()
-                : "Unknown",
-            };
-          }
-        );
-
-        //   console.log("✅ Mapped Employees:", employeeList);
-        setEmployees(employeeList);
-
-        Toast.show({
-          text1: "Successfully fetched all employees",
-          type: "success",
-          position: "bottom",
-          autoHide: true,
-          swipeable: true,
-        });
+        return;
       }
+  
+      const employeeList: Employee[] = res.data
+        .filter((emp: EmployeeDetails) => {
+          const isInThisOffice = ids.includes(emp.Employee.id);
+          const isNotSelf = emp.Employee.id !== loggedInUserId;
+          return isInThisOffice && isNotSelf;
+        })
+        .map((emp: EmployeeDetails) => ({
+          id: emp.Employee.id,
+          firstName: emp.Employee.firstName,
+          lastName: emp.Employee.lastName,
+          email: emp.Employee.email,
+          phone: emp.Employee.phoneNumber,
+          role:
+            emp.Employee.role.charAt(0).toUpperCase() +
+            emp.Employee.role.slice(1),
+          status:
+            typeof emp.Employee.employmentStatus === "string"
+              ? emp.Employee.employmentStatus
+              : Object.keys(emp.Employee.employmentStatus)[0],
+          profileImage: emp.Employee.profileImage ?? undefined,
+          joinedDate: emp.createdAt
+            ? new Date(emp.createdAt).toLocaleDateString()
+            : "Unknown",
+          updatedDate: emp.updatedAt
+            ? new Date(emp.updatedAt).toLocaleDateString()
+            : "Unknown",
+        }));
+  
+      setEmployees(employeeList);
+  
+      Toast.show({
+        text1: "Successfully fetched assigned employees",
+        type: "success",
+        position: "bottom",
+      });
     } catch (error) {
-      console.log("Unexpected error during fetchAllUsers()");
+      console.log("Unexpected error during handleFetchUsers:", error);
     }
   };
+  
 
   const fetchServerId = async () => {
     const token = await getToken("accessToken");
@@ -508,7 +574,7 @@ const EmployeeManagementScreen = () => {
             value={search}
             onChangeText={setSearch}
           />
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.addButton}
             onPress={() => {
               setEditingEmployee(null);
@@ -527,7 +593,7 @@ const EmployeeManagementScreen = () => {
             }}
           >
             <Text style={{ color: "#fff" }}>+ Add Employee</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         <ScrollView horizontal={!isMobile}>

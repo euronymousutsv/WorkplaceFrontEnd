@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { getShiftsByEmployee, Shifts } from '../../../api/auth/shiftApi'; // Import your fetch function
 import ShiftCard from '../components/ShiftCard';
@@ -11,16 +11,19 @@ const SchedulesScreen: React.FC = () => {
   const [shifts, setShifts] = useState<Shifts[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
+  const [refreshing, setRefreshing] = useState(false);
  
 
-  useEffect(() => {
+ 
     const fetchShifts = async () => {
       setLoading(true);
+      setRefreshing(false);
   
       const employeeId = await getUserIdFromToken(); 
       if (!employeeId) {
         setError("Employee ID not found in token");
         setLoading(false);
+        setRefreshing(false);
         return;
       }
   
@@ -56,10 +59,13 @@ const SchedulesScreen: React.FC = () => {
       }
   
       setLoading(false);
+      setRefreshing(false);
     };
   
+  useEffect(() => {
     fetchShifts();
-  }, []);
+  }
+  , []);
   
 
   // Mark dates with shifts
@@ -92,7 +98,9 @@ const SchedulesScreen: React.FC = () => {
         Shifts for {new Date(selectedDate).toDateString()}
       </Text>
 
-      <ScrollView style={styles.shiftsContainer}>
+      <ScrollView style={styles.shiftsContainer} refreshControl={
+    <RefreshControl refreshing={refreshing} onRefresh={fetchShifts} />
+  }>
         {loading ? (
           <Text>Loading...</Text>
         ) : error ? (
@@ -100,25 +108,25 @@ const SchedulesScreen: React.FC = () => {
         ) : shiftsForSelectedDate.length > 0 ? (
           shiftsForSelectedDate.map(shift => (
             <ShiftCard
-  key={shift.id}
-  shift={{
-    id: shift.id,
-    startTime: shift.startTime,
-    endTime: shift.endTime,
-    officeId: shift.officeId,
-    notes: shift.notes,
-    employeeId: "N/A",               // 👈 required by type, not UI
-    employeeName: "You",             // 👈 or fetch real name
-    officeLocation: {
-      id: "",
-      name: "",
-      latitude: "",
-      longitude: "",
-      radius: 0,
-      getCoordinates: () => "",
-    },
-  }}
-/>
+                key={shift.id}
+                shift={{
+                  id: shift.id,
+                  startTime: shift.startTime,
+                  endTime: shift.endTime,
+                  officeId: shift.officeId,
+                  notes: shift.notes,
+                  employeeId: "N/A",               // required by type, not UI
+                  employeeName: "You",             // or fetch real name
+                  officeLocation: {
+                    id: "",
+                    name: "",
+                    latitude: "",
+                    longitude: "",
+                    radius: 0,
+                    getCoordinates: () => "",
+                  },
+                }}
+              />
 
 
           ))

@@ -17,6 +17,7 @@ export interface UserJoinedServerResponse {
   };
   searchedOffice?: {
     officeId?: string;
+    officeName?: string;
   };
 }
 
@@ -57,10 +58,8 @@ export interface EmployeeDetails {
   Employee: Employee;
 }
 
-export interface EmployeeStatus {
-  Active: "Active";
-  Inactive: "Inactive";
-}
+export type EmployeeStatus = "Active" | "Inactive";
+
 
 export interface Employee {
   id: string;
