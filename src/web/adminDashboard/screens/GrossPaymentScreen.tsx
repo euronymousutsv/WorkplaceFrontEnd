@@ -12,6 +12,7 @@ import { fetchApprovedHoursByOffice, sendApprovedHoursToPayroll } from "../../..
 import { fetchAllUsers } from "../../../api/server/serverApi";
 import { ApiError } from "../../../api/utils/apiResponse";
 import Toast from "react-native-toast-message";
+import { Feather } from "@expo/vector-icons";
 
 const hourlyRate = 30;
 
@@ -26,6 +27,9 @@ const GrossPaymentScreen = () => {
     startDate: "",
     endDate: "",
   });
+  const [showApproved, setShowApproved] = useState(true);
+const [showPayroll, setShowPayroll] = useState(true);
+
 
   const getDateRange = (frequency: "Weekly" | "Fortnightly" | "Monthly") => {
     const today = new Date();
@@ -123,62 +127,91 @@ const GrossPaymentScreen = () => {
       </View>
 
       {/* Approved Hours Table */}
-      <Text style={styles.subtitle}>Approved Hours (Pending Payroll)</Text>
-      {approvedHours.length === 0 ? (
-        <Text style={{ fontStyle: "italic", color: "gray" }}>No approved hours to process.</Text>
-      ) : (
-        <ScrollView horizontal>
-          <View style={styles.table}>
-            <View style={styles.tableHeader}>
-              {["Emp ID", "Name", "Email", "Date", "Start", "End", "Hours", "Bonus", "Deduct", "Gross"].map((h) => (
-                <Text key={h} style={styles.headerCell}>{h}</Text>
-              ))}
-            </View>
-            {approvedHours.map((row) => (
-              <View style={styles.row} key={row.id}>
-                <Text style={styles.cell}>{row.employeeId.slice(0, 8)}...</Text>
-                <Text style={styles.cell}>{row.name}</Text>
-                <Text style={styles.cell}>{row.email}</Text>
-                <Text style={styles.cell}>{row.date}</Text>
-                <Text style={styles.cell}>{row.startTime}</Text>
-                <Text style={styles.cell}>{row.endTime}</Text>
-                <Text style={styles.cell}>{row.totalHours.toFixed(2)}</Text>
-                <Text style={styles.cell}>${row.bonus ?? 0}</Text>
-                <Text style={styles.cell}>${row.deductions ?? 0}</Text>
-                <Text style={styles.cell}>${row.gross.toFixed(2)}</Text>
-              </View>
-            ))}
+      <TouchableOpacity
+  style={styles.sectionToggle}
+  onPress={() => setShowApproved(!showApproved)}
+>
+  <Feather
+    name={showApproved ? "chevron-down" : "chevron-right"}
+    size={18}
+    color="#4A90E2"
+    style={{ marginRight: 6 }}
+  />
+  <Text style={styles.subtitle}>Approved Hours (Pending Payroll)</Text>
+</TouchableOpacity>
+
+{showApproved && (
+  approvedHours.length === 0 ? (
+    <Text style={{ fontStyle: "italic", color: "gray" }}>No approved hours to process.</Text>
+  ) : (
+    <ScrollView horizontal>
+      <View style={styles.table}>
+        <View style={styles.tableHeader}>
+          {["Emp ID", "Name", "Email", "Date", "Start", "End", "Hours", "Bonus", "Deduct", "Gross"].map((h) => (
+            <Text key={h} style={styles.headerCell}>{h}</Text>
+          ))}
+        </View>
+        {approvedHours.map((row) => (
+          <View style={styles.row} key={row.id}>
+            <Text style={styles.cell}>{row.employeeId.slice(0, 8)}...</Text>
+            <Text style={styles.cell}>{row.name}</Text>
+            <Text style={styles.cell}>{row.email}</Text>
+            <Text style={styles.cell}>{row.date}</Text>
+            <Text style={styles.cell}>{row.startTime}</Text>
+            <Text style={styles.cell}>{row.endTime}</Text>
+            <Text style={styles.cell}>{row.totalHours.toFixed(2)}</Text>
+            <Text style={styles.cell}>${row.bonus ?? 0}</Text>
+            <Text style={styles.cell}>${row.deductions ?? 0}</Text>
+            <Text style={styles.cell}>${row.gross.toFixed(2)}</Text>
           </View>
-        </ScrollView>
-      )}
+        ))}
+      </View>
+    </ScrollView>
+  )
+)}
+
 
       {/* Payroll Table */}
-      <Text style={styles.subtitle}>Payroll Processed</Text>
-      {payrolls.length === 0 ? (
-        <Text style={{ fontStyle: "italic", color: "gray" }}>No payrolls found.</Text>
-      ) : (
-        <ScrollView horizontal>
-          <View style={styles.table}>
-            <View style={styles.tableHeader}>
-              {["Emp ID", "Name", "Email", "Date", "Hours", "Bonus", "Deduct", "Gross"].map((h) => (
-                <Text key={h} style={styles.headerCell}>{h}</Text>
-              ))}
-            </View>
-            {payrolls.map((row) => (
-              <View style={styles.row} key={row.id}>
-                <Text style={styles.cell}>{row.employeeId.slice(0, 8)}...</Text>
-                <Text style={styles.cell}>{row.name}</Text>
-                <Text style={styles.cell}>{row.email}</Text>
-                <Text style={styles.cell}>{row.date}</Text>
-                <Text style={styles.cell}>{row.totalHours.toFixed(2)}</Text>
-                <Text style={styles.cell}>${row.bonus ?? 0}</Text>
-                <Text style={styles.cell}>${row.deductions ?? 0}</Text>
-                <Text style={styles.cell}>${row.gross.toFixed(2)}</Text>
-              </View>
-            ))}
+      <TouchableOpacity
+  style={styles.sectionToggle}
+  onPress={() => setShowPayroll(!showPayroll)}
+>
+  <Feather
+    name={showPayroll ? "chevron-down" : "chevron-right"}
+    size={18}
+    color="#4A90E2"
+    style={{ marginRight: 6 }}
+  />
+  <Text style={styles.subtitle}>Payroll Processed</Text>
+</TouchableOpacity>
+
+{showPayroll && (
+  payrolls.length === 0 ? (
+    <Text style={{ fontStyle: "italic", color: "gray" }}>No payrolls found.</Text>
+  ) : (
+    <ScrollView horizontal>
+      <View style={styles.table}>
+        <View style={styles.tableHeader}>
+          {["Emp ID", "Name", "Email", "Date", "Hours", "Bonus", "Deduct", "Gross"].map((h) => (
+            <Text key={h} style={styles.headerCell}>{h}</Text>
+          ))}
+        </View>
+        {payrolls.map((row) => (
+          <View style={styles.row} key={row.id}>
+            <Text style={styles.cell}>{row.employeeId.slice(0, 8)}...</Text>
+            <Text style={styles.cell}>{row.name}</Text>
+            <Text style={styles.cell}>{row.email}</Text>
+            <Text style={styles.cell}>{row.date}</Text>
+            <Text style={styles.cell}>{row.totalHours.toFixed(2)}</Text>
+            <Text style={styles.cell}>${row.bonus ?? 0}</Text>
+            <Text style={styles.cell}>${row.deductions ?? 0}</Text>
+            <Text style={styles.cell}>${row.gross.toFixed(2)}</Text>
           </View>
-        </ScrollView>
-      )}
+        ))}
+      </View>
+    </ScrollView>
+  )
+)}
 
       <Toast />
     </SafeAreaView>
@@ -220,6 +253,13 @@ const styles = StyleSheet.create({
   },
   headerCell: { flex: 1, fontWeight: "bold", textAlign: "center", fontSize: 13 },
   cell: { flex: 1, textAlign: "center", fontSize: 12 },
+  sectionToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  
 });
 
 export default GrossPaymentScreen;
