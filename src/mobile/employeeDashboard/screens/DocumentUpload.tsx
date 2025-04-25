@@ -19,6 +19,7 @@ import Toast from "react-native-toast-message";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import axios from "axios";
 import { getToken } from "../../../api/auth/token";
+import JWT from "expo-jwt";
 
 const baseUrl =
   process.env.BASE_URL || "https://workplace-zdzja.ondigitalocean.app";
@@ -130,7 +131,9 @@ const DocumentUpload = () => {
 
       // Step 2: Create document record with the file URL
       console.log("Step 2: Creating document record with URL");
-      const userId = await getToken("userId");
+      const accessToken = await getToken("accessToken");
+      const decodedToken = JWT.decode(accessToken!, null);
+      const userId = decodedToken?.userId;
       const documentRequest = {
         employeeId: userId || "",
         documentType: documentType,

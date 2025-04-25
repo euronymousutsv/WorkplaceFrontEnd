@@ -4,7 +4,7 @@ import { ApiError, ApiResponse } from "../utils/apiResponse";
 
 const baseUrl = process.env.BASE_URL || "";
 const API = axios.create({
-  baseURL: baseUrl,
+  baseURL: baseUrl + "/api/document",
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
@@ -47,15 +47,11 @@ export const uploadEmployeeDocument = async (
   reqData: UploadDocumentRequest
 ) => {
   try {
-    const response = await axios.post(
-      `${baseUrl}/api/document/addDocument`,
-      reqData,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const response = await axios.post(`${baseUrl}/addDocument`, reqData, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
     return response.data;
   } catch (error) {
