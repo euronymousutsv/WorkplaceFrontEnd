@@ -14,6 +14,11 @@ import {
 // import Header from '../components/Header';
 // import Sidebar from '../components/Sidebar';
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { useNavigation } from "@react-navigation/native";
+import { RootStackParamList } from "../../../types/navigationTypes";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { deleteToken } from "../../../api/auth/token";
+import { useAuth } from "../../../context/AuthContext";
 
 const SettingsScreen = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -21,6 +26,9 @@ const SettingsScreen = () => {
   const [screenWidth, setScreenWidth] = useState(
     Dimensions.get("window").width
   );
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+
+const { setIsAuthenticated, setUserRole } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [collapsedSections, setCollapsedSections] = useState<{
@@ -44,6 +52,21 @@ const SettingsScreen = () => {
 
   const toggleSection = (section: string) => {
     setCollapsedSections((prev) => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const handleLogout = async () => {
+    await deleteToken("accessToken");
+    await deleteToken("refreshToken");
+    await deleteToken("serverId");
+    await deleteToken("officeId");
+  
+    setIsAuthenticated(false);
+    setUserRole("");
+  
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "Login" }],
+    });
   };
 
   return (
@@ -204,9 +227,10 @@ const SettingsScreen = () => {
               </View>
             ))}
 
-            <TouchableOpacity style={styles.logoutBtn}>
-              <Text style={styles.logoutText}>Logout</Text>
-            </TouchableOpacity>
+<TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+  <Text style={styles.logoutText}>Logout</Text>
+</TouchableOpacity>
+
           </View>
         </ScrollView>
       </View>
