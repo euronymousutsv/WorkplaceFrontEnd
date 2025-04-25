@@ -10,6 +10,7 @@ export interface createChannelResponse {
 }
 
 export interface UserJoinedServerResponse {
+  
   joinedServer: {
     serverId: string;
     name: string;

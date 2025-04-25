@@ -11,7 +11,7 @@ import CustomDrawerContent from "./ChannelsDrawerView";
 import { Dimensions, View } from "react-native";
 import NotificationScreen from "./NotificationScreen";
 import EmployeeManagementScreen from "../../../web/adminDashboard/screens/EmployeeManagementScreen";
-import ClockInOutScreen from "../../../web/adminDashboard/screens/ClockInOutScreen";
+// import ClockInOutScreen from "../../../web/adminDashboard/screens/ClockInOutScreen";
 import LeaveRequestScreen from "../../../web/adminDashboard/screens/LeaveRequestScreen";
 import GrossPaymentScreen from "../../../web/adminDashboard/screens/GrossPaymentScreen";
 import SettingsScreen from "../../../web/adminDashboard/screens/SettingsScreen";
@@ -194,7 +194,7 @@ export const WebNavigatorDrawer = () => {
           }}
         />
 
-        <Drawer.Screen
+        {/* <Drawer.Screen
           name="Leave Request"
           component={LeaveRequestScreen}
           options={{
@@ -202,9 +202,9 @@ export const WebNavigatorDrawer = () => {
               <Ionicons name="airplane" size={size} color={color} />
             ),
           }}
-        />
+        /> */}
 
-        <Drawer.Screen
+        {/* <Drawer.Screen
           name="Clock In/Out"
           component={ClockInOutScreen}
           options={{
@@ -212,7 +212,7 @@ export const WebNavigatorDrawer = () => {
               <Ionicons name="time" size={size} color={color} />
             ),
           }}
-        />
+        /> */}
 
         <Drawer.Screen
           name="Employee Management"
@@ -223,7 +223,7 @@ export const WebNavigatorDrawer = () => {
             ),
           }}
         />
-        <Drawer.Screen
+        {/* <Drawer.Screen
           name="Gross Payment"
           component={GrossPaymentScreen}
           options={{
@@ -231,7 +231,7 @@ export const WebNavigatorDrawer = () => {
               <Ionicons name="cash" size={size} color={color} />
             ),
           }}
-        />
+        /> */}
 
         <Drawer.Screen
           name="Settings"
