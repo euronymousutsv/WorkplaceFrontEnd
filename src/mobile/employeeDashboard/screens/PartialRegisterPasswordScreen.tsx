@@ -47,17 +47,17 @@ export const ParitalRegestrationPasswordScreen = ({
       const phoneNumber = "+61412524317";
       const response = await partialregisterComplete(phoneNumber, password);
 
-      if (response instanceof ApiResponse) {
+      if (response instanceof ApiError) {
         navigation.navigate("Login");
         Toast.show({
           text1: response.message,
-          type: "success",
+          type: "error",
           position: "bottom",
         });
       } else {
         Toast.show({
           text1: response.message,
-          type: "error",
+          type: "success",
           position: "bottom",
         });
         if (response.statusCode === 409) {

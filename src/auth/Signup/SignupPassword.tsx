@@ -46,13 +46,7 @@ export const SignupPasswordScreen = ({ navigation }: { navigation: any }) => {
 
       if (response instanceof ApiError || response instanceof AxiosError) {
         Alert.alert(response.message);
-        // Toast.show({
-        //   text1: "Error",
-        //   text2: response.message,
 
-        //   type: "error",
-        //   position: "bottom",
-        // });
         console.log(response);
       } else {
         navigation.navigate("Login");

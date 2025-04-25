@@ -295,7 +295,6 @@ const updateEmployeeDetails = async (payload: EmployeeDetailsPayload) => {
   }
 };
 
-
 // get all users with a server
 const fetchAllUsers = async () => {
   const accessToken = await getToken("accessToken");
@@ -337,9 +336,9 @@ interface EmployeeData {
 // get employee details by ID
 const fetchEmployeeDetails = async (employeeId: string) => {
   try {
-    const accessToken = await getToken("accessToken", Plat.WEB);
-    console.log('Making API request for employee:', employeeId);
-    
+    const accessToken = await getToken("accessToken");
+    console.log("Making API request for employee:", employeeId);
+
     const response = await API.get<ApiResponse<EmployeeData>>(
       `getEmployeeById/${employeeId}`,
       {
@@ -349,12 +348,12 @@ const fetchEmployeeDetails = async (employeeId: string) => {
       }
     );
 
-    console.log('Raw API Response:', JSON.stringify(response.data, null, 2));
-    
+    console.log("Raw API Response:", JSON.stringify(response.data, null, 2));
+
     // Check if we have a response
     if (!response.data) {
-      console.error('No response data received');
-      return new ApiError(400, {}, 'No response data received');
+      console.error("No response data received");
+      return new ApiError(400, {}, "No response data received");
     }
 
     // Return the entire response data
@@ -363,14 +362,18 @@ const fetchEmployeeDetails = async (employeeId: string) => {
     console.error("API error in fetchEmployeeDetails:", error);
 
     if (error instanceof AxiosError) {
-      console.error('Axios Error Details:', {
+      console.error("Axios Error Details:", {
         status: error.response?.status,
         statusText: error.response?.statusText,
         data: error.response?.data,
         headers: error.response?.headers,
       });
       const err = error.response?.data as ApiError<{}>;
-      return new ApiError(err.statusCode || 500, {}, err.message || 'Failed to fetch employee details');
+      return new ApiError(
+        err.statusCode || 500,
+        {},
+        err.message || "Failed to fetch employee details"
+      );
     } else {
       return new ApiError(500, {}, "An unexpected error occurred");
     }
@@ -391,7 +394,7 @@ interface EmployeeInfoUpdate {
 // update employee info
 const updateEmployeeInfo = async (employeeData: EmployeeInfoUpdate) => {
   try {
-    const accessToken = await getToken("accessToken", Plat.WEB);
+    const accessToken = await getToken("accessToken");
     const response = await API.patch<ApiResponse<{}>>(
       "updateEmployeeInfo",
       employeeData,
@@ -408,7 +411,11 @@ const updateEmployeeInfo = async (employeeData: EmployeeInfoUpdate) => {
 
     if (error instanceof AxiosError) {
       const err = error.response?.data as ApiError<{}>;
-      return new ApiError(err.statusCode || 500, {}, err.message || 'Failed to update employee details');
+      return new ApiError(
+        err.statusCode || 500,
+        {},
+        err.message || "Failed to update employee details"
+      );
     } else {
       return new ApiError(500, {}, "An unexpected error occurred");
     }
@@ -418,7 +425,7 @@ const updateEmployeeInfo = async (employeeData: EmployeeInfoUpdate) => {
 interface EmployeeDocument {
   id: string;
   employeeId: string;
-  documentType: 'License' | 'National ID';
+  documentType: "License" | "National ID";
   documentid: string;
   issueDate: string;
   expiryDate: string;
@@ -431,7 +438,7 @@ interface EmployeeDocument {
 
 const fetchEmployeeDocuments = async (employeeId: string) => {
   try {
-    const accessToken = await getToken("accessToken", Plat.WEB);
+    const accessToken = await getToken("accessToken");
     const response = await API.get<ApiResponse<EmployeeDocument>>(
       `document/employee/${employeeId}`,
       {
@@ -447,7 +454,11 @@ const fetchEmployeeDocuments = async (employeeId: string) => {
 
     if (error instanceof AxiosError) {
       const err = error.response?.data as ApiError<{}>;
-      return new ApiError(err.statusCode || 500, {}, err.message || 'Failed to fetch employee documents');
+      return new ApiError(
+        err.statusCode || 500,
+        {},
+        err.message || "Failed to fetch employee documents"
+      );
     } else {
       return new ApiError(500, {}, "An unexpected error occurred");
     }
